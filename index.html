@@ -10,20 +10,27 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --ink: #1a1a1a;
-    --ink-soft: #45484c;
-    --paper: #faf9f6;
-    --panel: #ffffff;
-    --line: #d8d6cf;
-    --line-soft: #eae8e2;
-    --blue: #35618c;
-    --blue-soft: #e4ebef;
-    --gold: #b8892b;
-    --gold-soft: #f5ecd8;
-    --red: #a8452f;
-    --red-soft: #f4e1db;
-    --evergreen: #003b36;
-    --amber: #e98a15;
+    /* Quarkyard palette: calm, natural, approachable, academic */
+    --teal: #244B49;        /* primary */
+    --sage: #A8BDAE;        /* secondary */
+    --ivory: #F5F5EF;       /* background */
+    --charcoal: #303B39;    /* body text */
+
+    --ink: var(--charcoal);
+    --ink-soft: #55625F;
+    --paper: var(--ivory);
+    --panel: #FCFCF8;
+    --line: #CFD8D1;
+    --line-soft: #E3E8E2;
+    /* subject accents: physical science = teal, life science = deeper sage */
+    --blue: var(--teal);
+    --blue-soft: #E1EAE5;
+    --red: #4C6B5A;
+    --red-soft: #DCE6DE;
+    --gold: #4C6B5A;
+    --gold-soft: #E6EDE7;
+    --evergreen: var(--teal);
+    --amber: #4C6B5A;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   html{scroll-behavior:smooth;}
@@ -44,6 +51,7 @@
     margin-bottom:20px;
     border-bottom:1px solid transparent;
   }
+  .back-link{font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;color:var(--teal);}
   .back-link:hover{color:var(--evergreen);border-bottom-color:var(--evergreen);}
   .kicker{
     font-family:'Barlow Condensed',sans-serif;
@@ -68,7 +76,7 @@
     display:flex;
     align-items:baseline;
     gap:12px;
-    border-bottom:2px solid var(--ink);
+    border-bottom:2px solid var(--sage);
     padding-bottom:10px;
     margin-bottom:20px;
   }
@@ -111,16 +119,16 @@
     overflow:hidden;
     text-decoration:none;
     color:var(--ink);
-    box-shadow:0 1px 2px rgba(20,20,20,0.04), 0 4px 14px rgba(20,20,20,0.05);
+    box-shadow:0 1px 2px rgba(36,75,73,0.05), 0 4px 14px rgba(36,75,73,0.06);
     transition:transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   }
   .subject.bio a.card, .subject.bio div.card{--accent:var(--red); --accent-soft:var(--red-soft);}
   a.card:hover, div.card:hover{
     transform:translateY(-3px);
     border-color:var(--accent);
-    box-shadow:0 2px 4px rgba(20,20,20,0.05), 0 14px 30px rgba(20,20,20,0.10);
+    box-shadow:0 2px 4px rgba(36,75,73,0.06), 0 14px 30px rgba(36,75,73,0.12);
   }
-  a.card:focus-visible, .card-inner:focus-visible, .card-lang:focus-visible{outline:3px solid var(--amber);outline-offset:3px;}
+  a.card:focus-visible, .card-inner:focus-visible, .card-lang:focus-visible{outline:3px solid var(--sage);outline-offset:3px;}
 
   /* ---- Framed preview: screenshot sits on a soft tinted mat ---- */
   .card-mat{
