@@ -8,10 +8,10 @@
 <link rel="icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Lora:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
 <style>
   :root{--teal:#244B49;--teal-deep:#1A3836;--sage:#A8BDAE;--sage-soft:#DCE6DE;--ivory:#F5F5EF;--paper:#FBFBF7;--ink:#303B39;--ink-soft:#55625F;--line:#D5DDD6;
-    --cond:'Barlow Condensed',sans-serif;--sans:'Barlow',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--serif:'Lora',Georgia,serif}
+    --cond:'Fraunces',Georgia,serif;--sans:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;--serif:'Fraunces',Georgia,serif;--rust:#B4532F;--coral:#D66A47;--gold:#E8B04A}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--ivory);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.6}
   .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
@@ -20,7 +20,9 @@
   /* nav with subject dropdowns */
   .nav{background:var(--teal);color:var(--ivory);position:relative;z-index:10}
   .nav .wrap{display:flex;align-items:center;gap:8px;min-height:60px;flex-wrap:wrap}
-  .nav ul.menu{list-style:none;display:flex;gap:2px;flex:1;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ivory);font-family:var(--serif);font-weight:600;font-size:1.55rem;letter-spacing:-.02em;margin-right:14px}
+  .brand .y{color:var(--gold)}
+  .nav ul.menu{list-style:none;display:flex;gap:2px;flex:1;flex-wrap:wrap;justify-content:center}
   .dd{position:relative}
   .dd-btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:10px 12px;border-radius:8px;font-weight:600;font-size:.95rem;color:#E4ECE6}
   .dd-btn svg{width:14px;height:14px;transition:transform .2s}
@@ -28,7 +30,7 @@
   .dd-btn[aria-expanded="true"] svg{transform:rotate(180deg)}
   .dd-btn:focus-visible{outline:2px solid var(--sage)}
   .dd-menu{position:absolute;top:calc(100% + 6px);left:0;width:min(440px,92vw);background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 40px rgba(27,57,55,.22);padding:16px}
-  .dd-blurb{font-family:var(--serif);font-style:italic;color:var(--ink-soft);font-size:.92rem;margin:0 6px 8px}
+  .dd-blurb{color:var(--ink-soft);font-size:.92rem;margin:0 6px 8px}
   .dd-menu ul{list-style:none;max-height:60vh;overflow:auto}
   .dd-menu a{display:block;padding:8px 10px;border-radius:9px;text-decoration:none}
   .dd-menu a:hover{background:var(--sage-soft)}
@@ -36,21 +38,34 @@
   .md{display:block;font-size:.85rem;color:var(--ink-soft);line-height:1.4}
   .nav-support{color:var(--teal);background:var(--sage);font-weight:700;font-size:.9rem;text-decoration:none;padding:7px 16px;border-radius:999px}
   .nav-support:hover{background:#BCCDC0}
-  @media (max-width:760px){.nav .wrap{justify-content:flex-end;padding-top:10px} .nav ul.menu{order:3;flex:none;width:100%;display:grid;grid-template-columns:1fr 1fr;padding-bottom:8px} .dd{position:static} .dd-btn{padding:8px 6px;font-size:.9rem} .dd-menu{left:16px;right:16px;width:auto}}
+  @media (max-width:760px){.nav .wrap{justify-content:space-between;padding-top:10px} .nav ul.menu{order:3;flex:none;width:100%;display:grid;grid-template-columns:1fr 1fr;padding-bottom:8px} .dd{position:static} .dd-btn{padding:8px 6px;font-size:.9rem} .dd-menu{left:16px;right:16px;width:auto}}
 
-  /* hero */
-  .hero{background:linear-gradient(var(--teal),var(--teal-deep));color:var(--ivory);text-align:center;padding:56px 0 120px;position:relative;overflow:hidden}
-  .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 120%,rgba(168,189,174,.22),transparent 60%);pointer-events:none}
-  .wordmark{font-family:var(--cond);font-weight:800;font-size:clamp(3rem,9vw,5.6rem);letter-spacing:.06em;text-transform:uppercase;line-height:1}
-  .wordmark .q{color:var(--sage)}
-  .eyebrow{font-weight:600;letter-spacing:.24em;text-transform:uppercase;font-size:.78rem;color:var(--sage);margin:14px 0 30px}
-  .hero h1{font-family:var(--serif);font-weight:500;font-size:clamp(1.4rem,3vw,1.9rem);line-height:1.35;max-width:720px;margin:0 auto 16px}
-  .hero p{max-width:620px;margin:0 auto;color:#CFDCD3}
-  .pills{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:26px}
-  .pills span{border:1px solid rgba(168,189,174,.5);border-radius:999px;padding:5px 14px;font-size:.88rem;color:#E4ECE6}
+  /* hero (tinker) */
+  .hero{padding:56px 0 64px;border-bottom:1px solid #E2E2D8}
+  .hero-grid{display:flex;flex-wrap:wrap;align-items:center;gap:48px}
+  .hero-copy{flex:1 1 480px;min-width:0;display:flex;flex-direction:column;gap:22px}
+  .hero-tag{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:#E4EBE4;font-size:.86rem;font-weight:500;color:var(--teal)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
+  .hero h1{font-family:var(--serif);font-weight:500;font-size:clamp(42px,5.4vw,70px);line-height:1.04;letter-spacing:-.025em;color:var(--teal)}
+  .hero p{font-size:1.15rem;line-height:1.6;max-width:34em}
+  .hero-cta{display:flex;flex-wrap:wrap;gap:12px}
+  .btn-main,.btn-line{display:inline-flex;align-items:center;gap:8px;height:52px;padding:0 24px;border-radius:14px;font-weight:600;text-decoration:none;box-sizing:border-box}
+  .btn-main{background:var(--teal);color:var(--ivory)} .btn-main:hover{background:var(--teal-deep)}
+  .btn-line{border:1.5px solid var(--teal);color:var(--teal)} .btn-line:hover{background:#E4EBE4}
+  .hero-pills{display:flex;flex-wrap:wrap;gap:8px;padding-top:4px}
+  .hp{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:999px;background:var(--paper);border:1px solid #D6D9CE;font-size:.95rem;font-weight:500;box-sizing:border-box}
+  .hp:hover{border-color:var(--teal);color:var(--teal)} .hp:focus-visible{outline:2px solid var(--teal)}
+  .hero-art{flex:1 1 380px;min-width:0;display:flex;justify-content:center}
+  .hero-art svg{width:100%;max-width:500px;height:auto}
+  .o1{transform-origin:240px 220px;animation:spin 60s linear infinite} .o2{transform-origin:240px 220px;animation:spin 90s linear infinite reverse}
+  .quarks{transform-origin:240px 220px;animation:jiggle 6s ease-in-out infinite}
+  .f1{animation:bob 5s ease-in-out infinite} .f2{animation:bob 7s ease-in-out infinite reverse}
+  @keyframes spin{to{transform:rotate(360deg)}} @keyframes jiggle{50%{transform:rotate(4deg) scale(1.015)}} @keyframes bob{50%{transform:translateY(-10px)}}
+  @media (prefers-reduced-motion:reduce){.o1,.o2,.quarks,.f1,.f2{animation:none}}
+  @media (max-width:600px){.hero{padding:36px 0 44px} .hero-grid{gap:32px}}
 
   /* gallery reveal: a peek that opens up */
-  .reveal{margin-top:-80px;position:relative;z-index:2}
+  .reveal{margin-top:56px;position:relative;scroll-margin-top:20px}
   .wall{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-height:330px;overflow:hidden;transition:max-height .9s ease;position:relative}
   .wall::after{content:"";position:absolute;left:0;right:0;bottom:0;height:150px;background:linear-gradient(rgba(245,245,239,0),var(--ivory));transition:opacity .5s;pointer-events:none}
   .reveal.open .wall{max-height:2400px}
@@ -60,12 +75,14 @@
   .w:hover img{transform:scale(1.05)}
   .w span{position:absolute;left:10px;bottom:10px;background:rgba(36,75,73,.92);color:var(--ivory);font-weight:600;font-size:.82rem;padding:3px 10px;border-radius:999px}
   @media (max-width:700px){.wall{grid-template-columns:1fr 1fr;max-height:260px}}
+  .g-h{font-family:var(--serif);font-weight:600;font-size:2.1rem;letter-spacing:-.01em;color:var(--teal);text-align:center}
+  .g-sub{text-align:center;color:var(--ink-soft);margin-bottom:24px}
   .reveal-btn{display:block;margin:18px auto 0;font:inherit;font-weight:700;color:var(--teal);background:var(--paper);border:1.5px solid var(--sage);border-radius:999px;padding:10px 22px;cursor:pointer}
   .reveal-btn:hover{background:var(--sage-soft)}
 
   /* subject cards */
   .sec{padding:72px 0 24px}
-  .sec h2{font-family:var(--cond);font-weight:800;text-transform:uppercase;letter-spacing:.03em;font-size:2rem;color:var(--teal);text-align:center}
+  .sec h2{font-family:var(--serif);font-weight:600;letter-spacing:-.01em;font-size:2.1rem;color:var(--teal);text-align:center}
   .sec .sub{text-align:center;color:var(--ink-soft);margin-bottom:28px}
   .sc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
   @media (max-width:960px){.sc-grid{grid-template-columns:1fr 1fr}}
@@ -73,7 +90,7 @@
   .sc{background:var(--paper);border:1px solid var(--line);border-top:5px solid var(--teal);border-radius:14px;padding:20px;display:flex;flex-direction:column}
   .sc-life{border-top-color:var(--sage)} .sc-earth{border-top-color:#6F8F8A} .sc-skills{border-top-color:#7A9586}
   .sc-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-  .sc h3{font-family:var(--cond);font-weight:700;font-size:1.35rem;color:var(--ink)}
+  .sc h3{font-family:var(--serif);font-weight:600;font-size:1.3rem;color:var(--ink)}
   .sc-head span{font-size:.8rem;font-weight:700;color:var(--teal);white-space:nowrap}
   .sc p{font-size:.93rem;color:var(--ink-soft);margin:4px 0 14px;flex:1}
   .sc-thumbs{display:flex;margin-bottom:14px}
@@ -95,6 +112,16 @@
 <body>
 <nav class="nav" aria-label="Subjects">
   <div class="wrap">
+    <a class="brand" href="/" aria-label="Quarkyard home">
+      <svg width="38" height="38" viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="1" y="1" width="46" height="46" rx="13" fill="none" stroke="#A8BDAE" stroke-width="2"/>
+        <line x1="24" y1="15" x2="15" y2="30.5" stroke="#A8BDAE" stroke-width="2" stroke-dasharray="1 4" stroke-linecap="round"/>
+        <line x1="24" y1="15" x2="33" y2="30.5" stroke="#A8BDAE" stroke-width="2" stroke-dasharray="1 4" stroke-linecap="round"/>
+        <line x1="15" y1="30.5" x2="33" y2="30.5" stroke="#A8BDAE" stroke-width="2" stroke-dasharray="1 4" stroke-linecap="round"/>
+        <circle cx="24" cy="15" r="6" fill="#D66A47"/><circle cx="15" cy="30.5" r="6" fill="#E8B04A"/><circle cx="33" cy="30.5" r="6" fill="#F5F5EF"/>
+      </svg>
+      <span>quark<span class="y">yard</span></span>
+    </a>
     <ul class="menu">
       <li class="dd">
         <button class="dd-btn" aria-expanded="false" aria-controls="m-skills">Science Skills<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
@@ -147,17 +174,46 @@
 </nav>
 
 <header class="hero">
-  <div class="wrap">
-    <div class="wordmark"><span class="q">Q</span>uarkyard</div>
-    <div class="eyebrow">Online labs &amp; simulations</div>
-    <h1>Real experiments, no lab bench required.</h1>
-    <p>Each Quarkyard lab lets you make a prediction, change the variables, and collect your own data, then explain what happened. It's built for classrooms and curious learners, and it's free to use on any device.</p>
-    <div class="pills"><span>18 free labs</span><span>No sign-up</span><span>English &amp; Español</span><span>Works on Chromebooks</span></div>
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <span class="hero-tag"><span class="dot" style="background:var(--coral)"></span>Online labs &amp; simulations · Grades 6–12</span>
+      <h1>Science you can<br>tinker with.</h1>
+      <p>Hands-on virtual labs and simulations for middle and high school biology, chemistry, physics and earth science. Run the experiment, change a variable, see what happens.</p>
+      <div class="hero-cta">
+        <a class="btn-main" href="#subjects">Browse all labs <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg></a>
+        <a class="btn-line" href="#reveal">Peek inside</a>
+      </div>
+      <div class="hero-pills">
+        <button class="hp" data-target="m-life"><span class="dot" style="background:#6F9A7C"></span>Life Science</button>
+        <button class="hp" data-target="m-physical"><span class="dot" style="background:var(--coral)"></span>Physical Science</button>
+        <button class="hp" data-target="m-earth"><span class="dot" style="background:var(--teal)"></span>Earth &amp; Climate</button>
+        <button class="hp" data-target="m-skills"><span class="dot" style="background:var(--gold)"></span>Science Skills</button>
+      </div>
+    </div>
+    <div class="hero-art">
+      <svg viewBox="0 0 480 440" role="img" aria-label="Illustration of three quarks bound together inside a proton, with orbit rings">
+        <defs><pattern id="qy-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.4" fill="#33605D"/></pattern></defs>
+        <rect width="480" height="440" rx="32" fill="#244B49"/><rect width="480" height="440" rx="32" fill="url(#qy-grid)"/>
+        <g class="orbit o1"><ellipse cx="240" cy="220" rx="190" ry="70" fill="none" stroke="#A8BDAE" stroke-width="1.5" opacity="0.45" transform="rotate(-24 240 220)"/></g>
+        <g class="orbit o2"><ellipse cx="240" cy="220" rx="190" ry="70" fill="none" stroke="#A8BDAE" stroke-width="1.5" opacity="0.45" transform="rotate(36 240 220)"/></g>
+        <circle cx="240" cy="220" r="118" fill="#1D3F3D" stroke="#A8BDAE" stroke-width="2" opacity="0.95"/>
+        <path d="M240 160 q -8 12 -12 18 t -12 18 t -12 18 t -12 18 t -12 18" fill="none" stroke="#A8BDAE" stroke-width="3" stroke-linecap="round"/>
+        <path d="M240 160 q 8 12 12 18 t 12 18 t 12 18 t 12 18 t 12 18" fill="none" stroke="#A8BDAE" stroke-width="3" stroke-linecap="round"/>
+        <path d="M180 250 q 10 -10 20 0 t 20 0 t 20 0 t 20 0 t 20 0 t 20 0" fill="none" stroke="#A8BDAE" stroke-width="3" stroke-linecap="round"/>
+        <g class="quarks">
+          <circle cx="240" cy="160" r="26" fill="#D66A47"/><circle cx="180" cy="250" r="26" fill="#E8B04A"/><circle cx="300" cy="250" r="26" fill="#F5F5EF"/>
+          <circle cx="232" cy="152" r="7" fill="#FFFFFF" opacity="0.3"/><circle cx="172" cy="242" r="7" fill="#FFFFFF" opacity="0.3"/><circle cx="292" cy="242" r="7" fill="#FFFFFF" opacity="0.6"/>
+        </g>
+        <circle class="float f1" cx="414" cy="146" r="9" fill="#E8B04A"/><circle class="float f2" cx="96" cy="330" r="7" fill="#A8BDAE"/>
+      </svg>
+    </div>
   </div>
 </header>
 
 <div class="wrap">
-  <section class="reveal" id="reveal" aria-label="Gallery">
+  <section class="reveal" id="reveal" aria-labelledby="g-h">
+    <h2 class="g-h" id="g-h">A peek inside the labs</h2>
+    <p class="g-sub">Real controls, live graphs, and data you collect yourself.</p>
     <div class="wall" id="wall">
       <a class="w" href="/heating-curve-simulator/"><img src="/thumbs/heating.jpg" alt="Ice to Boiling" loading="lazy"><span>Ice to Boiling</span></a>
 <a class="w" href="/yeast-uv-simulator/"><img src="/thumbs/yeast.jpg" alt="Yeast &amp; UV" loading="lazy"><span>Yeast &amp; UV</span></a>
@@ -181,7 +237,7 @@
     <button class="reveal-btn" id="reveal-btn" aria-expanded="false" aria-controls="wall">Show all 18 labs</button>
   </section>
 
-  <section class="sec" aria-labelledby="sub-h">
+  <section class="sec" id="subjects" aria-labelledby="sub-h">
     <h2 id="sub-h">Choose a subject</h2>
     <p class="sub">Every subject is also in the menu at the top of the page.</p>
     <div class="sc-grid">
@@ -228,7 +284,7 @@
   btns.forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();var open=b.getAttribute('aria-expanded')==='true';closeAll(b);b.setAttribute('aria-expanded',String(!open));document.getElementById(b.getAttribute('aria-controls')).hidden=open;});});
   document.addEventListener('click',function(e){if(!e.target.closest('.dd-menu'))closeAll();});
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeAll();});
-  document.querySelectorAll('.sc-open').forEach(function(s){s.addEventListener('click',function(e){e.stopPropagation();var id=s.dataset.target,b=document.querySelector('[aria-controls="'+id+'"]');window.scrollTo({top:0,behavior:'smooth'});closeAll(b);b.setAttribute('aria-expanded','true');document.getElementById(id).hidden=false;b.focus({preventScroll:true});});});
+  document.querySelectorAll(".sc-open,.hp").forEach(function(s){s.addEventListener('click',function(e){e.stopPropagation();var id=s.dataset.target,b=document.querySelector('[aria-controls="'+id+'"]');window.scrollTo({top:0,behavior:'smooth'});closeAll(b);b.setAttribute('aria-expanded','true');document.getElementById(id).hidden=false;b.focus({preventScroll:true});});});
   var r=document.getElementById('reveal'),rb=document.getElementById('reveal-btn');
   rb.addEventListener('click',function(){var o=r.classList.toggle('open');rb.setAttribute('aria-expanded',String(o));rb.textContent=o?'Show fewer':'Show all 18 labs';});
 </script>
