@@ -2,421 +2,235 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="robots" content="noindex, nofollow" />
-<title>Quarkyard — Science Simulators</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Quarkyard — Online Science Labs &amp; Simulations</title>
+<link rel="icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Lora:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    /* Quarkyard palette: calm, natural, approachable, academic */
-    --teal: #244B49;        /* primary */
-    --sage: #A8BDAE;        /* secondary */
-    --ivory: #F5F5EF;       /* background */
-    --charcoal: #303B39;    /* body text */
+  :root{--teal:#244B49;--teal-deep:#1A3836;--sage:#A8BDAE;--sage-soft:#DCE6DE;--ivory:#F5F5EF;--paper:#FBFBF7;--ink:#303B39;--ink-soft:#55625F;--line:#D5DDD6;
+    --cond:'Barlow Condensed',sans-serif;--sans:'Barlow',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--serif:'Lora',Georgia,serif}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ivory);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.6}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+  @media (max-width:600px){.wrap{padding:0 16px}}
 
-    --ink: var(--charcoal);
-    --ink-soft: #55625F;
-    --paper: var(--ivory);
-    --panel: #FCFCF8;
-    --line: #CFD8D1;
-    --line-soft: #E3E8E2;
-    /* subject accents: physical science = teal, life science = deeper sage */
-    --blue: var(--teal);
-    --blue-soft: #E1EAE5;
-    --red: #4C6B5A;
-    --red-soft: #DCE6DE;
-    --gold: #4C6B5A;
-    --gold-soft: #E6EDE7;
-    --evergreen: var(--teal);
-    --amber: #4C6B5A;
-  }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  html{scroll-behavior:smooth;}
-  body{
-    font-family:'Barlow',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    background:var(--paper);
-    color:var(--ink);
-    line-height:1.5;
-  }
-  .wrap{max-width:920px;margin:0 auto;padding:40px 24px 80px;}
-  header.masthead{margin-bottom:40px;}
-  .back-link{
-    display:inline-block;
-    font-size:0.85rem;
-    font-weight:600;
-    color:var(--ink-soft);
-    text-decoration:none;
-    margin-bottom:20px;
-    border-bottom:1px solid transparent;
-  }
-  .back-link{font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;color:var(--teal);}
-  .back-link:hover{color:var(--evergreen);border-bottom-color:var(--evergreen);}
-  .kicker{
-    font-family:'Barlow Condensed',sans-serif;
-    font-size:0.8rem;
-    font-weight:700;
-    letter-spacing:0.14em;
-    text-transform:uppercase;
-    color:var(--amber);
-    margin-bottom:10px;
-  }
-  h1{
-    font-family:'Barlow Condensed',sans-serif;
-    font-weight:800;
-    font-size:clamp(2rem,5vw,2.8rem);
-    color:var(--evergreen);
-    letter-spacing:-0.01em;
-    margin-bottom:14px;
-  }
-  .lede{color:var(--ink-soft);max-width:620px;font-size:1rem;}
-  section.subject{margin-top:48px;}
-  .subject-head{
-    display:flex;
-    align-items:baseline;
-    gap:12px;
-    border-bottom:2px solid var(--sage);
-    padding-bottom:10px;
-    margin-bottom:20px;
-  }
-  .subject-head h2{
-    font-family:'Barlow Condensed',sans-serif;
-    font-weight:800;
-    font-size:1.5rem;
-    text-transform:uppercase;
-    letter-spacing:0.02em;
-  }
-  .subject-head .count{
-    font-size:0.8rem;
-    color:var(--ink-soft);
-    font-weight:600;
-  }
-  .subject.chem .subject-head{border-bottom-color:var(--blue);}
-  .subject.bio .subject-head{border-bottom-color:var(--red);}
-  .unit-group{margin-bottom:28px;}
-  .unit-group:last-child{margin-bottom:0;}
-  .unit-label{
-    font-size:0.78rem;
-    font-weight:700;
-    text-transform:uppercase;
-    letter-spacing:0.08em;
-    color:var(--ink-soft);
-    margin-bottom:10px;
-  }
-  .card-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;}
-  @media (max-width:640px){.card-grid{grid-template-columns:1fr;gap:20px;}}
+  /* nav with subject dropdowns */
+  .nav{background:var(--teal);color:var(--ivory);position:relative;z-index:10}
+  .nav .wrap{display:flex;align-items:center;gap:8px;min-height:60px;flex-wrap:wrap}
+  .nav ul.menu{list-style:none;display:flex;gap:2px;flex:1;flex-wrap:wrap}
+  .dd{position:relative}
+  .dd-btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:10px 12px;border-radius:8px;font-weight:600;font-size:.95rem;color:#E4ECE6}
+  .dd-btn svg{width:14px;height:14px;transition:transform .2s}
+  .dd-btn:hover,.dd-btn[aria-expanded="true"]{background:rgba(168,189,174,.18);color:#fff}
+  .dd-btn[aria-expanded="true"] svg{transform:rotate(180deg)}
+  .dd-btn:focus-visible{outline:2px solid var(--sage)}
+  .dd-menu{position:absolute;top:calc(100% + 6px);left:0;width:min(440px,92vw);background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 40px rgba(27,57,55,.22);padding:16px}
+  .dd-blurb{font-family:var(--serif);font-style:italic;color:var(--ink-soft);font-size:.92rem;margin:0 6px 8px}
+  .dd-menu ul{list-style:none;max-height:60vh;overflow:auto}
+  .dd-menu a{display:block;padding:8px 10px;border-radius:9px;text-decoration:none}
+  .dd-menu a:hover{background:var(--sage-soft)}
+  .mt{display:block;font-weight:700;color:var(--teal);line-height:1.3}
+  .md{display:block;font-size:.85rem;color:var(--ink-soft);line-height:1.4}
+  .nav-support{color:var(--teal);background:var(--sage);font-weight:700;font-size:.9rem;text-decoration:none;padding:7px 16px;border-radius:999px}
+  .nav-support:hover{background:#BCCDC0}
+  @media (max-width:760px){.nav .wrap{justify-content:flex-end;padding-top:10px} .nav ul.menu{order:3;flex:none;width:100%;display:grid;grid-template-columns:1fr 1fr;padding-bottom:8px} .dd{position:static} .dd-btn{padding:8px 6px;font-size:.9rem} .dd-menu{left:16px;right:16px;width:auto}}
 
-  /* ---- Card shell ---- */
-  a.card, div.card{
-    --accent:var(--blue); --accent-soft:var(--blue-soft);
-    position:relative;
-    display:flex;
-    flex-direction:column;
-    background:var(--panel);
-    border:1px solid var(--line-soft);
-    border-radius:14px;
-    overflow:hidden;
-    text-decoration:none;
-    color:var(--ink);
-    box-shadow:0 1px 2px rgba(36,75,73,0.05), 0 4px 14px rgba(36,75,73,0.06);
-    transition:transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-  }
-  .subject.bio a.card, .subject.bio div.card{--accent:var(--red); --accent-soft:var(--red-soft);}
-  a.card:hover, div.card:hover{
-    transform:translateY(-3px);
-    border-color:var(--accent);
-    box-shadow:0 2px 4px rgba(36,75,73,0.06), 0 14px 30px rgba(36,75,73,0.12);
-  }
-  a.card:focus-visible, .card-inner:focus-visible, .card-lang:focus-visible{outline:3px solid var(--sage);outline-offset:3px;}
+  /* hero */
+  .hero{background:linear-gradient(var(--teal),var(--teal-deep));color:var(--ivory);text-align:center;padding:56px 0 120px;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 120%,rgba(168,189,174,.22),transparent 60%);pointer-events:none}
+  .wordmark{font-family:var(--cond);font-weight:800;font-size:clamp(3rem,9vw,5.6rem);letter-spacing:.06em;text-transform:uppercase;line-height:1}
+  .wordmark .q{color:var(--sage)}
+  .eyebrow{font-weight:600;letter-spacing:.24em;text-transform:uppercase;font-size:.78rem;color:var(--sage);margin:14px 0 30px}
+  .hero h1{font-family:var(--serif);font-weight:500;font-size:clamp(1.4rem,3vw,1.9rem);line-height:1.35;max-width:720px;margin:0 auto 16px}
+  .hero p{max-width:620px;margin:0 auto;color:#CFDCD3}
+  .pills{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:26px}
+  .pills span{border:1px solid rgba(168,189,174,.5);border-radius:999px;padding:5px 14px;font-size:.88rem;color:#E4ECE6}
 
-  /* ---- Framed preview: screenshot sits on a soft tinted mat ---- */
-  .card-mat{
-    display:block;
-    background:var(--accent-soft);
-    padding:16px 16px 0;
-    border-bottom:1px solid var(--line-soft);
-  }
-  .card-thumb{
-    display:block;
-    width:100%;
-    height:auto;
-    aspect-ratio:8/3;
-    object-fit:cover;
-    object-position:top center;
-    border-radius:8px 8px 0 0;
-    background:var(--panel);
-    box-shadow:0 0 0 1px rgba(0,0,0,0.06), 0 -1px 8px rgba(0,0,0,0.06);
-  }
+  /* gallery reveal: a peek that opens up */
+  .reveal{margin-top:-80px;position:relative;z-index:2}
+  .wall{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-height:330px;overflow:hidden;transition:max-height .9s ease;position:relative}
+  .wall::after{content:"";position:absolute;left:0;right:0;bottom:0;height:150px;background:linear-gradient(rgba(245,245,239,0),var(--ivory));transition:opacity .5s;pointer-events:none}
+  .reveal.open .wall{max-height:2400px}
+  .reveal.open .wall::after{opacity:0}
+  .w{position:relative;display:block;border-radius:14px;overflow:hidden;background:var(--paper);border:1px solid var(--line);box-shadow:0 8px 24px rgba(27,57,55,.12);aspect-ratio:16/9}
+  .w img{width:100%;height:100%;object-fit:cover;object-position:top;display:block;transition:transform .5s}
+  .w:hover img{transform:scale(1.05)}
+  .w span{position:absolute;left:10px;bottom:10px;background:rgba(36,75,73,.92);color:var(--ivory);font-weight:600;font-size:.82rem;padding:3px 10px;border-radius:999px}
+  @media (max-width:700px){.wall{grid-template-columns:1fr 1fr;max-height:260px}}
+  .reveal-btn{display:block;margin:18px auto 0;font:inherit;font-weight:700;color:var(--teal);background:var(--paper);border:1.5px solid var(--sage);border-radius:999px;padding:10px 22px;cursor:pointer}
+  .reveal-btn:hover{background:var(--sage-soft)}
 
-  /* ---- Body ---- */
-  .card-inner{display:flex;flex-direction:column;flex:1;text-decoration:none;color:inherit;}
-  .card-tag{
-    align-self:flex-start;
-    display:inline-block;
-    font-size:0.68rem;
-    font-weight:700;
-    text-transform:uppercase;
-    letter-spacing:0.07em;
-    padding:3px 10px;
-    border-radius:20px;
-    margin:20px 22px 10px;
-    background:var(--accent-soft);
-    color:var(--accent);
-  }
-  .card-title{
-    font-family:'Barlow Condensed',sans-serif;
-    font-weight:700;
-    font-size:1.3rem;
-    line-height:1.15;
-    letter-spacing:0.005em;
-    margin:0 22px 8px;
-  }
-  .card-desc{font-size:0.92rem;line-height:1.6;color:var(--ink-soft);margin:0 22px;flex:1;}
-  .card-cta{
-    display:flex;
-    align-items:center;
-    gap:6px;
-    margin:18px 22px 0;
-    padding:14px 0 18px;
-    border-top:1px solid var(--line-soft);
-    font-family:'Barlow Condensed',sans-serif;
-    font-weight:700;
-    font-size:0.95rem;
-    letter-spacing:0.04em;
-    text-transform:uppercase;
-    color:var(--accent);
-  }
-  .card-cta .arrow{transition:transform 0.18s ease;}
-  a.card:hover .card-cta .arrow, .card-inner:hover .card-cta .arrow{transform:translateX(4px);}
+  /* subject cards */
+  .sec{padding:72px 0 24px}
+  .sec h2{font-family:var(--cond);font-weight:800;text-transform:uppercase;letter-spacing:.03em;font-size:2rem;color:var(--teal);text-align:center}
+  .sec .sub{text-align:center;color:var(--ink-soft);margin-bottom:28px}
+  .sc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  @media (max-width:960px){.sc-grid{grid-template-columns:1fr 1fr}}
+  @media (max-width:560px){.sc-grid{grid-template-columns:1fr}}
+  .sc{background:var(--paper);border:1px solid var(--line);border-top:5px solid var(--teal);border-radius:14px;padding:20px;display:flex;flex-direction:column}
+  .sc-life{border-top-color:var(--sage)} .sc-earth{border-top-color:#6F8F8A} .sc-skills{border-top-color:#7A9586}
+  .sc-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .sc h3{font-family:var(--cond);font-weight:700;font-size:1.35rem;color:var(--ink)}
+  .sc-head span{font-size:.8rem;font-weight:700;color:var(--teal);white-space:nowrap}
+  .sc p{font-size:.93rem;color:var(--ink-soft);margin:4px 0 14px;flex:1}
+  .sc-thumbs{display:flex;margin-bottom:14px}
+  .sc-thumbs img{width:64px;height:40px;object-fit:cover;object-position:top;border-radius:7px;border:2px solid var(--paper);margin-right:-14px;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+  .sc-open{all:unset;cursor:pointer;font-weight:700;color:var(--teal);font-size:.95rem}
+  .sc-open:hover{text-decoration:underline}
+  .sc-open:focus-visible{outline:2px solid var(--sage)}
 
-  /* ---- Spanish link: sits in the CTA row ---- */
-  .card-lang{
-    position:absolute; right:22px; bottom:16px; z-index:1;
-    font-size:0.72rem; font-weight:700; letter-spacing:0.03em;
-    color:var(--ink-soft); text-decoration:none;
-    border:1px solid var(--line); border-radius:20px;
-    padding:3px 10px; background:var(--panel);
-    transition:color 0.15s, border-color 0.15s, background 0.15s;
-  }
-  .card-lang:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);}
-
-  /* ---- A section with just one simulator: full-width, side-by-side ---- */
-  @media (min-width:700px){
-    .card-grid > .card:only-child{grid-column:1 / -1;display:grid;grid-template-columns:1.15fr 1fr;align-items:stretch;}
-    .card-grid > .card:only-child .card-mat{padding:20px;border-bottom:none;border-right:1px solid var(--line-soft);display:flex;align-items:center;}
-    .card-grid > .card:only-child .card-thumb{border-radius:8px;}
-    .card-grid > .card:only-child .card-tag{margin-top:24px;}
-  }
-  footer{
-    margin-top:60px;
-    padding-top:20px;
-    border-top:1px solid var(--line);
-    font-size:0.8rem;
-    color:var(--ink-soft);
-  }
+  .support{margin:64px 0 48px;display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:center;background:var(--sage-soft);border-radius:20px;padding:36px}
+  .support h2{font-family:var(--serif);font-weight:500;font-size:1.6rem;color:var(--teal);margin-bottom:6px}
+  .support p{color:var(--ink-soft)}
+  .support a{justify-self:end;background:var(--teal);color:var(--ivory);text-decoration:none;font-weight:700;padding:13px 26px;border-radius:999px}
+  .support a:hover{background:var(--teal-deep)}
+  @media (max-width:700px){.support{grid-template-columns:1fr} .support a{justify-self:start}}
+  footer{border-top:1px solid var(--line);padding:22px 0 40px;font-size:.88rem;color:var(--ink-soft);text-align:center}
+  footer a{color:var(--ink-soft)}
 </style>
 </head>
 <body>
+<nav class="nav" aria-label="Subjects">
+  <div class="wrap">
+    <ul class="menu">
+      <li class="dd">
+        <button class="dd-btn" aria-expanded="false" aria-controls="m-skills">Science Skills<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        <div class="dd-menu" id="m-skills" hidden>
+          <p class="dd-blurb">Plan fair tests and read data like a scientist.</p>
+          <ul><li><a href="/experiment-design-simulator/"><span class="mt">Experiment Design</span><span class="md">Find the variables, choose controls, predict, and spot the error in someone else's data.</span></a></li></ul>
+        </div>
+      </li>
+
+      <li class="dd">
+        <button class="dd-btn" aria-expanded="false" aria-controls="m-physical">Physical Science<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        <div class="dd-menu" id="m-physical" hidden>
+          <p class="dd-blurb">Energy, heat, and the states of matter.</p>
+          <ul><li><a href="/energy-transfer-simulator/"><span class="mt">Energy Transfer</span><span class="md">Mix warm and cool water and track where the energy goes.</span></a></li>
+<li><a href="/water-ice-simulator/"><span class="mt">Water &amp; Ice</span><span class="md">Find the latent heat of fusion from real melting data.</span></a></li>
+<li><a href="/ice-vs-cold-water/"><span class="mt">Ice vs. Cold Water</span><span class="md">Which cools a drink more: ice, or the same mass of 0 &deg;C water?</span></a></li>
+<li><a href="/heating-curve-simulator/"><span class="mt">Ice to Boiling</span><span class="md">Heat ice until it boils and watch the heating curve draw itself.</span></a></li>
+<li><a href="/boiling-point-simulator/"><span class="mt">Boiling Point &amp; Pressure</span><span class="md">Change the air pressure and find what controls boiling temperature.</span></a></li>
+<li><a href="/phase-change-simulator/"><span class="mt">Phase Changes</span><span class="md">All six phase changes, with particles, probes, and energy arrows.</span></a></li>
+<li><a href="/heat-pump-simulator/"><span class="mt">Heat Pump</span><span class="md">Follow refrigerant as it boils, compresses, and condenses.</span></a></li></ul>
+        </div>
+      </li>
+
+      <li class="dd">
+        <button class="dd-btn" aria-expanded="false" aria-controls="m-earth">Earth &amp; Climate<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        <div class="dd-menu" id="m-earth" hidden>
+          <p class="dd-blurb">Carbon, sunlight, and a changing planet.</p>
+          <ul><li><a href="/co2-simulator/"><span class="mt">CO&#8322; Investigation</span><span class="md">How CO&#8322;, distance, and water volume change temperature.</span></a></li>
+<li><a href="/rising-seas-simulator/"><span class="mt">Rising Seas</span><span class="md">From CO&#8322; to melting ice to flooded coastlines.</span></a></li>
+<li><a href="/uv-latitude-simulator/"><span class="mt">UV &amp; Latitude</span><span class="md">Real CDC and NOAA data: does latitude explain skin cancer?</span></a></li></ul>
+        </div>
+      </li>
+
+      <li class="dd">
+        <button class="dd-btn" aria-expanded="false" aria-controls="m-life">Life Science<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        <div class="dd-menu" id="m-life" hidden>
+          <p class="dd-blurb">Cells, genes, and the body.</p>
+          <ul><li><a href="/cellgame.html"><span class="mt">Cell Cycle Game</span><span class="md">A two-player board game through the cell cycle and p53 checkpoints.</span></a></li>
+<li><a href="/p53-simulator/"><span class="mt">Protein Synthesis</span><span class="md">Transcribe and translate a DNA strand; the simulator checks your work.</span></a></li>
+<li><a href="/meiosis-simulator/"><span class="mt">Meiosis &amp; Crossing Over</span><span class="md">See how new gene combinations arise.</span></a></li>
+<li><a href="/pedigree-simulator/"><span class="mt">Pedigrees &amp; Alleles</span><span class="md">Punnett squares, a mutation twist, and a real family pedigree.</span></a></li>
+<li><a href="/yeast-uv-simulator/"><span class="mt">Yeast &amp; UV</span><span class="md">Plate yeast, test sunscreen, and count the colonies.</span></a></li>
+<li><a href="/tumor-growth-simulator/"><span class="mt">Tumor Growth</span><span class="md">Grow benign and malignant tumors side by side.</span></a></li>
+<li><a href="/lung-balloon-simulator/"><span class="mt">Balloon Lung Model</span><span class="md">Compare breathing in healthy lungs and lungs with a tumor.</span></a></li></ul>
+        </div>
+      </li>
+    </ul>
+    <a class="nav-support" href="https://buymeacoffee.com/ipassedmath" target="_blank" rel="noopener">Support</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="wordmark"><span class="q">Q</span>uarkyard</div>
+    <div class="eyebrow">Online labs &amp; simulations</div>
+    <h1>Real experiments, no lab bench required.</h1>
+    <p>Each Quarkyard lab lets you make a prediction, change the variables, and collect your own data, then explain what happened. It's built for classrooms and curious learners, and it's free to use on any device.</p>
+    <div class="pills"><span>18 free labs</span><span>No sign-up</span><span>English &amp; Español</span><span>Works on Chromebooks</span></div>
+  </div>
+</header>
+
 <div class="wrap">
+  <section class="reveal" id="reveal" aria-label="Gallery">
+    <div class="wall" id="wall">
+      <a class="w" href="/heating-curve-simulator/"><img src="/thumbs/heating.jpg" alt="Ice to Boiling" loading="lazy"><span>Ice to Boiling</span></a>
+<a class="w" href="/yeast-uv-simulator/"><img src="/thumbs/yeast.jpg" alt="Yeast &amp; UV" loading="lazy"><span>Yeast &amp; UV</span></a>
+<a class="w" href="/rising-seas-simulator/"><img src="/thumbs/risingseas.jpg" alt="Rising Seas" loading="lazy"><span>Rising Seas</span></a>
+<a class="w" href="/phase-change-simulator/"><img src="/thumbs/phase.jpg" alt="Phase Changes" loading="lazy"><span>Phase Changes</span></a>
+<a class="w" href="/pedigree-simulator/"><img src="/thumbs/pedigree.jpg" alt="Pedigrees" loading="lazy"><span>Pedigrees</span></a>
+<a class="w" href="/heat-pump-simulator/"><img src="/thumbs/heatpump.jpg" alt="Heat Pump" loading="lazy"><span>Heat Pump</span></a>
+<a class="w" href="/experiment-design-simulator/"><img src="/thumbs/experiment-design.jpg" alt="Experiment Design" loading="lazy"><span>Experiment Design</span></a>
+<a class="w" href="/energy-transfer-simulator/"><img src="/thumbs/energy.jpg" alt="Energy Transfer" loading="lazy"><span>Energy Transfer</span></a>
+<a class="w" href="/water-ice-simulator/"><img src="/thumbs/waterice.jpg" alt="Water &amp; Ice" loading="lazy"><span>Water &amp; Ice</span></a>
+<a class="w" href="/ice-vs-cold-water/"><img src="/thumbs/icecold.jpg" alt="Ice vs. Cold Water" loading="lazy"><span>Ice vs. Cold Water</span></a>
+<a class="w" href="/boiling-point-simulator/"><img src="/thumbs/boiling.jpg" alt="Boiling Point &amp; Pressure" loading="lazy"><span>Boiling Point &amp; Pressure</span></a>
+<a class="w" href="/co2-simulator/"><img src="/thumbs/co2.jpg" alt="CO&#8322; Investigation" loading="lazy"><span>CO&#8322; Investigation</span></a>
+<a class="w" href="/uv-latitude-simulator/"><img src="/thumbs/uv.jpg" alt="UV &amp; Latitude" loading="lazy"><span>UV &amp; Latitude</span></a>
+<a class="w" href="/cellgame.html"><img src="/thumbs/cellgame.jpg" alt="Cell Cycle Game" loading="lazy"><span>Cell Cycle Game</span></a>
+<a class="w" href="/p53-simulator/"><img src="/thumbs/p53.jpg" alt="Protein Synthesis" loading="lazy"><span>Protein Synthesis</span></a>
+<a class="w" href="/meiosis-simulator/"><img src="/thumbs/meiosis.jpg" alt="Meiosis &amp; Crossing Over" loading="lazy"><span>Meiosis &amp; Crossing Over</span></a>
+<a class="w" href="/tumor-growth-simulator/"><img src="/thumbs/tumor.jpg" alt="Tumor Growth" loading="lazy"><span>Tumor Growth</span></a>
+<a class="w" href="/lung-balloon-simulator/"><img src="/thumbs/lung.jpg" alt="Balloon Lung Model" loading="lazy"><span>Balloon Lung Model</span></a>
+    </div>
+    <button class="reveal-btn" id="reveal-btn" aria-expanded="false" aria-controls="wall">Show all 18 labs</button>
+  </section>
 
-  <header class="masthead">
-    <a href="/" class="back-link">Quarkyard</a>
-    <div class="kicker">Not indexed — direct link only</div>
-    <h1>Investigation Simulators</h1>
-    <p class="lede">All the interactive investigation simulators in one place, organized by subject. Bookmark this page — it's the one link you need for any of these.</p>
-  </header>
-
-  <section class="subject chem">
-    <div class="subject-head">
-      <h2>Science Skills</h2>
-      <span class="count">1 simulator</span>
+  <section class="sec" aria-labelledby="sub-h">
+    <h2 id="sub-h">Choose a subject</h2>
+    <p class="sub">Every subject is also in the menu at the top of the page.</p>
+    <div class="sc-grid">
+    <div class="sc sc-skills">
+      <div class="sc-head"><h3>Science Skills</h3><span>1 labs</span></div>
+      <p>Plan fair tests and read data like a scientist.</p>
+      <div class="sc-thumbs"><img src="/thumbs/experiment-design.jpg" alt="" loading="lazy"></div>
+      <button class="sc-open" data-target="m-skills">See Science Skills labs &rarr;</button>
     </div>
 
-    <div class="unit-group">
-      <div class="card-grid">
-        <div class="card">
-          <a class="card-lang" href="/experiment-design-simulator/#es" lang="es">Español</a>
-          <a class="card-thumb-link card-mat" href="/experiment-design-simulator/" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/experiment-design.jpg" alt="" width="880" height="330" loading="lazy"></a>
-            <a class="card-inner" href="/experiment-design-simulator/">
-            <span class="card-tag">Experimental design</span>
-            <div class="card-title">Experiment Design Simulator</div>
-            <div class="card-desc">Find the independent and dependent variables, choose what to control, predict, run the experiment, and spot the error in someone else&rsquo;s data. 24 experiments across 6 topics. English &amp; Español.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-          </a>
-        </div>
-      </div>
+    <div class="sc sc-physical">
+      <div class="sc-head"><h3>Physical Science</h3><span>7 labs</span></div>
+      <p>Energy, heat, and the states of matter.</p>
+      <div class="sc-thumbs"><img src="/thumbs/energy.jpg" alt="" loading="lazy"><img src="/thumbs/waterice.jpg" alt="" loading="lazy"><img src="/thumbs/icecold.jpg" alt="" loading="lazy"></div>
+      <button class="sc-open" data-target="m-physical">See Physical Science labs &rarr;</button>
+    </div>
+
+    <div class="sc sc-earth">
+      <div class="sc-head"><h3>Earth &amp; Climate</h3><span>3 labs</span></div>
+      <p>Carbon, sunlight, and a changing planet.</p>
+      <div class="sc-thumbs"><img src="/thumbs/co2.jpg" alt="" loading="lazy"><img src="/thumbs/risingseas.jpg" alt="" loading="lazy"><img src="/thumbs/uv.jpg" alt="" loading="lazy"></div>
+      <button class="sc-open" data-target="m-earth">See Earth &amp; Climate labs &rarr;</button>
+    </div>
+
+    <div class="sc sc-life">
+      <div class="sc-head"><h3>Life Science</h3><span>7 labs</span></div>
+      <p>Cells, genes, and the body.</p>
+      <div class="sc-thumbs"><img src="/thumbs/cellgame.jpg" alt="" loading="lazy"><img src="/thumbs/p53.jpg" alt="" loading="lazy"><img src="/thumbs/meiosis.jpg" alt="" loading="lazy"></div>
+      <button class="sc-open" data-target="m-life">See Life Science labs &rarr;</button>
+    </div>
     </div>
   </section>
 
-  <section class="subject chem">
-    <div class="subject-head">
-      <h2>Chemistry</h2>
-      <span class="count">9 simulators</span>
-    </div>
-
-    <div class="unit-group">
-      <div class="card-grid">
-        <a class="card" href="/co2-simulator/">
-          <span class="card-mat"><img class="card-thumb" src="thumbs/co2.jpg" alt="CO2 simulator: three bottles with heat lamps" width="880" height="330" loading="lazy"></span>
-          <span class="card-tag">Climate &amp; CO2</span>
-          <div class="card-title">CO2 Investigation Simulator</div>
-          <div class="card-desc">How CO2, distance from a heat source, and water volume affect temperature change.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-        </a>
-        <div class="card">
-          <a class="card-lang" href="/rising-seas-simulator/#es" lang="es">Español</a>
-          <a class="card-thumb-link card-mat" href="/rising-seas-simulator/" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/risingseas.jpg" alt="" width="880" height="330" loading="lazy"></a>
-            <a class="card-inner" href="/rising-seas-simulator/">
-            <span class="card-tag">Climate &amp; sea level</span>
-            <div class="card-title">Rising Seas: Who Has to Move?</div>
-            <div class="card-desc">Follow the chain from CO2 to warming, melting land ice, and rising seas. Flood maps of four coastal places and calculate how many people would have to move. Starts with a Units Lab on dimensional analysis. English &amp; Español.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-          </a>
-        </div>
-        <a class="card" href="/energy-transfer-simulator/">
-          <span class="card-mat"><img class="card-thumb" src="thumbs/energy.jpg" alt="Energy transfer simulator: warm and cool cups mixing" width="880" height="330" loading="lazy"></span>
-          <span class="card-tag">Energy transfer</span>
-          <div class="card-title">Energy Transfer Investigation Simulator</div>
-          <div class="card-desc">Mixing warm and cool water — conservation of energy and Q = cmΔT.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-        </a>
-        <a class="card" href="/water-ice-simulator/">
-          <span class="card-mat"><img class="card-thumb" src="thumbs/waterice.jpg" alt="Water-ice simulator: water cooling toward 0 °C on the temperature graph" width="880" height="330" loading="lazy"></span>
-          <span class="card-tag">Latent heat</span>
-          <div class="card-title">Water-Ice Investigation Simulator</div>
-          <div class="card-desc">Melting ice with warm water to find the latent heat of fusion from real data.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-        </a>
-        <a class="card" href="/ice-vs-cold-water/">
-          <span class="card-mat"><img class="card-thumb" src="thumbs/icecold.jpg" alt="Ice vs cold water lab: two cups with temperature probes" width="880" height="330" loading="lazy"></span>
-          <span class="card-tag">Latent heat</span>
-          <div class="card-title">Ice vs. Cold Water Lab</div>
-          <div class="card-desc">Add ice or the same mass of 0 °C cold water to warm water — which cools it more, and where does the energy go?</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-        </a>
-        <div class="card">
-          <a class="card-lang" href="/heating-curve-simulator/index-es.html" lang="es">Español</a>
-          <a class="card-thumb-link card-mat" href="/heating-curve-simulator/" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/heating.jpg" alt="" width="880" height="330" loading="lazy"></a>
-            <a class="card-inner" href="/heating-curve-simulator/">
-            <span class="card-tag">Heating curve</span>
-            <div class="card-title">Ice to Boiling Simulator</div>
-            <div class="card-desc">Heat a block of ice until it melts and boils, and watch the temperature graph draw itself — flat while it melts, flat while it boils.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-          </a>
-        </div>
-        <div class="card">
-          <a class="card-lang" href="/boiling-point-simulator/index-es.html" lang="es">Español</a>
-          <a class="card-thumb-link card-mat" href="/boiling-point-simulator/" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/boiling.jpg" alt="" width="880" height="330" loading="lazy"></a>
-            <a class="card-inner" href="/boiling-point-simulator/">
-            <span class="card-tag">Pressure &amp; boiling</span>
-            <div class="card-title">Boiling Point Investigation Simulator</div>
-            <div class="card-desc">Change the air pressure and boil water to find how pressure controls boiling temperature — the idea behind a heat pump.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-          </a>
-        </div>
-        <a class="card" href="/heat-pump-simulator/">
-          <span class="card-mat"><img class="card-thumb" src="thumbs/heatpump.jpg" alt="Heat pump simulator: refrigerant loop between inside and outside" width="880" height="330" loading="lazy"></span>
-          <span class="card-tag">Heat pumps</span>
-          <div class="card-title">Heat Pump Simulator</div>
-          <div class="card-desc">Follow refrigerant particles as they boil, get compressed, condense, and expand. See how pressure lets a heat pump pull energy out of cold air. Simple and full versions, heating and cooling. English &amp; Español.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-        </a>
-        <a class="card" href="/phase-change-simulator/">
-          <span class="card-mat"><img class="card-thumb" src="thumbs/phase.jpg" alt="Phase change simulator: ice melting with energy flow controls" width="880" height="330" loading="lazy"></span>
-          <span class="card-tag">Phase changes</span>
-          <div class="card-title">Phase Change Simulator</div>
-          <div class="card-desc">Heat and cool water through all six phase changes — melting to deposition — with particles, temperature probes, and energy arrows. English &amp; Español.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-        </a>
-      </div>
-    </div>
+  <section class="support" aria-labelledby="sup-h">
+    <div><h2 id="sup-h">Help keep the yard open</h2><p>Quarkyard is free for every student and teacher. If it's useful in your classroom, you can chip in to support new labs.</p></div>
+    <a href="https://buymeacoffee.com/ipassedmath" target="_blank" rel="noopener">Support Quarkyard</a>
   </section>
-
-  <section class="subject bio">
-    <div class="subject-head">
-      <h2>Biology</h2>
-      <span class="count">6 simulators</span>
-    </div>
-
-    <div class="unit-group">
-      <div class="card-grid">
-        <div class="card">
-          <a class="card-lang" href="/cellgame-es.html" lang="es">Español</a>
-          <a class="card-thumb-link card-mat" href="/cellgame.html" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/cellgame.jpg" alt="" width="880" height="330" loading="lazy"></a>
-            <a class="card-inner" href="/cellgame.html">
-            <span class="card-tag">Cell cycle</span>
-            <div class="card-title">Cell Cycle Simulator</div>
-            <div class="card-desc">Two-player board game — move through the cell cycle and hit p53 checkpoints.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-          </a>
-        </div>
-        <a class="card" href="/p53-simulator/">
-          <span class="card-mat"><img class="card-thumb" src="thumbs/p53.jpg" alt="p53 protein synthesis simulator: nucleus and cytoplasm steps" width="880" height="330" loading="lazy"></span>
-          <span class="card-tag">Protein synthesis</span>
-          <div class="card-title">p53 Protein Synthesis Simulator</div>
-          <div class="card-desc">Transcribe and translate a DNA strand yourself — the simulator checks your work.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-        </a>
-        <a class="card" href="/meiosis-simulator/">
-          <span class="card-mat"><img class="card-thumb" src="thumbs/meiosis.jpg" alt="Meiosis simulator: replicated chromosomes" width="880" height="330" loading="lazy"></span>
-          <span class="card-tag">Meiosis</span>
-          <div class="card-title">Meiosis &amp; Crossing Over Simulator</div>
-          <div class="card-desc">Replicate, cross over, and divide Dad's chromosome 17 to see how new p53/BRCA1 combinations arise.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-        </a>
-        <a class="card" href="/pedigree-simulator/">
-          <span class="card-mat"><img class="card-thumb" src="thumbs/pedigree.jpg" alt="Pedigree simulator: family tree with genotypes" width="880" height="330" loading="lazy"></span>
-          <span class="card-tag">Genetics</span>
-          <div class="card-title">Pedigree &amp; Allele-Tracing Simulator</div>
-          <div class="card-desc">Punnett square basics, a mutation twist, then the real p53 pedigree in Jasmine's family.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-        </a>
-        <a class="card" href="/uv-latitude-simulator/">
-          <span class="card-mat"><img class="card-thumb" src="thumbs/uv.jpg" alt="UV and latitude simulator: UV bands by latitude" width="880" height="330" loading="lazy"></span>
-          <span class="card-tag">UV &amp; cancer</span>
-          <div class="card-title">UV &amp; Latitude Investigation Simulator</div>
-          <div class="card-desc">Real CDC and NOAA data — predict, explore, and test whether latitude and UV actually explain who gets skin cancer.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-        </a>
-        <div class="card">
-          <a class="card-lang" href="/yeast-uv-simulator/index-es.html" lang="es">Español</a>
-          <a class="card-thumb-link card-mat" href="/yeast-uv-simulator/" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/yeast.jpg" alt="" width="880" height="330" loading="lazy"></a>
-            <a class="card-inner" href="/yeast-uv-simulator/">
-            <span class="card-tag">UV &amp; cancer</span>
-            <div class="card-title">Yeast &amp; UV Investigation Simulator</div>
-            <div class="card-desc">Plate UV-sensitive and wild-type yeast, test sunscreen, fabric, foil, or time in the sun, then count the colonies that grew.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-          </a>
-        </div>
-        <div class="card">
-          <a class="card-lang" href="/tumor-growth-simulator/index-es.html" lang="es">Español</a>
-          <a class="card-thumb-link card-mat" href="/tumor-growth-simulator/" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/tumor.jpg" alt="" width="880" height="330" loading="lazy"></a>
-            <a class="card-inner" href="/tumor-growth-simulator/">
-            <span class="card-tag">Tumors</span>
-            <div class="card-title">Tumor Growth Simulation: Benign vs. Malignant</div>
-            <div class="card-desc">Grow a benign and a malignant tumor in the same patch of lung tissue, then see what each one does to the tissue and to the whole lung.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-          </a>
-        </div>
-        <div class="card">
-          <a class="card-lang" href="/lung-balloon-simulator/index-es.html" lang="es">Español</a>
-          <a class="card-thumb-link card-mat" href="/lung-balloon-simulator/" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/lung.jpg" alt="" width="880" height="330" loading="lazy"></a>
-            <a class="card-inner" href="/lung-balloon-simulator/">
-            <span class="card-tag">Tumors &amp; breathing</span>
-            <div class="card-title">Balloon Lung Model: Healthy vs. Tumor</div>
-            <div class="card-desc">Pull the diaphragm on two bottle-and-balloon chests at once and compare how much air healthy lungs and lungs with a tumor take in.</div>
-          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <footer>
-    Prototype simulators for classroom use. Not indexed for search.
-  </footer>
-
 </div>
+<footer><div class="wrap">&copy; Quarkyard · Free online science labs · <a href="https://buymeacoffee.com/ipassedmath" target="_blank" rel="noopener">Support</a></div></footer>
+
+<script>
+  var btns=[].slice.call(document.querySelectorAll('.dd-btn'));
+  function closeAll(except){btns.forEach(function(b){if(b!==except){b.setAttribute('aria-expanded','false');document.getElementById(b.getAttribute('aria-controls')).hidden=true;}});}
+  btns.forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();var open=b.getAttribute('aria-expanded')==='true';closeAll(b);b.setAttribute('aria-expanded',String(!open));document.getElementById(b.getAttribute('aria-controls')).hidden=open;});});
+  document.addEventListener('click',function(e){if(!e.target.closest('.dd-menu'))closeAll();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeAll();});
+  document.querySelectorAll('.sc-open').forEach(function(s){s.addEventListener('click',function(e){e.stopPropagation();var id=s.dataset.target,b=document.querySelector('[aria-controls="'+id+'"]');window.scrollTo({top:0,behavior:'smooth'});closeAll(b);b.setAttribute('aria-expanded','true');document.getElementById(id).hidden=false;b.focus({preventScroll:true});});});
+  var r=document.getElementById('reveal'),rb=document.getElementById('reveal-btn');
+  rb.addEventListener('click',function(){var o=r.classList.toggle('open');rb.setAttribute('aria-expanded',String(o));rb.textContent=o?'Show fewer':'Show all 18 labs';});
+</script>
 </body>
 </html>
