@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Heat Pump Simulator</title>
+<meta name="description" content="See how a heat pump moves energy from cold air to warm air. Watch refrigerant particles boil and condense, see how pressure changes the boiling point, and run heating and cooling modes. English &amp; Español.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a cutaway of a house wall. Controls strip on top, the refrigerant loop crossing the wall, then step-through + energy ledger, the two pressure panels, and the record (graph + data table). */
+:root {
+  --bg: #eef1f4; --surface: #ffffff; --sunk: #f5f7f9; --ink: #16202a; --muted: #586675; --line: #d2dae2;
+  --cold: #2a6fdb; --mid: #19a39a; --warm: #d9481f; --accent: #1d3a57; --accent-ink: #ffffff;
+  --energy: #e08a00; --elec: #7c3fbf; --pipe: #8d9aa6; --metal: #b9c4ce; --wall: #c9b9a6; --wallline: #a8957f;
+  --inBg: #f1e2cb; --outBg: #d4e7f3; --room: #2a6fdb; --cmp: #8a6b4f; --outT: #586675; --hl: rgba(224,138,0,.28); --note: #fff4dc; --note-ink: #6b4a00;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f151b; --surface: #172029; --sunk: #121a21; --ink: #e5ebf0; --muted: #94a3b1; --line: #2b3845;
+  --cold: #6fa3ff; --mid: #3fc9be; --warm: #f2855a; --accent: #9cc3ea; --accent-ink: #0f151b;
+  --energy: #f3b23e; --elec: #c39af2; --pipe: #5d6b78; --metal: #3d4a57; --wall: #4a4036; --wallline: #6b5d4e;
+  --inBg: #2e2418; --outBg: #12273a; --room: #6fa3ff; --cmp: #d1ad86; --outT: #94a3b1; --hl: rgba(243,178,62,.30); --note: #3a2e12; --note-ink: #f3d58e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f151b; --surface: #172029; --sunk: #121a21; --ink: #e5ebf0; --muted: #94a3b1; --line: #2b3845;
+  --cold: #6fa3ff; --mid: #3fc9be; --warm: #f2855a; --accent: #9cc3ea; --accent-ink: #0f151b;
+  --energy: #f3b23e; --elec: #c39af2; --pipe: #5d6b78; --metal: #3d4a57; --wall: #4a4036; --wallline: #6b5d4e;
+  --inBg: #2e2418; --outBg: #12273a; --room: #6fa3ff; --cmp: #d1ad86; --outT: #94a3b1; --hl: rgba(243,178,62,.30); --note: #3a2e12; --note-ink: #f3d58e; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.45 }
+.wrap { max-width: 1160px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 18px 48px; display: grid; gap: 16px }
+header { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; justify-content: space-between }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700 }
+h1 { margin: 2px 0 0; font-size: clamp(26px, 4vw, 34px); line-height: 1.1; text-wrap: balance }
+h2 { margin: 0; font-size: 18px; text-wrap: balance }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); justify-self: start }
+.seg button { font: inherit; font-size: 14px; border: 0; background: transparent; color: var(--ink); padding: 7px 14px; cursor: pointer; min-height: 36px }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700 }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--cold); outline-offset: 2px }
+.question { background: var(--surface); border: 2px solid var(--ink); border-radius: var(--r); padding: 14px 16px }
+.question .lab { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--muted) }
+.question p { margin: 4px 0 0; font-size: clamp(18px, 2.4vw, 21px); font-weight: 700; text-wrap: balance }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; min-width: 0 }
+.setup { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 14px 22px; align-items: start }
+.field { display: grid; gap: 6px }
+.field > span { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .02em }
+.range { display: flex; align-items: center; gap: 10px }
+.range input { flex: 1; min-width: 0; accent-color: var(--warm) }
+.range output { font-family: var(--f-mono); font-weight: 700; min-width: 5.5ch; text-align: right }
+.facts { grid-column: 1 / -1; font-size: 14px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; margin: 0 }
+.facts b { color: var(--ink) }
+.scene { display: grid; gap: 10px }
+.scene canvas { width: 100%; aspect-ratio: 1000 / 470; display: block; background: var(--sunk); border-radius: 8px; max-width: 100% }
+.legend { display: flex; gap: 8px 18px; flex-wrap: wrap; font-size: 14px; align-items: center }
+.legend .sw { display: inline-flex; gap: 2px; vertical-align: middle; margin-right: 6px }
+.legend .sw i { width: 7px; height: 7px; border-radius: 50%; background: var(--mid) }
+.legend .sw.gas { gap: 7px }
+.grad { display: inline-block; width: 90px; height: 9px; border-radius: 5px; vertical-align: middle; margin: 0 6px; background: linear-gradient(90deg, var(--cold), var(--mid), var(--warm)) }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between }
+.btns { display: flex; flex-wrap: wrap; gap: 8px }
+.btn { font: inherit; font-weight: 700; border-radius: 8px; padding: 9px 16px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); min-height: 40px }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line) }
+.btn:disabled { opacity: .45; cursor: not-allowed }
+.clock { font-family: var(--f-mono); font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums }
+.clock small { font-family: var(--f-body); font-size: 13px; color: var(--muted); font-weight: 400; margin-right: 6px }
+.pill { font-size: 13px; font-weight: 700; border-radius: 999px; padding: 3px 11px; border: 1px solid var(--line); background: var(--sunk) }
+.pill.on { border-color: var(--energy); color: var(--ink) }
+.pill.on::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--energy); margin-right: 6px; vertical-align: 1px }
+.tracker { font-size: 14px; background: var(--sunk); border-radius: 8px; padding: 8px 12px; min-height: 38px }
+.tracker b { font-family: var(--f-mono) }
+.two { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px }
+.rowhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px }
+.small { font-size: 13px; color: var(--muted) }
+.big { border-left: 4px solid var(--energy); background: var(--sunk); padding: 10px 12px; border-radius: 0 8px 8px 0; font-size: 15px; margin: 0 0 12px }
+.stepTabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px }
+.stepTabs button { font: inherit; font-size: 14px; text-align: left; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 8px 10px; cursor: pointer; display: grid; gap: 2px; min-width: 0 }
+.stepTabs button b { font-family: var(--f-mono); font-size: 13px; color: var(--muted) }
+.stepTabs button span { overflow-wrap: anywhere }
+.stepTabs button[aria-pressed="true"] { border: 2px solid var(--energy); background: var(--sunk) }
+.stepBody h3 { margin: 0 0 2px; font-size: 18px }
+.stepBody .where { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .03em; text-transform: uppercase }
+.stepBody p { margin: 8px 0 0; max-width: 68ch }
+.facts3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 10px }
+.fact { background: var(--sunk); border-radius: 8px; padding: 8px 10px; display: grid; gap: 2px }
+.fact span { font-size: 12.5px; color: var(--muted); font-weight: 700 }
+.fact div { font-family: var(--f-mono); font-size: 15px; font-weight: 700 }
+.think { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 8px; font-size: 15px }
+.think b { color: var(--energy) }
+.ledger { display: grid; gap: 10px }
+.lrow { display: grid; gap: 4px }
+.lrow > span { font-size: 13px; font-weight: 700; color: var(--muted) }
+.lbar { display: flex; height: 34px; border-radius: 6px; overflow: hidden; background: var(--sunk); border: 1px solid var(--line) }
+.lbar div { height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-family: var(--f-mono); font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; transition: width .3s }
+.seg-air { background: var(--mid) } .seg-elec { background: var(--elec) } .seg-out { background: var(--energy) }
+.lkey { display: grid; gap: 4px; font-size: 14px }
+.lkey i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px }
+.lkey b { font-family: var(--f-mono) }
+.ratio { font-size: 15px; background: var(--sunk); border-radius: 8px; padding: 10px 12px }
+.ratio b { font-family: var(--f-mono); font-size: 18px }
+.cv { width: 100%; height: 300px; display: block }
+.boil { display: grid; gap: 12px }
+.presets { display: flex; flex-wrap: wrap; gap: 6px }
+.presets button { font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 5px 11px; cursor: pointer }
+.presets button.live { border-color: var(--energy) }
+.bpgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px }
+.bp { background: var(--sunk); border-radius: 8px; padding: 10px 12px; display: grid; gap: 2px }
+.bp span { font-size: 12.5px; color: var(--muted); font-weight: 700 }
+.bp div { font-family: var(--f-mono); font-size: clamp(17px, 2.4vw, 22px); font-weight: 700; font-variant-numeric: tabular-nums }
+.bp small { font-family: var(--f-mono); color: var(--muted); font-size: 12.5px }
+.bp.w div { color: var(--cold) } .bp.r div { color: var(--mid) }
+.glegend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; margin-top: 6px }
+.glegend i { display: inline-block; width: 18px; height: 4px; border-radius: 2px; vertical-align: middle; margin-right: 6px }
+.tablebox { overflow: auto; max-height: 380px; border: 1px solid var(--line); border-radius: 8px }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums }
+th, td { padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--line); white-space: nowrap }
+th { position: sticky; top: 0; background: var(--sunk); font-size: 12px; line-height: 1.25; white-space: normal; min-width: 76px }
+td { font-family: var(--f-mono) }
+td.empty { color: var(--muted); font-family: var(--f-body); white-space: normal }
+details { font-size: 14px }
+.reveal > summary { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; font-size: 18px }
+.reveal > summary::-webkit-details-marker { display: none }
+.reveal > summary::before { content: "+"; font-family: var(--f-mono); font-weight: 700; color: var(--energy); width: 1ch }
+.reveal[open] > summary::before { content: "−" }
+.reveal > summary .small { font-weight: 400 }
+details summary { cursor: pointer; font-weight: 700 }
+details ul { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 4px; max-width: 80ch }
+.page { display: grid; gap: 16px }
+[hidden] { display: none !important }
+.pageSeg { justify-self: center }
+.pageSeg button { font-size: 16px; padding: 10px 22px; min-height: 44px }
+.sdiag { position: relative }
+#sLoop { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none }
+.sexp { margin: 8px 0 0; font-size: 15px; max-width: 70ch }
+.simple { display: grid; gap: 12px }
+.sdiag svg { width: 100%; height: auto; display: block; border-radius: 8px }
+.wins { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px }
+.win { background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: grid; gap: 8px; align-content: start; min-width: 0 }
+.whead { display: flex; gap: 8px; align-items: start }
+.wn { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--surface); display: grid; place-items: center; font-family: var(--f-mono); font-weight: 700; font-size: 14px }
+.wwhere { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .04em; text-transform: uppercase }
+.whead b { font-size: 15px; line-height: 1.2 }
+.win canvas { width: 100%; aspect-ratio: 240 / 170; display: block; background: var(--surface); border-radius: 6px; max-width: 100% }
+.wcap { display: grid; gap: 3px; font-size: 13.5px; line-height: 1.3 }
+.wcap .hiP { color: var(--warm); font-weight: 700 } .wcap .loP { color: var(--cold); font-weight: 700 }
+@media (max-width: 980px) { .wins { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+@media (max-width: 480px) { .wins { grid-template-columns: 1fr } }
+@media (max-width: 820px) { .two { grid-template-columns: 1fr } }
+@media (max-width: 520px) { .stepTabs { grid-template-columns: repeat(2, minmax(0, 1fr)) } .bpgrid { grid-template-columns: 1fr } }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow" data-i="eyebrow">Chemistry · Simulator</div>
+      <h1 data-i="title">How a Heat Pump Works</h1>
+    </div>
+    <div class="seg" role="group" aria-label="Language">
+      <button id="lang-en" aria-pressed="true">English</button><button id="lang-es" aria-pressed="false">Español</button>
+    </div>
+  </header>
+
+  <section class="question">
+    <div class="lab" data-i="qlab">Question</div>
+    <p data-i="q">How can a heat pump pull energy out of cold outdoor air to heat a house, and then run backward to cool the house in summer?</p>
+  </section>
+
+  <div class="seg pageSeg" role="group" id="pageSeg" aria-label="Page"><button data-pg="simple" aria-pressed="true" data-i="pgSimple">Simple version</button><button data-pg="full" aria-pressed="false" data-i="pgFull">Full version</button></div>
+
+  <div class="page" id="pageSimple">
+  <section class="card simple">
+    <div class="setup">
+      <div class="field"><span data-i="modeLab">Mode</span>
+        <div class="seg" role="group" id="sModeSeg"><button data-m="heat" aria-pressed="true" data-i="heat">Heating (winter)</button><button data-m="cool" aria-pressed="false" data-i="cool">Cooling (summer)</button></div></div>
+      <div class="field"><span data-i="outLab">Outdoor air temperature</span>
+        <div class="range"><input id="sOutT" type="range" min="-20" max="15" step="1" value="0"><output id="sOutOut">0 °C</output></div></div>
+      <div class="field"><span data-i="motionLabS">Particle motion</span>
+        <div class="seg" role="group" id="sMotionSeg"><button data-p="0" data-i="mFreeze">Freeze</button><button data-p="0.1" data-i="m10">10× slower</button><button data-p="0.5" aria-pressed="true" data-i="m2">2× slower</button><button data-p="1" data-i="m1">Normal</button></div></div>
+    </div>
+    <p class="small" style="margin:0" data-i="simpleNote"></p>
+    <div class="sdiag"><div id="sDiagram"></div><canvas id="sLoop" aria-hidden="true"></canvas></div>
+    <div class="legend">
+      <span><span class="sw"><i></i><i></i><i></i><i></i></span><span data-i="legLiq">Packed dots = liquid</span></span>
+      <span><span class="sw gas"><i></i><i></i><i></i></span><span data-i="legGas">Spread-out, jiggling dots = gas</span></span>
+      <span><span data-i="legTemp">Dot color = temperature:</span> <span class="mono">−30 °C</span><span class="grad"></span><span class="mono">100 °C</span></span>
+    </div>
+    <p class="big" style="margin:0" data-i="bigIdea"></p>
+  </section>
+
+  <section class="card">
+    <div class="rowhead"><h2 data-i="zoomTitle">Zoom in on each part</h2><button class="btn ghost" id="replayBtn" data-i="replay">Replay</button></div>
+    <div class="wins" id="wins"></div>
+  </section>
+
+  <section class="two">
+    <div class="card">
+      <div class="rowhead"><h2 data-i="tGraphTitle">Temperature around the loop</h2></div>
+      <canvas class="cv" id="sTempG" aria-label="Temperature of the refrigerant around the loop"></canvas>
+      <p class="sexp" id="sTempExp"></p>
+    </div>
+    <div class="card">
+      <div class="rowhead"><h2 data-i="pGraphTitle">Pressure around the loop</h2></div>
+      <canvas class="cv" id="sPresG" aria-label="Pressure of the refrigerant around the loop"></canvas>
+      <p class="sexp" id="sPresExp"></p>
+    </div>
+  </section>
+  </div>
+
+  <div class="page" id="pageFull" hidden>
+  <p class="small" style="margin:0" data-i="fullNote"></p>
+
+  <section class="card setup" aria-label="Setup">
+    <div class="field"><span data-i="modeLab">Mode</span>
+      <div class="seg" role="group" id="modeSeg"><button data-m="heat" aria-pressed="true" data-i="heat">Heating (winter)</button><button data-m="cool" aria-pressed="false" data-i="cool">Cooling (summer)</button></div></div>
+    <div class="field"><span data-i="outLab">Outdoor air temperature</span>
+      <div class="range"><input id="outT" type="range" min="-25" max="20" step="1" value="0"><output id="outOut">0 °C</output></div></div>
+    <div class="field"><span data-i="setLab">Thermostat setting</span>
+      <div class="range"><input id="setT" type="range" min="16" max="28" step="1" value="21"><output id="setOut">21 °C</output></div></div>
+    <div class="field"><span data-i="motionLab">Particle motion</span>
+      <div class="seg" role="group" id="motionSeg"><button data-p="0" data-i="mFreeze">Freeze</button><button data-p="0.1" data-i="m10">10× slower</button><button data-p="0.5" aria-pressed="true" data-i="m2">2× slower</button><button data-p="1" data-i="m1">Normal</button></div></div>
+    <div class="field"><span data-i="speedLab">Clock speed</span>
+      <div class="seg" role="group" id="speedSeg"><button data-s="30">30×</button><button data-s="60" aria-pressed="true">60×</button><button data-s="120">120×</button></div></div>
+    <p class="facts" data-i="facts"></p>
+  </section>
+
+  <section class="card scene">
+    <canvas id="scene" aria-label="Cutaway of a house wall with the heat pump refrigerant loop"></canvas>
+    <div class="legend">
+      <span><span class="sw"><i></i><i></i><i></i><i></i></span><span data-i="legLiq">Packed dots = liquid</span></span>
+      <span><span class="sw gas"><i></i><i></i><i></i></span><span data-i="legGas">Spread-out, jiggling dots = gas</span></span>
+      <span><span data-i="legTemp">Dot color = temperature:</span> <span class="mono">−30 °C</span><span class="grad"></span><span class="mono">100 °C</span></span>
+    </div>
+    <p class="small" style="margin:0" data-i="particleNote"></p>
+    <div class="controls">
+      <div class="btns">
+        <button class="btn" id="runBtn" data-i="run">Start the clock</button>
+        <button class="btn ghost" id="pauseBtn" disabled data-i="pause">Pause</button>
+        <button class="btn ghost" id="resetBtn" data-i="reset">Reset</button>
+        <button class="btn ghost" id="followBtn" data-i="follow">Follow one particle</button>
+      </div>
+      <span class="pill" id="unitPill"></span>
+      <div class="clock"><small data-i="timeLab">Time</small><span id="clock">0.0 min</span></div>
+    </div>
+    <div class="tracker" id="tracker" hidden></div>
+  </section>
+
+  <section class="two">
+    <div class="card">
+      <div class="rowhead"><h2 data-i="stepsTitle">Step through the cycle</h2></div>
+      <p class="big" data-i="bigIdea"></p>
+      <div class="stepTabs" id="stepTabs" role="group"></div>
+      <div class="stepBody" id="stepBody"></div>
+    </div>
+    <div class="card">
+      <div class="rowhead"><h2 data-i="ledgerTitle">Energy ledger</h2><span class="small" data-i="ledgerNote">Right now, every second</span></div>
+      <div class="ledger" id="ledger"></div>
+    </div>
+  </section>
+
+  <section class="two">
+    <div class="card">
+      <div class="rowhead"><h2 data-i="phaseTitle">Phase diagram of the refrigerant</h2></div>
+      <canvas class="cv" id="phase" aria-label="Pressure versus temperature diagram"></canvas>
+      <p class="small" style="margin:8px 0 0" data-i="phaseNote"></p>
+    </div>
+    <div class="card">
+      <div class="rowhead"><h2 data-i="graphTitle">Room temperature over time</h2></div>
+      <canvas class="cv" id="graph" aria-label="Graph of room temperature over time"></canvas>
+      <div class="glegend" id="glegend"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="rowhead"><h2 data-i="tableTitle">Data table</h2><button class="btn ghost" id="copyBtn" data-i="copy">Copy table</button></div>
+    <div class="field" style="margin-bottom:10px"><span data-i="intervalLab">Show a reading every</span>
+      <div class="seg" role="group" id="intSeg"><button data-v="0.5">0.5 min</button><button data-v="1">1 min</button><button data-v="2" aria-pressed="true">2 min</button><button data-v="5">5 min</button></div></div>
+    <div class="tablebox"><table><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table></div>
+  </section>
+
+  <details class="card reveal" id="boilReveal">
+    <summary><span data-i="boilTitle">Pressure changes the boiling point</span><span class="small" data-i="boilHint">Extra: open if you need it</span></summary>
+    <div class="boil" style="margin-top:12px">
+      <p class="small" style="margin:0" data-i="boilNote"></p>
+      <div class="range"><input id="pSlider" type="range" min="0" max="1000" step="1" value="300" aria-label="Pressure"><output id="pOut" style="min-width:9ch">84 kPa</output></div>
+      <div class="presets" id="presets"></div>
+      <div class="bpgrid">
+        <div class="bp"><span data-i="bpPress">Pressure</span><div id="bpP">84 kPa</div><small id="bpAtm">0.83 atm</small></div>
+        <div class="bp w"><span data-i="bpWater">Water boils at</span><div id="bpW">95 °C</div></div>
+        <div class="bp r"><span data-i="bpRef">Refrigerant boils at</span><div id="bpR">−55 °C</div></div>
+      </div>
+      <p class="small" style="margin:0" id="boilSay"></p>
+    </div>
+  </details>
+
+  <section class="card">
+    <details><summary data-i="notesTitle">About this model</summary><ul data-i="notes"></ul></details>
+  </section>
+  </div>
+</div>
+
+<script>
+// ================= language =================
+const STR = {
+  en: {
+    pgSimple: 'Simple version', pgFull: 'Full version', replay: 'Replay', zoomTitle: 'Zoom in on each part', motionLabS: 'Particle motion',
+    tGraphTitle: 'Temperature around the loop', pGraphTitle: 'Pressure around the loop', xLoop: 'Around the loop →', refrig: 'refrigerant',
+    tExp: c => `In step 1, the refrigerant (<b>${c.Te} °C</b>) is colder than the ${c.src} (<b>${c.Tsrc} °C</b>), so energy flows into the refrigerant. In step 3, the refrigerant (<b>${c.Tc} °C</b>) is hotter than the ${c.sink} (<b>${c.Tsink} °C</b>), so energy flows out. The flat parts of the line are phase changes: the temperature stays the same while the refrigerant boils or condenses.`,
+    pExp: c => `The compressor raises the pressure from <b>${c.Pl}</b> to <b>${c.Ph} kPa</b>, and the expansion valve drops it back down. At low pressure the refrigerant boils at <b>${c.Te} °C</b>. At high pressure it condenses at <b>${c.Tc} °C</b>. Higher pressure means a higher boiling point.`,
+    simpleNote: 'Watch the refrigerant particles travel around the loop. Red pipes are the high-pressure side and blue pipes are the low-pressure side. Watch where the dots spread apart (boiling) and where they pack together (condensing).',
+    fullNote: 'The full version: a real house cutaway, the room warming or cooling over time, an energy ledger, a phase diagram, and a data table.',
+    sP: [c => `LOW pressure: ${c.Pl} kPa`, c => `Pressure rises: ${c.Pl} → ${c.Ph} kPa`, c => `HIGH pressure: ${c.Ph} kPa`, c => `Pressure drops: ${c.Ph} → ${c.Pl} kPa`],
+    sT: [c => `Stays at ${c.Te} °C while it boils`, c => `Heats up: ${c.Tsuct} → ${c.Tdis} °C`, c => `Stays at ${c.Tc} °C while it condenses`, c => `Cools down: ${c.Tsub} → ${c.Te} °C`],
+    sE: [c => `Energy IN from the ${c.src}`, c => 'Energy IN as electricity', c => `Energy OUT to the ${c.sink}`, c => 'No energy in or out. Some of the liquid boils, which cools it.'],
+    hiShort: 'HIGH', loShort: 'LOW', boilAt: 'boils at', condAt: 'condenses at', indoorCoil: 'Indoor coil', outdoorCoil: 'Outdoor coil',
+    eyebrow: 'Chemistry · Simulator', title: 'How a Heat Pump Works', qlab: 'Question',
+    q: 'How can a heat pump pull energy out of cold outdoor air to heat a house, and then run backward to cool the house in summer?',
+    modeLab: 'Mode', heat: 'Heating (winter)', cool: 'Cooling (summer)', outLab: 'Outdoor air temperature', setLab: 'Thermostat setting', speedLab: 'Clock speed (1 second = 0.5, 1, or 2 minutes)', motionLab: 'Particle motion (does not change the clock)', mFreeze: 'Freeze', m10: '10× slower', m2: '2× slower', m1: 'Normal', boilHint: 'Extra: open if you need it',
+    facts: '<b>The room:</b> the heat pump’s compressor uses <b>1 kW of electricity</b> (1 kJ every second). Energy leaks through the walls between the room and the outdoors, so the heat pump has to keep working. A <b>mini split</b> is one common kind of heat pump.',
+    legLiq: 'Packed dots = liquid', legGas: 'Spread-out, jiggling dots = gas', legTemp: 'Dot color = temperature:',
+    particleNote: 'Each dot is a group of refrigerant particles moving around a sealed loop. The same particles go around again and again; nothing is used up. Watch where dots spread apart (boiling) and where they pack together (condensing).',
+    run: 'Start the clock', pause: 'Pause', resume: 'Resume', reset: 'Reset', follow: 'Follow one particle', unfollow: 'Stop following', timeLab: 'Time',
+    unitOn: 'Heat pump running', unitRest: 'Thermostat reached: heat pump resting',
+    stepsTitle: 'Step through the cycle',
+    bigIdea: '<b>Big idea:</b> energy only moves on its own from hotter to colder. The heat pump follows that rule. It changes the <b>pressure</b> of the refrigerant so the refrigerant is <b>colder</b> than the air where it picks up energy and <b>hotter</b> than the air where it drops energy off.',
+    ledgerTitle: 'Energy ledger', ledgerNote: 'Right now, every second',
+    phaseTitle: 'Phase diagram of the refrigerant',
+    phaseNote: 'The curve is the boiling point at each pressure. Above the curve the refrigerant is a liquid; below it, a gas. The numbered loop is the path the refrigerant takes. Steps 1 and 3 sit on the curve because the refrigerant is boiling or condensing there.',
+    boilTitle: 'Pressure changes the boiling point',
+    boilNote: 'Slide the pressure or pick a choice below. Higher pressure pushes on the particles, so they need more energy to escape into a gas, and the boiling point goes up. Lower pressure lowers the boiling point.',
+    bpPress: 'Pressure', bpWater: 'Water boils at', bpRef: 'Refrigerant boils at',
+    graphTitle: 'Room temperature over time', tableTitle: 'Data table', copy: 'Copy table', copied: 'Copied', intervalLab: 'Show a reading every',
+    notesTitle: 'About this model',
+    notes: '<li>The refrigerant is modeled on R-32, a common heat pump refrigerant. Its boiling points come from a simple curve fit, so they are close but not exact.</li><li>Efficiency uses a simplified ideal (Carnot) heat pump times 0.45, which gives realistic numbers for a modern unit.</li><li>Real heat pumps slow the compressor down instead of shutting off. Here the thermostat simply turns it on and off.</li><li>The dots are not to scale. Real refrigerant particles are far too small and too many to draw, and the speeds are slowed down so you can see them.</li><li>When the heat pump switches from heating to cooling, a <b>reversing valve</b> sends the refrigerant around the loop the other way. The indoor and outdoor coils swap jobs.</li>',
+    // canvas
+    inside: 'INSIDE', outside: 'OUTSIDE', roomAir: 'Room air', outAir: 'Outdoor air', thermo: v => `Thermostat: ${v} °C`,
+    indoorUnit: 'Indoor unit', outdoorUnit: 'Outdoor unit', compressor: 'Compressor', valve: 'Expansion valve', electricity: 'electricity',
+    boiling: 'boiling: liquid → gas', condensing: 'condensing: gas → liquid', energyIn: 'energy in', energyOut: 'energy out',
+    high: 'HIGH PRESSURE', low: 'LOW PRESSURE', liquid: 'liquid', gas: 'gas', mix: 'liquid + gas',
+    // steps
+    stepName: ['Boil', 'Compress', 'Condense', 'Expand'],
+    stepTitle: ['Boil: liquid → gas', 'Compress: squeeze the gas', 'Condense: gas → liquid', 'Expand: drop the pressure'],
+    whereEvap: m => m === 'heat' ? 'Outdoor coil' : 'Indoor coil', whereCond: m => m === 'heat' ? 'Indoor coil' : 'Outdoor coil',
+    whereComp: 'Compressor (in the outdoor unit)', whereValve: 'Expansion valve (in the outdoor unit)',
+    srcAir: m => m === 'heat' ? 'outdoor air' : 'room air', sinkAir: m => m === 'heat' ? 'room air' : 'outdoor air',
+    s1: c => `The pressure here is <b>low (${c.Pl} kPa)</b>. At this pressure the refrigerant boils at only <b>${c.Te} °C</b>. The ${c.src} is ${c.Tsrc} °C, which is warmer, so energy flows from the air into the refrigerant. That energy pulls the particles of the liquid apart into a gas. While it boils, the temperature stays at ${c.Te} °C, just like ice stayed at 0 °C while it melted.`,
+    s2: c => `Electrical energy runs the compressor. It pushes the gas particles into a smaller space, so they crash into each other and the walls more often and harder. The pressure jumps from ${c.Pl} to <b>${c.Ph} kPa</b>, and the temperature rises from ${c.Tsuct} °C to about <b>${c.Tdis} °C</b>. There is no phase change here. It is still a gas, just a hot, squeezed one.`,
+    s3: c => `The pressure here is <b>high (${c.Ph} kPa)</b>, so the refrigerant condenses at <b>${c.Tc} °C</b>. That is hotter than the ${c.sink} (${c.Tsink} °C), so energy flows out of the refrigerant into the air. As the gas particles pull back together into a liquid, they release energy. The temperature stays at ${c.Tc} °C while it condenses.`,
+    s4: c => `The warm liquid squeezes through a tiny opening, and the pressure drops from ${c.Ph} to <b>${c.Pl} kPa</b>. At this low pressure the boiling point is only ${c.Te} °C, so about <b>${c.x}%</b> of the liquid boils right away. That boiling uses the liquid’s own energy, so the temperature drops to <b>${c.Te} °C</b>. The cold mixture goes back to step 1.`,
+    think: ['Why does the refrigerant have to be colder than the air for this step to work?', 'Where does the energy that heats up the gas come from?', c => `How does high pressure let the refrigerant give energy to air that is already ${c.Tsink} °C?`, 'What would happen at step 1 if the valve did not lower the pressure?'],
+    thinkLab: 'Think about it:',
+    fPress: 'Pressure', fTemp: 'Temperature', fPhase: 'Phase', fEnergy: 'Energy',
+    eIn: 'flows in from the air', eOut: 'flows out to the air', eElec: 'electricity in', eNone: 'none in or out',
+    phLtoG: 'liquid → gas', phGtoL: 'gas → liquid', phGas: 'gas', phLtoMix: 'liquid → mostly liquid + some gas',
+    // ledger
+    lFromOut: 'Taken from the outdoor air', lFromRoom: 'Removed from the room', lElec: 'Electricity', lToRoom: 'Delivered to the room', lToOut: 'Released to the outdoor air',
+    lTopH: 'Energy picked up + electricity', lBot: 'Energy dropped off',
+    ratioH: v => `For every <b>1 kJ</b> of electricity, the room gets <b>${v} kJ</b> of energy.`,
+    ratioC: v => `For every <b>1 kJ</b> of electricity, <b>${v} kJ</b> of energy is pumped out of the room.`,
+    lRest: 'The thermostat turned the heat pump off, so no energy is moving right now.',
+    kw: 'kJ every second',
+    // tracker
+    trk: (ph, T, P, w) => `Following one particle: <b>${ph}</b> · <b>${T} °C</b> · <b>${P} kPa</b> · ${w}`,
+    wh: { comp1: 'in the compressor', comp2: 'in the compressor', hot: 'in the hot gas pipe', liq: 'in the warm liquid pipe', valve: 'in the expansion valve', low: 'in the cold pipe after the valve', suct: 'in the cool gas pipe' },
+    whCoil: n => `in the ${n.toLowerCase()}`,
+    // pressure presets
+    pre: { sea: 'Sea level', denver: 'Denver', everest: 'Top of Mount Everest', lo: 'Heat pump low side', hi: 'Heat pump high side' },
+    boilSay: (w, r) => `At this pressure water boils at ${w} °C and the refrigerant boils at ${r} °C. The refrigerant always boils at a much lower temperature than water, which is why it can boil in winter air.`,
+    airP: 'air pressure in Denver', liquidRegion: 'LIQUID', gasRegion: 'GAS', boilsHere: 'boils here', condHere: 'condenses here',
+    axT: 'Temperature (°C)', axP: 'Pressure (kPa)', axMin: 'Time (min)', axRoom: 'Temperature (°C)',
+    // graph + table
+    legRoom: 'Room with heat pump', legCmpH: 'Room with space heater', legCmpC: 'Room with no cooling', legOut: 'Outdoor air', legSet: 'Thermostat setting',
+    thTime: 'Time (min)', thRoom: 'Room with heat pump (°C)', thCmpH: 'Room with space heater (°C)', thCmpC: 'Room with no cooling (°C)', thOut: 'Outdoor air (°C)', thOn: 'Heat pump on?',
+    thPl: 'Low side pressure (kPa)', thPh: 'High side pressure (kPa)', thElec: 'Total electricity used (kJ)', thRoomH: 'Total energy into room (kJ)', thRoomC: 'Total energy removed from room (kJ)', thOutH: 'Total energy from outdoor air (kJ)', thOutC: 'Total energy released outside (kJ)',
+    yes: 'Yes', no: 'No', empty: 'Press “Start the clock” to collect data.',
+  },
+  es: {
+    pgSimple: 'Versión simple', pgFull: 'Versión completa', replay: 'Repetir', zoomTitle: 'Acércate a cada parte', motionLabS: 'Movimiento de partículas',
+    tGraphTitle: 'Temperatura por el circuito', pGraphTitle: 'Presión por el circuito', xLoop: 'Por el circuito →', refrig: 'refrigerante',
+    tExp: c => `En el paso 1, el refrigerante (<b>${c.Te} °C</b>) está más frío que el ${c.src} (<b>${c.Tsrc} °C</b>), así que la energía pasa al refrigerante. En el paso 3, el refrigerante (<b>${c.Tc} °C</b>) está más caliente que el ${c.sink} (<b>${c.Tsink} °C</b>), así que la energía sale. Las partes planas de la línea son cambios de fase: la temperatura no cambia mientras el refrigerante hierve o se condensa.`,
+    pExp: c => `El compresor sube la presión de <b>${c.Pl}</b> a <b>${c.Ph} kPa</b>, y la válvula de expansión la vuelve a bajar. A presión baja el refrigerante hierve a <b>${c.Te} °C</b>. A presión alta se condensa a <b>${c.Tc} °C</b>. Más presión significa un punto de ebullición más alto.`,
+    simpleNote: 'Mira cómo las partículas de refrigerante viajan por el circuito. Los tubos rojos son el lado de alta presión y los azules son el lado de baja presión. Mira dónde los puntos se separan (ebullición) y dónde se juntan (condensación).',
+    fullNote: 'La versión completa: un corte de una casa real, el cuarto que se calienta o se enfría con el tiempo, un balance de energía, un diagrama de fases y una tabla de datos.',
+    sP: [c => `Presión BAJA: ${c.Pl} kPa`, c => `La presión sube: ${c.Pl} → ${c.Ph} kPa`, c => `Presión ALTA: ${c.Ph} kPa`, c => `La presión baja: ${c.Ph} → ${c.Pl} kPa`],
+    sT: [c => `Se queda en ${c.Te} °C mientras hierve`, c => `Se calienta: ${c.Tsuct} → ${c.Tdis} °C`, c => `Se queda en ${c.Tc} °C mientras se condensa`, c => `Se enfría: ${c.Tsub} → ${c.Te} °C`],
+    sE: [c => `Entra energía desde el ${c.src}`, c => 'Entra energía como electricidad', c => `Sale energía al ${c.sink}`, c => 'No entra ni sale energía. Parte del líquido hierve, y eso lo enfría.'],
+    hiShort: 'ALTA', loShort: 'BAJA', boilAt: 'hierve a', condAt: 'se condensa a', indoorCoil: 'Serpentín interior', outdoorCoil: 'Serpentín exterior',
+    eyebrow: 'Química · Simulador', title: 'Cómo funciona una bomba de calor', qlab: 'Pregunta',
+    q: '¿Cómo puede una bomba de calor sacar energía del aire frío de afuera para calentar una casa, y luego funcionar al revés para enfriarla en el verano?',
+    modeLab: 'Modo', heat: 'Calefacción (invierno)', cool: 'Enfriamiento (verano)', outLab: 'Temperatura del aire de afuera', setLab: 'Temperatura del termostato', speedLab: 'Velocidad del reloj (1 segundo = 0.5, 1 o 2 minutos)', motionLab: 'Movimiento de partículas (no cambia el reloj)', mFreeze: 'Congelar', m10: '10× más lento', m2: '2× más lento', m1: 'Normal', boilHint: 'Extra: ábrelo si lo necesitas',
+    facts: '<b>El cuarto:</b> el compresor de la bomba de calor usa <b>1 kW de electricidad</b> (1 kJ cada segundo). La energía pasa por las paredes entre el cuarto y el exterior, así que la bomba de calor tiene que seguir trabajando. Un <b>minisplit</b> es un tipo común de bomba de calor.',
+    legLiq: 'Puntos juntos = líquido', legGas: 'Puntos separados que vibran = gas', legTemp: 'Color del punto = temperatura:',
+    particleNote: 'Cada punto es un grupo de partículas de refrigerante que se mueve por un circuito cerrado. Las mismas partículas dan la vuelta una y otra vez; nada se gasta. Mira dónde los puntos se separan (ebullición) y dónde se juntan (condensación).',
+    run: 'Iniciar el reloj', pause: 'Pausar', resume: 'Continuar', reset: 'Reiniciar', follow: 'Seguir una partícula', unfollow: 'Dejar de seguir', timeLab: 'Tiempo',
+    unitOn: 'Bomba de calor funcionando', unitRest: 'Se llegó al termostato: bomba de calor en pausa',
+    stepsTitle: 'Recorre el ciclo paso a paso',
+    bigIdea: '<b>Idea principal:</b> la energía solo se mueve por sí sola de lo más caliente a lo más frío. La bomba de calor sigue esa regla. Cambia la <b>presión</b> del refrigerante para que esté <b>más frío</b> que el aire donde recoge energía y <b>más caliente</b> que el aire donde la deja.',
+    ledgerTitle: 'Balance de energía', ledgerNote: 'Ahora mismo, cada segundo',
+    phaseTitle: 'Diagrama de fases del refrigerante',
+    phaseNote: 'La curva es el punto de ebullición a cada presión. Arriba de la curva el refrigerante es líquido; abajo, es gas. El circuito numerado es el camino del refrigerante. Los pasos 1 y 3 están sobre la curva porque ahí el refrigerante hierve o se condensa.',
+    boilTitle: 'La presión cambia el punto de ebullición',
+    boilNote: 'Mueve la presión o elige una opción. Más presión empuja las partículas, así que necesitan más energía para escapar como gas, y el punto de ebullición sube. Menos presión baja el punto de ebullición.',
+    bpPress: 'Presión', bpWater: 'El agua hierve a', bpRef: 'El refrigerante hierve a',
+    graphTitle: 'Temperatura del cuarto en el tiempo', tableTitle: 'Tabla de datos', copy: 'Copiar tabla', copied: 'Copiada', intervalLab: 'Mostrar una lectura cada',
+    notesTitle: 'Sobre este modelo',
+    notes: '<li>El refrigerante está basado en el R-32, un refrigerante común en las bombas de calor. Sus puntos de ebullición vienen de una curva simple, así que son cercanos pero no exactos.</li><li>La eficiencia usa una bomba de calor ideal (Carnot) simplificada por 0.45, lo que da números realistas para un equipo moderno.</li><li>Las bombas de calor reales bajan la velocidad del compresor en vez de apagarse. Aquí el termostato solo lo prende y lo apaga.</li><li>Los puntos no están a escala. Las partículas reales son demasiado pequeñas y demasiadas para dibujarlas, y las velocidades están más lentas para que puedas verlas.</li><li>Cuando la bomba de calor cambia de calefacción a enfriamiento, una <b>válvula de inversión</b> manda el refrigerante por el circuito al revés. Los serpentines de adentro y de afuera intercambian sus trabajos.</li>',
+    inside: 'ADENTRO', outside: 'AFUERA', roomAir: 'Aire del cuarto', outAir: 'Aire de afuera', thermo: v => `Termostato: ${v} °C`,
+    indoorUnit: 'Unidad interior', outdoorUnit: 'Unidad exterior', compressor: 'Compresor', valve: 'Válvula de expansión', electricity: 'electricidad',
+    boiling: 'hirviendo: líquido → gas', condensing: 'condensando: gas → líquido', energyIn: 'entra energía', energyOut: 'sale energía',
+    high: 'ALTA PRESIÓN', low: 'BAJA PRESIÓN', liquid: 'líquido', gas: 'gas', mix: 'líquido + gas',
+    stepName: ['Hervir', 'Comprimir', 'Condensar', 'Expandir'],
+    stepTitle: ['Hervir: líquido → gas', 'Comprimir: apretar el gas', 'Condensar: gas → líquido', 'Expandir: bajar la presión'],
+    whereEvap: m => m === 'heat' ? 'Serpentín exterior' : 'Serpentín interior', whereCond: m => m === 'heat' ? 'Serpentín interior' : 'Serpentín exterior',
+    whereComp: 'Compresor (en la unidad exterior)', whereValve: 'Válvula de expansión (en la unidad exterior)',
+    srcAir: m => m === 'heat' ? 'aire de afuera' : 'aire del cuarto', sinkAir: m => m === 'heat' ? 'aire del cuarto' : 'aire de afuera',
+    s1: c => `Aquí la presión es <b>baja (${c.Pl} kPa)</b>. A esta presión el refrigerante hierve a solo <b>${c.Te} °C</b>. El ${c.src} está a ${c.Tsrc} °C, que es más caliente, así que la energía pasa del aire al refrigerante. Esa energía separa las partículas del líquido y lo convierte en gas. Mientras hierve, la temperatura se queda en ${c.Te} °C, igual que el hielo se quedó en 0 °C mientras se derretía.`,
+    s2: c => `La energía eléctrica hace funcionar el compresor. Empuja las partículas del gas a un espacio más pequeño, así que chocan entre sí y contra las paredes más seguido y más fuerte. La presión sube de ${c.Pl} a <b>${c.Ph} kPa</b>, y la temperatura sube de ${c.Tsuct} °C a unos <b>${c.Tdis} °C</b>. Aquí no hay cambio de fase. Sigue siendo gas, pero caliente y apretado.`,
+    s3: c => `Aquí la presión es <b>alta (${c.Ph} kPa)</b>, así que el refrigerante se condensa a <b>${c.Tc} °C</b>. Eso es más caliente que el ${c.sink} (${c.Tsink} °C), así que la energía sale del refrigerante al aire. Cuando las partículas del gas se juntan otra vez como líquido, sueltan energía. La temperatura se queda en ${c.Tc} °C mientras se condensa.`,
+    s4: c => `El líquido tibio pasa por una abertura muy pequeña, y la presión baja de ${c.Ph} a <b>${c.Pl} kPa</b>. A esta presión baja el punto de ebullición es solo ${c.Te} °C, así que cerca del <b>${c.x}%</b> del líquido hierve de inmediato. Esa ebullición usa la energía del mismo líquido, así que la temperatura baja a <b>${c.Te} °C</b>. La mezcla fría regresa al paso 1.`,
+    think: ['¿Por qué el refrigerante tiene que estar más frío que el aire para que este paso funcione?', '¿De dónde viene la energía que calienta el gas?', c => `¿Cómo deja la presión alta que el refrigerante le dé energía a un aire que ya está a ${c.Tsink} °C?`, '¿Qué pasaría en el paso 1 si la válvula no bajara la presión?'],
+    thinkLab: 'Piénsalo:',
+    fPress: 'Presión', fTemp: 'Temperatura', fPhase: 'Fase', fEnergy: 'Energía',
+    eIn: 'entra desde el aire', eOut: 'sale al aire', eElec: 'entra electricidad', eNone: 'no entra ni sale',
+    phLtoG: 'líquido → gas', phGtoL: 'gas → líquido', phGas: 'gas', phLtoMix: 'líquido → casi todo líquido + algo de gas',
+    lFromOut: 'Tomada del aire de afuera', lFromRoom: 'Sacada del cuarto', lElec: 'Electricidad', lToRoom: 'Entregada al cuarto', lToOut: 'Soltada al aire de afuera',
+    lTopH: 'Energía recogida + electricidad', lBot: 'Energía entregada',
+    ratioH: v => `Por cada <b>1 kJ</b> de electricidad, el cuarto recibe <b>${v} kJ</b> de energía.`,
+    ratioC: v => `Por cada <b>1 kJ</b> de electricidad, se sacan <b>${v} kJ</b> de energía del cuarto.`,
+    lRest: 'El termostato apagó la bomba de calor, así que ahora no se está moviendo energía.',
+    kw: 'kJ cada segundo',
+    trk: (ph, T, P, w) => `Siguiendo una partícula: <b>${ph}</b> · <b>${T} °C</b> · <b>${P} kPa</b> · ${w}`,
+    wh: { comp1: 'en el compresor', comp2: 'en el compresor', hot: 'en el tubo de gas caliente', liq: 'en el tubo de líquido tibio', valve: 'en la válvula de expansión', low: 'en el tubo frío después de la válvula', suct: 'en el tubo de gas fresco' },
+    whCoil: n => `en el ${n.toLowerCase()}`,
+    pre: { sea: 'Nivel del mar', denver: 'Denver', everest: 'Cima del monte Everest', lo: 'Lado de baja de la bomba de calor', hi: 'Lado de alta de la bomba de calor' },
+    boilSay: (w, r) => `A esta presión el agua hierve a ${w} °C y el refrigerante hierve a ${r} °C. El refrigerante siempre hierve a una temperatura mucho más baja que el agua; por eso puede hervir con el aire del invierno.`,
+    airP: 'presión del aire en Denver', liquidRegion: 'LÍQUIDO', gasRegion: 'GAS', boilsHere: 'hierve aquí', condHere: 'se condensa aquí',
+    axT: 'Temperatura (°C)', axP: 'Presión (kPa)', axMin: 'Tiempo (min)', axRoom: 'Temperatura (°C)',
+    legRoom: 'Cuarto con bomba de calor', legCmpH: 'Cuarto con calentador eléctrico', legCmpC: 'Cuarto sin enfriamiento', legOut: 'Aire de afuera', legSet: 'Termostato',
+    thTime: 'Tiempo (min)', thRoom: 'Cuarto con bomba de calor (°C)', thCmpH: 'Cuarto con calentador (°C)', thCmpC: 'Cuarto sin enfriamiento (°C)', thOut: 'Aire de afuera (°C)', thOn: '¿Bomba de calor prendida?',
+    thPl: 'Presión lado de baja (kPa)', thPh: 'Presión lado de alta (kPa)', thElec: 'Electricidad total usada (kJ)', thRoomH: 'Energía total al cuarto (kJ)', thRoomC: 'Energía total sacada del cuarto (kJ)', thOutH: 'Energía total del aire de afuera (kJ)', thOutC: 'Energía total soltada afuera (kJ)',
+    yes: 'Sí', no: 'No', empty: 'Presiona “Iniciar el reloj” para juntar datos.',
+  },
+};
+let lang = 'en';
+try { if (localStorage.getItem('msLang') === 'es') lang = 'es'; } catch (e) {}
+const t = (k, ...a) => { const v = STR[lang][k]; return typeof v === 'function' ? v(...a) : v; };
+
+// ================= physics =================
+// Refrigerant saturation curve (fit to R-32): ln P(kPa) = A - B / T(K)
+const RA = 15.418, RB = 2381;
+const psatR = T => Math.exp(RA - RB / (T + 273.15));
+const tsatR = P => RB / (RA - Math.log(P)) - 273.15;
+// Water (Clausius–Clapeyron through 100 °C at 101.3 kPa)
+const tsatW = P => 1 / (1 / 373.15 - Math.log(P / 101.325) / 4895) - 273.15;
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const W_KW = 1.0, C_ROOM = 300, K_LOSS = 0.1, END = 90 * 60;
+
+function cycle(mode, Tin, Tout) {
+  let Te, Tc;
+  if (mode === 'heat') { Te = Tout - 10; Tc = Math.max(Tin + 22, Te + 25); }
+  else { Te = Tin - 15; Tc = Math.max(Tout + 15, Te + 25); }
+  const Pl = psatR(Te), Ph = psatR(Tc), Tsuct = Te + 6, Tsub = Tc - 4;
+  const Tdis = (Tsuct + 273.15) * Math.pow(Ph / Pl, 0.2) - 273.15 + 3;
+  const x = clamp(1.8 * (Tsub - Te) / 300, 0.05, 0.6);
+  const copH = clamp(0.45 * (Tc + 273.15) / (Tc - Te), 1.3, 6);
+  return { Te, Tc, Pl, Ph, Tsuct, Tsub, Tdis, x, copH, copC: copH - 1 };
+}
+function stateAt(role, f, c) {
+  const comp = k => ({ T: c.Tsuct + (c.Tdis - c.Tsuct) * k, P: c.Pl * Math.pow(c.Ph / c.Pl, k), q: 1 });
+  switch (role) {
+    case 'comp1': return comp(f * 0.5);
+    case 'comp2': return comp(0.5 + f * 0.5);
+    case 'hot': return { T: c.Tdis, P: c.Ph, q: 1 };
+    case 'cond':
+      if (f < 0.18) return { T: c.Tdis + (c.Tc - c.Tdis) * f / 0.18, P: c.Ph, q: 1 };
+      if (f < 0.88) return { T: c.Tc, P: c.Ph, q: 1 - (f - 0.18) / 0.7 };
+      return { T: c.Tc + (c.Tsub - c.Tc) * (f - 0.88) / 0.12, P: c.Ph, q: 0 };
+    case 'liq': return { T: c.Tsub, P: c.Ph, q: 0 };
+    case 'valve': return { T: c.Tsub + (c.Te - c.Tsub) * f, P: c.Ph * Math.pow(c.Pl / c.Ph, f), q: c.x * f };
+    case 'low': return { T: c.Te, P: c.Pl, q: c.x };
+    case 'evap':
+      if (f < 0.85) return { T: c.Te, P: c.Pl, q: c.x + (1 - c.x) * f / 0.85 };
+      return { T: c.Te + (c.Tsuct - c.Te) * (f - 0.85) / 0.15, P: c.Pl, q: 1 };
+    case 'suct': return { T: c.Tsuct, P: c.Pl, q: 1 };
+  }
+}
+
+// ================= loop geometry (logical canvas 1000 × 470) =================
+const GEOM = {
+  compOut: [[870, 360], [902, 360]],
+  top: [[902, 360], [975, 360], [975, 22], [470, 22], [470, 62], [450, 62]],
+  inCoil: [[450, 62], [160, 62], [160, 92], [450, 92], [450, 122], [160, 122], [160, 152], [450, 152]],
+  bottom: [[450, 152], [500, 152], [500, 425], [660, 425], [660, 352]],
+  valve: [[660, 352], [660, 328]],
+  vOut: [[660, 328], [660, 290]],
+  outCoil: [[660, 290], [940, 290], [940, 245], [660, 245], [660, 200], [940, 200]],
+  suct: [[940, 200], [952, 200], [952, 312], [870, 312], [870, 328]],
+  compIn: [[870, 328], [870, 360]],
+};
+const ORDER = ['compOut', 'top', 'inCoil', 'bottom', 'valve', 'vOut', 'outCoil', 'suct', 'compIn'];
+const ROLES = ['comp2', 'hot', 'cond', 'liq', 'valve', 'low', 'evap', 'suct', 'comp1'];
+const COMP = { x: 870, y: 360, r: 32 }, VALVE = { x: 660, y: 340 };
+const nominal = cycle('heat', 18, 0);
+let FLOW = null; // { samples:[{x,y,nx,ny,role,f}], cum:[], total }
+function roleGeom(mode) { // which geometry piece plays each role
+  const order = mode === 'heat' ? ORDER : [...ORDER].reverse(), map = {};
+  order.forEach((g, i) => map[ROLES[i]] = g); return map;
+}
+function buildFlow(mode) {
+  const order = mode === 'heat' ? ORDER : [...ORDER].reverse();
+  const samples = [];
+  order.forEach((g, i) => {
+    let pts = GEOM[g]; if (mode === 'cool') pts = [...pts].reverse();
+    const segs = []; let L = 0;
+    for (let k = 0; k < pts.length - 1; k++) { const [x0, y0] = pts[k], [x1, y1] = pts[k + 1], l = Math.hypot(x1 - x0, y1 - y0); segs.push({ x0, y0, x1, y1, l, s0: L }); L += l; }
+    const n = Math.max(4, Math.round(L / 2));
+    for (let j = 0; j < n; j++) {
+      const s = (j + 0.5) / n * L, sg = segs.find(q => s <= q.s0 + q.l) || segs[segs.length - 1];
+      const u = (s - sg.s0) / sg.l, dx = (sg.x1 - sg.x0) / sg.l, dy = (sg.y1 - sg.y0) / sg.l;
+      samples.push({ x: sg.x0 + (sg.x1 - sg.x0) * u, y: sg.y0 + (sg.y1 - sg.y0) * u, nx: -dy, ny: dx, role: ROLES[i], f: s / L, ds: L / n });
+    }
+  });
+  const cum = []; let tot = 0;
+  for (const p of samples) { const q = stateAt(p.role, p.f, nominal).q; tot += p.ds * (1 + 3 * (1 - q)); cum.push(tot); }
+  FLOW = { samples, cum, total: tot, roles: roleGeom(mode) };
+}
+function sampleAt(q) { // q in [0,1) of travel time -> sample index
+  const target = q * FLOW.total, c = FLOW.cum; let lo = 0, hi = c.length - 1;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (c[m] < target) lo = m + 1; else hi = m; }
+  return lo;
+}
+
+// ================= app state =================
+const DEF = { heat: { out: 0, set: 21, min: -25, max: 20 }, cool: { out: 35, set: 24, min: 15, max: 45 } };
+let mode = 'heat', Tout = 0, Tset = 21, speed = 60, interval = 2;
+let room, running = false, started = false, finished = false, unitOn = true, flow = 1, follow = false, step = 0;
+let readings = [], trace = [], heaterOn = true, pspeed = 0.5, vt = 0;
+const N_DOTS = 300; let dots = [];
+const $ = id => document.getElementById(id);
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function resetRun() {
+  const T0 = mode === 'heat' ? Tset - 6 : Tset + 6;
+  room = { t: 0, Tin: T0, Tcmp: T0, elec: 0, eRoom: 0, eOut: 0 }; heaterOn = true;
+  running = false; started = false; finished = false;
+  thermostat();
+  readings = [record()]; trace = [{ t: 0, a: room.Tin, b: room.Tcmp, o: Tout }];
+  renderAll();
+}
+function thermostat() {
+  if (mode === 'heat') { if (room.Tin > Tset + 0.5) unitOn = false; else if (room.Tin < Tset - 0.5) unitOn = true; }
+  else { if (room.Tin < Tset - 0.5) unitOn = false; else if (room.Tin > Tset + 0.5) unitOn = true; }
+}
+function simStep(dt) {
+  thermostat();
+  const c = cycle(mode, room.Tin, Tout), W = unitOn ? W_KW : 0;
+  const Qh = c.copH * W, Qc = Qh - W;
+  if (mode === 'heat') {
+    room.Tin += (Qh - K_LOSS * (room.Tin - Tout)) * dt / C_ROOM;
+    if (room.Tcmp > Tset + 0.5) heaterOn = false; else if (room.Tcmp < Tset - 0.5) heaterOn = true;
+    room.Tcmp += ((heaterOn ? W_KW : 0) - K_LOSS * (room.Tcmp - Tout)) * dt / C_ROOM;
+    room.eRoom += Qh * dt; room.eOut += Qc * dt;
+  } else {
+    room.Tin += (-Qc - K_LOSS * (room.Tin - Tout)) * dt / C_ROOM;
+    room.Tcmp += (-K_LOSS * (room.Tcmp - Tout)) * dt / C_ROOM;
+    room.eRoom += Qc * dt; room.eOut += Qh * dt;
+  }
+  room.elec += W * dt; room.t += dt;
+}
+function record() {
+  const c = cycle(mode, room.Tin, Tout);
+  return { t: room.t, a: room.Tin, b: room.Tcmp, o: Tout, on: unitOn, Pl: c.Pl, Ph: c.Ph, elec: room.elec, eRoom: room.eRoom, eOut: room.eOut };
+}
+function initDots() {
+  dots = [];
+  for (let i = 0; i < N_DOTS; i++) dots.push({ q: (i + Math.random() * 0.6) / N_DOTS, u: 0.03 + Math.random() * 0.94, lane: Math.random() - 0.5, ph: Math.random() * 6.28 });
+}
+
+// ================= colors & canvas helpers =================
+let col = {};
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  for (const k of ['inBg', 'outBg', 'bg', 'surface', 'sunk', 'ink', 'muted', 'line', 'cold', 'mid', 'warm', 'accent', 'energy', 'elec', 'pipe', 'metal', 'wall', 'wallline', 'room', 'cmp', 'outT', 'hl']) col[k] = cs.getPropertyValue('--' + k).trim();
+}
+function rgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function mixc(a, b, f) { const A = rgb(a), B = rgb(b); return A.map((v, i) => Math.round(v + (B[i] - v) * f)); }
+function tempColor(T, alpha = 1) {
+  const f = clamp((T + 30) / 130, 0, 1);
+  const c = f < 0.4 ? mixc(col.cold, col.mid, f / 0.4) : mixc(col.mid, col.warm, (f - 0.4) / 0.6);
+  return `rgba(${c.join(',')},${alpha})`;
+}
+function airColor(T, alpha) { const f = clamp((T + 20) / 60, 0, 1); return `rgba(${mixc(col.cold, col.warm, f).join(',')},${alpha})`; }
+function sizeCanvas(cv, logicalW) {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const ctx = cv.getContext('2d'), s = logicalW ? w / logicalW : 1;
+  ctx.setTransform(dpr * s, 0, 0, dpr * s, 0, 0); return { ctx, w: logicalW || w, h: logicalW ? h / s : h };
+}
+const FONT = () => getComputedStyle(document.body).fontFamily;
+const r0 = x => Math.round(x), f1 = x => (Math.round(x * 10) / 10).toFixed(1);
+function polyline(ctx, pts) { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); }
+function arrow(ctx, x, y0, y1, width, color, phase, label) {
+  if (width <= 0.2) return;
+  ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round';
+  const dir = Math.sign(y1 - y0), head = 6 + width;
+  ctx.setLineDash([7, 6]); ctx.lineDashOffset = -phase * 26;
+  ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1 - dir * head); ctx.stroke(); ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x - head * 0.8, y1 - dir * head); ctx.lineTo(x + head * 0.8, y1 - dir * head); ctx.closePath(); ctx.fill();
+  if (label) { ctx.font = '700 12px ' + FONT(); ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, x + 10, (y0 + y1) / 2); }
+  ctx.restore();
+}
+
+// ================= scene drawing =================
+function drawScene(realDt) {
+  const cv = $('scene'), { ctx, w: W, h: H } = sizeCanvas(cv, 1000);
+  vt += realDt * pspeed;
+  const c = cycle(mode, room.Tin, Tout), now = vt, F = FONT();
+  ctx.clearRect(0, 0, W, H);
+  // air backgrounds
+  ctx.fillStyle = col.inBg; ctx.fillRect(0, 0, 548, H); ctx.fillStyle = airColor(room.Tin, 0.06); ctx.fillRect(0, 0, 548, H);
+  ctx.fillStyle = col.outBg; ctx.fillRect(578, 0, W - 578, H); ctx.fillStyle = airColor(Tout, 0.06); ctx.fillRect(578, 0, W - 578, H);
+  // wall
+  ctx.fillStyle = col.wall; ctx.fillRect(548, 0, 30, H);
+  ctx.strokeStyle = col.wallline; ctx.lineWidth = 1;
+  for (let y = -30; y < H; y += 16) { ctx.beginPath(); ctx.moveTo(548, y + 30); ctx.lineTo(578, y); ctx.stroke(); }
+  // unit housings
+  ctx.fillStyle = col.surface; ctx.strokeStyle = col.line; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(130, 44, 350, 140, 12) : ctx.rect(130, 44, 350, 140); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(620, 150, 370, 292, 12) : ctx.rect(620, 150, 370, 292); ctx.fill(); ctx.stroke();
+  // highlight for selected step
+  const rg = FLOW.roles;
+  ctx.save(); ctx.strokeStyle = col.hl; ctx.fillStyle = col.hl; ctx.lineWidth = 34; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  if (step === 0) { polyline(ctx, GEOM[rg.evap]); ctx.stroke(); }
+  if (step === 2) { polyline(ctx, GEOM[rg.cond]); ctx.stroke(); }
+  if (step === 1) { ctx.beginPath(); ctx.arc(COMP.x, COMP.y, COMP.r + 16, 0, 6.283); ctx.fill(); }
+  if (step === 3) { ctx.beginPath(); ctx.arc(VALVE.x, VALVE.y, 26, 0, 6.283); ctx.fill(); }
+  ctx.restore();
+  // pipes and coils
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  for (const g of ORDER) {
+    const coil = g === 'inCoil' || g === 'outCoil';
+    ctx.strokeStyle = coil ? col.metal : col.pipe; ctx.lineWidth = 18; polyline(ctx, GEOM[g]); ctx.stroke();
+    ctx.strokeStyle = col.sunk; ctx.lineWidth = 13; polyline(ctx, GEOM[g]); ctx.stroke();
+  }
+  // compressor body
+  ctx.fillStyle = col.metal; ctx.beginPath(); ctx.arc(COMP.x, COMP.y, COMP.r, 0, 6.283); ctx.fill();
+  ctx.fillStyle = col.sunk; ctx.beginPath(); ctx.arc(COMP.x, COMP.y, COMP.r - 6, 0, 6.283); ctx.fill();
+  // valve body
+  ctx.fillStyle = col.pipe; ctx.beginPath();
+  ctx.moveTo(VALVE.x - 14, VALVE.y - 12); ctx.lineTo(VALVE.x + 14, VALVE.y - 12); ctx.lineTo(VALVE.x + 3, VALVE.y); ctx.lineTo(VALVE.x + 14, VALVE.y + 12); ctx.lineTo(VALVE.x - 14, VALVE.y + 12); ctx.lineTo(VALVE.x - 3, VALVE.y); ctx.closePath(); ctx.fill();
+  // particles
+  const target = unitOn ? 1 : 0; flow += (target - flow) * Math.min(1, realDt * 1.5);
+  const period = reduced ? 50 : 26;
+  let tracked = null;
+  dots.forEach((d, i) => {
+    d.q = (d.q + realDt * pspeed * flow / period) % 1;
+    const s = FLOW.samples[sampleAt(d.q)], st = stateAt(s.role, s.f, c);
+    const gas = st.q > d.u, kin = clamp((st.T + 40) / 140, 0, 1);
+    let off, along = 0;
+    if (gas) { const a = reduced ? 1 : (1.2 + 2.6 * kin); off = d.lane * 7 + Math.sin(now * (6 + 10 * kin) + d.ph) * a; along = Math.cos(now * (7 + 9 * kin) + d.ph * 1.7) * a; }
+    else { off = d.lane * 8 + (reduced ? 0 : Math.sin(now * 5 + d.ph) * 0.4); }
+    off = clamp(off, -5.5, 5.5);
+    const dx = s.ny, dy = -s.nx; // tangent
+    const x = s.x + s.nx * off + dx * along, y = s.y + s.ny * off + dy * along;
+    ctx.beginPath(); ctx.arc(x, y, gas ? 2.5 : 3.1, 0, 6.283); ctx.fillStyle = tempColor(st.T, gas ? 0.92 : 1); ctx.fill();
+    if (follow && i === 0) tracked = { x, y, st, gas, role: s.role };
+  });
+  if (tracked) {
+    ctx.strokeStyle = col.ink; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(tracked.x, tracked.y, 9, 0, 6.283); ctx.stroke();
+    lastTracked = tracked;
+  }
+  // energy arrows
+  const Wn = unitOn ? W_KW * flow : 0, Qh = c.copH * Wn, Qc = Qh - Wn;
+  const wArrow = q => q * 2.2;
+  const indoorQ = mode === 'heat' ? Qh : Qc, outdoorQ = mode === 'heat' ? Qc : Qh;
+  for (const x of [205, 305, 405]) {
+    if (mode === 'heat') arrow(ctx, x, 192, 246, wArrow(indoorQ), col.energy, now, x === 405 ? t('energyOut') : '');
+    else arrow(ctx, x, 246, 192, wArrow(indoorQ), col.energy, now, x === 405 ? t('energyIn') : '');
+  }
+  for (const x of [720, 800, 880]) {
+    if (mode === 'heat') arrow(ctx, x, 96, 144, wArrow(outdoorQ), col.energy, now, x === 880 ? t('energyIn') : '');
+    else arrow(ctx, x, 144, 96, wArrow(outdoorQ), col.energy, now, x === 880 ? t('energyOut') : '');
+  }
+  // electricity bolt
+  ctx.save(); ctx.fillStyle = col.elec; ctx.globalAlpha = unitOn ? 1 : 0.35;
+  const bx = 940, by = 396; ctx.beginPath();
+  ctx.moveTo(bx + 4, by - 16); ctx.lineTo(bx - 8, by + 2); ctx.lineTo(bx, by + 2); ctx.lineTo(bx - 4, by + 18); ctx.lineTo(bx + 9, by - 2); ctx.lineTo(bx + 1, by - 2); ctx.closePath(); ctx.fill();
+  if (unitOn) { ctx.strokeStyle = col.elec; ctx.lineWidth = 3; ctx.setLineDash([5, 4]); ctx.lineDashOffset = -now * 20; ctx.beginPath(); ctx.moveTo(bx - 10, by - 6); ctx.lineTo(COMP.x + COMP.r + 4, COMP.y + 14); ctx.stroke(); ctx.setLineDash([]); }
+  ctx.font = '700 12px ' + F; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(t('electricity'), bx, by + 24);
+  ctx.restore();
+  // labels
+  ctx.textBaseline = 'alphabetic'; ctx.fillStyle = col.muted; ctx.font = '700 12px ' + F; ctx.textAlign = 'left';
+  ctx.fillText(t('indoorUnit'), 140, 177); ctx.fillText(t('outdoorUnit'), 632, 170);
+  ctx.font = '700 14px ' + F; ctx.fillStyle = col.ink; ctx.fillText(t('inside'), 16, 458); ctx.fillText(t('outside'), 594, 462); ctx.font = '700 12px ' + F; ctx.fillStyle = col.muted;
+  ctx.textAlign = 'center'; ctx.fillStyle = col.ink; ctx.font = '700 13px ' + F;
+  ctx.fillText(t('compressor'), COMP.x, 410);
+  ctx.textAlign = 'left'; ctx.fillText(t('valve'), 680, 345);
+  // coil role labels
+  ctx.font = '700 13px ' + F; ctx.fillStyle = col.energy; ctx.textAlign = 'center';
+  ctx.textAlign = 'right'; ctx.fillText(mode === 'heat' ? t('condensing') : t('boiling'), 470, 177); ctx.textAlign = 'center';
+  ctx.fillText(mode === 'heat' ? t('boiling') : t('condensing'), 800, 186);
+  // step numbers
+  const badge = (n, x, y) => { ctx.fillStyle = step === n - 1 ? col.energy : col.ink; ctx.beginPath(); ctx.arc(x, y, 12, 0, 6.283); ctx.fill(); ctx.fillStyle = col.surface; ctx.font = '700 13px ' + F; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(n, x, y + 0.5); ctx.textBaseline = 'alphabetic'; };
+  const coilBadge = g => g === 'inCoil' ? [118, 107] : [610, 245];
+  badge(1, ...coilBadge(rg.evap)); badge(3, ...coilBadge(rg.cond)); badge(2, COMP.x - 46, COMP.y - 30); badge(4, VALVE.x - 30, VALVE.y);
+  // room and outdoor readouts
+  ctx.textAlign = 'left'; ctx.fillStyle = col.muted; ctx.font = '700 13px ' + F; ctx.fillText(t('roomAir'), 40, 286);
+  ctx.fillStyle = col.ink; ctx.font = '700 32px ' + getComputedStyle(document.documentElement).getPropertyValue('--f-mono'); ctx.fillText(`${f1(room.Tin)} °C`, 40, 322);
+  ctx.fillStyle = col.muted; ctx.font = '13px ' + F; ctx.fillText(t('thermo', Tset), 40, 344);
+  ctx.fillStyle = col.muted; ctx.font = '700 13px ' + F; ctx.fillText(t('outAir'), 600, 62);
+  ctx.fillStyle = col.ink; ctx.font = '700 28px ' + getComputedStyle(document.documentElement).getPropertyValue('--f-mono'); ctx.fillText(`${Tout} °C`, 600, 94);
+  // pipe tags (the two lines that pass through the wall)
+  const tag = (role, x, y, align) => {
+    const st = stateAt(role, 0.5, c), hp = st.P > (c.Pl + c.Ph) / 2;
+    const ph = st.q >= 0.999 ? t('gas') : st.q <= 0.001 ? t('liquid') : t('mix');
+    ctx.textAlign = align; ctx.font = '700 11px ' + F; ctx.fillStyle = hp ? col.warm : col.cold;
+    ctx.fillText(`${hp ? t('high') : t('low')} · ${r0(st.P)} kPa · ${r0(st.T)} °C ${ph}`, x, y);
+  };
+  tag(mode === 'heat' ? 'hot' : 'suct', 770, 46, 'center');
+  tag(mode === 'heat' ? 'liq' : 'low', 512, 404, 'left');
+}
+let lastTracked = null;
+
+// ================= phase diagram =================
+function drawPhase() {
+  const cv = $('phase'), { ctx, w: W, h: H } = sizeCanvas(cv), F = FONT();
+  const c = cycle(mode, room.Tin, Tout);
+  ctx.clearRect(0, 0, W, H);
+  const L = 58, R = 14, T = 14, B = 44, pw = W - L - R, ph = H - T - B;
+  const tMin = -40, tMax = 140, pMax = 5000;
+  const X = v => L + (v - tMin) / (tMax - tMin) * pw, Y = p => T + ph - p / pMax * ph;
+  ctx.font = '12px ' + F; ctx.strokeStyle = col.line; ctx.fillStyle = col.muted; ctx.lineWidth = 1;
+  for (let p = 0; p <= pMax; p += 1000) { ctx.beginPath(); ctx.moveTo(L, Y(p)); ctx.lineTo(L + pw, Y(p)); ctx.stroke(); ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(p, L - 6, Y(p)); }
+  for (let v = -40; v <= tMax; v += 20) { ctx.beginPath(); ctx.moveTo(X(v), T); ctx.lineTo(X(v), T + ph); ctx.stroke(); ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(v, X(v), T + ph + 6); }
+  ctx.fillStyle = col.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(t('axT'), L + pw / 2, T + ph + 24);
+  ctx.save(); ctx.translate(14, T + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textBaseline = 'middle'; ctx.fillText(t('axP'), 0, 0); ctx.restore();
+  // regions
+  ctx.font = '700 13px ' + F; ctx.fillStyle = col.muted; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t('liquidRegion'), X(-30), Y(4200)); ctx.textAlign = 'right'; ctx.fillText(t('gasRegion'), X(135), Y(600));
+  // air pressure line
+  ctx.strokeStyle = col.muted; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(L, Y(84)); ctx.lineTo(L + pw, Y(84)); ctx.stroke(); ctx.setLineDash([]);
+  ctx.font = '11px ' + F; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.fillStyle = col.muted; ctx.fillText(`${t('airP')} (84 kPa)`, L + pw - 2, Y(84) - 2);
+  // saturation curve
+  ctx.strokeStyle = col.mid; ctx.lineWidth = 3; ctx.beginPath();
+  for (let v = -40; v <= 75; v += 1) { const p = psatR(v); if (p > pMax) break; v === -40 ? ctx.moveTo(X(v), Y(p)) : ctx.lineTo(X(v), Y(p)); }
+  ctx.stroke();
+  // cycle loop
+  const A = [c.Te, c.Pl], Bp = [c.Tsuct, c.Pl], C = [c.Tdis, c.Ph], D = [c.Tc, c.Ph], E = [c.Tsub, c.Ph];
+  const legs = [[A, Bp, 1], [Bp, C, 2], [C, E, 3], [E, A, 4]];
+  for (const [p, q, n] of legs) {
+    ctx.strokeStyle = step === n - 1 ? col.energy : col.ink; ctx.lineWidth = step === n - 1 ? 4 : 2;
+    ctx.beginPath(); ctx.moveTo(X(p[0]), Y(p[1])); ctx.lineTo(X(q[0]), Y(q[1])); ctx.stroke();
+  }
+  const mids = [[(A[0] + Bp[0]) / 2, c.Pl, 0, -16], [(Bp[0] + C[0]) / 2, (c.Pl + c.Ph) / 2, 16, 0], [(C[0] + D[0]) / 2, c.Ph, 0, -16], [(E[0] + A[0]) / 2, (c.Pl + c.Ph) / 2, -16, 0]];
+  mids.forEach(([tv, pv, ox, oy], i) => {
+    const x = X(tv) + ox, y = Y(pv) + oy;
+    ctx.fillStyle = step === i ? col.energy : col.ink; ctx.beginPath(); ctx.arc(x, y, 10, 0, 6.283); ctx.fill();
+    ctx.fillStyle = col.surface; ctx.font = '700 12px ' + F; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(i + 1, x, y + 0.5);
+  });
+  for (const [p, lab, al, dx, dy] of [[A, t('boilsHere'), 'left', 8, 16], [D, t('condHere'), 'right', -8, -10]]) {
+    ctx.fillStyle = col.mid; ctx.beginPath(); ctx.arc(X(p[0]), Y(p[1]), 5, 0, 6.283); ctx.fill();
+    ctx.fillStyle = col.ink; ctx.font = '700 11px ' + F; ctx.textAlign = al; ctx.textBaseline = 'bottom';
+    ctx.fillText(`${lab} · ${r0(p[0])} °C`, X(p[0]) + dx, Y(p[1]) + dy);
+  }
+  if (follow && lastTracked) {
+    const st = lastTracked.st; ctx.strokeStyle = col.ink; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(X(st.T), Y(st.P), 7, 0, 6.283); ctx.stroke();
+  }
+}
+
+// ================= room graph =================
+function drawGraph() {
+  const cv = $('graph'), { ctx, w: W, h: H } = sizeCanvas(cv), F = FONT();
+  ctx.clearRect(0, 0, W, H);
+  const L = 44, R = 12, T = 12, B = 44, pw = W - L - R, ph = H - T - B;
+  const xMax = Math.max(30, Math.ceil(room.t / 60 / 10) * 10);
+  let lo = Math.min(Tout, Tset, ...trace.map(p => Math.min(p.a, p.o))), hi = Math.max(Tout, Tset, ...trace.map(p => Math.max(p.a, p.o)));
+  lo = Math.floor((lo - 2) / 5) * 5; hi = Math.ceil((hi + 2) / 5) * 5;
+  const X = m => L + m / xMax * pw, Y = v => T + ph - (v - lo) / (hi - lo) * ph;
+  ctx.font = '12px ' + F; ctx.strokeStyle = col.line; ctx.fillStyle = col.muted; ctx.lineWidth = 1;
+  const yStep = hi - lo > 40 ? 10 : 5;
+  for (let v = lo; v <= hi; v += yStep) { ctx.beginPath(); ctx.moveTo(L, Y(v)); ctx.lineTo(L + pw, Y(v)); ctx.stroke(); ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(v, L - 6, Y(v)); }
+  for (let m = 0; m <= xMax; m += xMax > 60 ? 15 : 10) { ctx.beginPath(); ctx.moveTo(X(m), T); ctx.lineTo(X(m), T + ph); ctx.stroke(); ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(m, X(m), T + ph + 6); }
+  ctx.fillStyle = col.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(t('axMin'), L + pw / 2, T + ph + 24);
+  ctx.save(); ctx.translate(12, T + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textBaseline = 'middle'; ctx.fillText(t('axRoom'), 0, 0); ctx.restore();
+  ctx.strokeStyle = col.energy; ctx.setLineDash([8, 5]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(L, Y(Tset)); ctx.lineTo(L + pw, Y(Tset)); ctx.stroke(); ctx.setLineDash([]);
+  for (const [k, c, dash, lw] of [['o', col.outT, [2, 4], 2], ['a', col.room, [], 3]]) {
+    ctx.strokeStyle = c; ctx.lineWidth = lw; ctx.setLineDash(dash); ctx.beginPath();
+    trace.forEach((p, i) => { const x = X(p.t / 60), y = Y(p[k]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+  const lst = trace[trace.length - 1];
+  if (lst) for (const [k, c] of [['a', col.room]]) { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(X(lst.t / 60), Y(lst[k]), 4.5, 0, 6.283); ctx.fill(); }
+}
+function renderGLegend() {
+  $('glegend').innerHTML = `<span><i style="background:var(--room)"></i>${t('legRoom')}</span><span><i style="background:repeating-linear-gradient(90deg,var(--outT) 0 2px,transparent 2px 6px)"></i>${t('legOut')}</span><span><i style="background:repeating-linear-gradient(90deg,var(--energy) 0 8px,transparent 8px 12px)"></i>${t('legSet')}</span>`;
+}
+
+// ================= steps panel =================
+function stepCtx() {
+  const c = cycle(mode, room.Tin, Tout);
+  return { Pl: r0(c.Pl), Ph: r0(c.Ph), Te: r0(c.Te), Tc: r0(c.Tc), Tdis: r0(c.Tdis), Tsuct: r0(c.Tsuct), x: r0(c.x * 100),
+    src: t('srcAir', mode), sink: t('sinkAir', mode), Tsrc: mode === 'heat' ? Tout : f1(room.Tin), Tsink: mode === 'heat' ? f1(room.Tin) : Tout, raw: c };
+}
+function renderTabs() {
+  $('stepTabs').innerHTML = STR[lang].stepName.map((n, i) => `<button data-s="${i}" aria-pressed="${i === step}"><b>${i + 1}</b><span>${n}</span></button>`).join('');
+}
+let lastStepHTML = '';
+function renderStep() {
+  const c = stepCtx(), S = STR[lang];
+  const where = [t('whereEvap', mode), t('whereComp'), t('whereCond', mode), t('whereValve')][step];
+  const body = [S.s1, S.s2, S.s3, S.s4][step](c);
+  const th = S.think[step], think = typeof th === 'function' ? th(c) : th;
+  const P = [`${c.Pl} kPa`, `${c.Pl} → ${c.Ph} kPa`, `${c.Ph} kPa`, `${c.Ph} → ${c.Pl} kPa`][step];
+  const T = [`${c.Te} °C`, `${c.Tsuct} → ${c.Tdis} °C`, `${c.Tc} °C`, `${r0(c.raw.Tsub)} → ${c.Te} °C`][step];
+  const ph = [S.phLtoG, S.phGas, S.phGtoL, S.phLtoMix][step];
+  const en = [S.eIn, S.eElec, S.eOut, S.eNone][step];
+  const html = `<div class="where">${where}</div><h3>${S.stepTitle[step]}</h3>
+    <div class="facts3"><div class="fact"><span>${S.fPress}</span><div>${P}</div></div><div class="fact"><span>${S.fTemp}</span><div>${T}</div></div><div class="fact"><span>${S.fPhase}</span><div style="font-family:var(--f-body)">${ph}</div></div><div class="fact"><span>${S.fEnergy}</span><div style="font-family:var(--f-body)">${en}</div></div></div>
+    <p>${body}</p><div class="think"><b>${S.thinkLab}</b> ${think}</div>`;
+  if (html !== lastStepHTML) { $('stepBody').innerHTML = html; lastStepHTML = html; }
+}
+
+// ================= ledger =================
+let lastLedger = '';
+function renderLedger() {
+  const c = cycle(mode, room.Tin, Tout);
+  let html;
+  if (!unitOn) html = `<div class="ratio">${t('lRest')}</div>`;
+  else {
+    const W = W_KW, Qh = c.copH * W, Qc = Qh - W, pick = Qc, drop = Qh;
+    const pickLab = mode === 'heat' ? t('lFromOut') : t('lFromRoom'), dropLab = mode === 'heat' ? t('lToRoom') : t('lToOut');
+    const pct = v => (v / drop * 100).toFixed(1);
+    html = `<div class="lrow"><span>${t('lTopH')}</span><div class="lbar"><div class="seg-air" style="width:${pct(pick)}%">${pick.toFixed(2)}</div><div class="seg-elec" style="width:${pct(W)}%">${W.toFixed(2)}</div></div></div>
+      <div class="lrow"><span>= ${t('lBot')}</span><div class="lbar"><div class="seg-out" style="width:100%">${drop.toFixed(2)}</div></div></div>
+      <div class="lkey"><div><i class="seg-air"></i>${pickLab}: <b>${pick.toFixed(2)}</b> ${t('kw')}</div><div><i class="seg-elec"></i>${t('lElec')}: <b>${W.toFixed(2)}</b> ${t('kw')}</div><div><i class="seg-out"></i>${dropLab}: <b>${drop.toFixed(2)}</b> ${t('kw')}</div></div>
+      <div class="ratio">${mode === 'heat' ? t('ratioH', Qh.toFixed(1)) : t('ratioC', Qc.toFixed(1))}</div>`;
+  }
+  if (html !== lastLedger) { $('ledger').innerHTML = html; lastLedger = html; }
+}
+
+// ================= boiling point panel =================
+const PMIN = 30, PMAX = 4000;
+const sliderToP = v => PMIN * Math.pow(PMAX / PMIN, v / 1000), pToSlider = p => 1000 * Math.log(p / PMIN) / Math.log(PMAX / PMIN);
+let pNow = 84, pLive = null;
+function renderPresets() {
+  const c = cycle(mode, room.Tin, Tout), P = STR[lang].pre;
+  const list = [['sea', 101], ['denver', 84], ['everest', 34], ['lo', c.Pl], ['hi', c.Ph]];
+  $('presets').innerHTML = list.map(([k, p]) => `<button data-k="${k}" data-p="${p}" class="${k === 'lo' || k === 'hi' ? 'live' : ''}">${P[k]} · ${r0(p)} kPa</button>`).join('');
+}
+function renderBoil() {
+  if (pLive) { const c = cycle(mode, room.Tin, Tout); pNow = pLive === 'lo' ? c.Pl : c.Ph; $('pSlider').value = pToSlider(pNow); }
+  const w = tsatW(pNow), r = tsatR(pNow);
+  $('pOut').textContent = `${r0(pNow)} kPa`; $('bpP').textContent = `${r0(pNow)} kPa`; $('bpAtm').textContent = `${(pNow / 101.325).toFixed(2)} atm`;
+  $('bpW').textContent = `${r0(w)} °C`; $('bpR').textContent = `${r0(r)} °C`;
+  $('boilSay').textContent = t('boilSay', r0(w), r0(r));
+}
+
+// ================= table =================
+function heads() {
+  return [t('thTime'), t('thRoom'), t('thOut'), t('thOn'), t('thPl'), t('thPh'), t('thElec'), mode === 'heat' ? t('thRoomH') : t('thRoomC'), mode === 'heat' ? t('thOutH') : t('thOutC')];
+}
+function rowsShown() { const k = Math.round(interval / 0.5); return readings.filter((r, i) => i % k === 0); }
+function rowVals(r) { return [(r.t / 60).toFixed(1), f1(r.a), String(r.o), r.on ? t('yes') : t('no'), r0(r.Pl), r0(r.Ph), r0(r.elec), r0(r.eRoom), r0(r.eOut)]; }
+function renderTable() {
+  $('thead').innerHTML = heads().map(h => `<th>${h}</th>`).join('');
+  const tb = $('tbody');
+  if (!started) { tb.innerHTML = `<tr><td colspan="9" class="empty">${t('empty')}</td></tr>`; return; }
+  tb.innerHTML = rowsShown().map(r => `<tr>${rowVals(r).map(v => `<td>${v}</td>`).join('')}</tr>`).join('');
+  const box = tb.closest('.tablebox'); box.scrollTop = box.scrollHeight;
+}
+
+// ================= status =================
+function renderStatus() {
+  $('clock').textContent = `${(room.t / 60).toFixed(1)} min`;
+  const p = $('unitPill'); p.textContent = unitOn ? t('unitOn') : t('unitRest'); p.className = 'pill' + (unitOn ? ' on' : '');
+  $('runBtn').disabled = started; $('pauseBtn').disabled = !started || finished;
+  $('pauseBtn').textContent = running || !started ? t('pause') : t('resume');
+  $('followBtn').textContent = follow ? t('unfollow') : t('follow');
+  const tr = $('tracker'); tr.hidden = !follow;
+  if (follow && lastTracked) {
+    const st = lastTracked.st, rg = FLOW.roles, role = lastTracked.role;
+    let w = STR[lang].wh[role];
+    if (role === 'evap') w = t('whCoil', t('whereEvap', mode)); if (role === 'cond') w = t('whCoil', t('whereCond', mode));
+    tr.innerHTML = t('trk', lastTracked.gas ? t('gas') : t('liquid'), r0(st.T), r0(st.P), w);
+  }
+}
+function renderAll() { renderStatus(); renderTabs(); renderStep(); renderLedger(); renderPresets(); renderBoil(); renderTable(); renderGLegend(); drawGraph(); drawPhase(); }
+
+// ================= main loop =================
+let last = performance.now(), slow = 0;
+function frame(now) {
+  const realDt = Math.min(0.1, (now - last) / 1000); last = now;
+  if (running) {
+    let left = realDt * speed;
+    while (left > 1e-9 && room.t < END) {
+      const next = (Math.floor(room.t / 30 + 1e-7) + 1) * 30, dt = Math.min(1, left, next - room.t);
+      simStep(dt); left -= dt;
+      if (Math.abs(next - room.t) < 1e-6) { room.t = next; readings.push(record()); trace.push({ t: room.t, a: room.Tin, b: room.Tcmp, o: Tout }); renderTable(); }
+    }
+    if (room.t >= END - 1e-6) { running = false; finished = true; }
+  } else if (!started) thermostat();
+  if (page === 'full') {
+    drawScene(realDt);
+    slow += realDt;
+    if (slow > 0.25) { slow = 0; renderStatus(); renderStep(); renderLedger(); renderBoil(); drawPhase(); if (running) drawGraph(); }
+  } else { drawSimple(realDt); drawSimpleLoop(realDt); }
+  requestAnimationFrame(frame);
+}
+
+// ================= wiring =================
+function setPressed(group, btn) { group.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false')); }
+function applyMode(m) {
+  mode = m; const d = DEF[m];
+  const o = $('outT'); o.min = d.min; o.max = d.max; o.value = d.out; Tout = d.out; $('outOut').textContent = Tout + ' °C';
+  $('setT').value = d.set; Tset = d.set; $('setOut').textContent = Tset + ' °C';
+  buildFlow(m); resetRun();
+}
+$('modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; setPressed($('modeSeg'), b); applyMode(b.dataset.m); });
+$('outT').addEventListener('input', e => { Tout = +e.target.value; $('outOut').textContent = Tout + ' °C'; if (!started) resetRun(); else renderPresets(); });
+$('setT').addEventListener('input', e => { Tset = +e.target.value; $('setOut').textContent = Tset + ' °C'; if (!started) resetRun(); });
+$('motionSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; pspeed = +b.dataset.p; setPressed($('motionSeg'), b); });
+$('speedSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; speed = +b.dataset.s; setPressed($('speedSeg'), b); });
+$('intSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; interval = +b.dataset.v; setPressed($('intSeg'), b); renderTable(); });
+$('runBtn').addEventListener('click', () => { if (started) return; started = true; running = true; renderStatus(); renderTable(); });
+$('pauseBtn').addEventListener('click', () => { if (!started || finished) return; running = !running; renderStatus(); });
+$('resetBtn').addEventListener('click', resetRun);
+$('followBtn').addEventListener('click', () => { follow = !follow; if (!follow) lastTracked = null; renderStatus(); drawPhase(); });
+$('stepTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; step = +b.dataset.s; renderTabs(); renderStep(); drawPhase(); });
+$('pSlider').addEventListener('input', e => { pLive = null; pNow = sliderToP(+e.target.value); renderBoil(); });
+$('presets').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const k = b.dataset.k; pLive = (k === 'lo' || k === 'hi') ? k : null; pNow = +b.dataset.p; $('pSlider').value = pToSlider(pNow); renderBoil(); });
+$('copyBtn').addEventListener('click', async () => {
+  const txt = [heads(), ...rowsShown().map(rowVals)].map(r => r.join('\t')).join('\n');
+  try { await navigator.clipboard.writeText(txt); $('copyBtn').textContent = t('copied'); setTimeout(() => $('copyBtn').textContent = t('copy'), 1500); }
+  catch (e) { const range = document.createRange(); range.selectNodeContents($('tbody').closest('table')); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(range); }
+});
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i]').forEach(el => { const v = STR[lang][el.dataset.i]; if (typeof v === 'string') el.innerHTML = v; });
+  $('lang-en').setAttribute('aria-pressed', lang === 'en'); $('lang-es').setAttribute('aria-pressed', lang === 'es');
+  lastStepHTML = ''; lastLedger = ''; renderAll(); renderSimple();
+}
+$('lang-en').addEventListener('click', () => { lang = 'en'; try { localStorage.setItem('msLang', 'en'); } catch (e) {} applyLang(); });
+$('lang-es').addEventListener('click', () => { lang = 'es'; try { localStorage.setItem('msLang', 'es'); } catch (e) {} applyLang(); });
+const mq = matchMedia('(prefers-color-scheme: dark)');
+mq.addEventListener?.('change', () => { readColors(); drawGraph(); drawPhase(); });
+new MutationObserver(() => { readColors(); drawGraph(); drawPhase(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+window.addEventListener('resize', () => { drawGraph(); drawPhase(); });
+
+
+// ================= Part 1: simplified cycle =================
+let sMode = 'heat', sMotion = 0.5, sOut = 0, page = 'simple';
+const S_T = { heat: [21, 0], cool: [24, 35] }, S_RANGE = { heat: [-20, 15, 0], cool: [25, 40, 35] };
+function sCtx() {
+  const Tin = S_T[sMode][0], To = sOut, c = cycle(sMode, Tin, To);
+  return { Pl: r0(c.Pl), Ph: r0(c.Ph), Te: r0(c.Te), Tc: r0(c.Tc), Tdis: r0(c.Tdis), Tsuct: r0(c.Tsuct), Tsub: r0(c.Tsub), src: t('srcAir', sMode), sink: t('sinkAir', sMode), Tsrc: sMode === 'heat' ? To : Tin, Tsink: sMode === 'heat' ? Tin : To, Tin, To, raw: c };
+}
+function simpleSVG() {
+  const c = sCtx(), heat = sMode === 'heat';
+  const HI = 'var(--warm)', LO = 'var(--cold)', L = heat ? HI : LO, Rc = heat ? LO : HI;
+  const zig = x => szig(x).map(q => q.join(',')).join(' ');
+  const pipe = (d, col) => `<path d="${d}" style="fill:none;stroke:${col};stroke-width:18;stroke-linecap:round;stroke-linejoin:round"/><path d="${d}" style="fill:none;stroke:var(--surface);stroke-width:11;stroke-linecap:round;stroke-linejoin:round"/>`;
+  const coil = (x, col) => `<polyline points="${zig(x)}" style="fill:none;stroke:${col};stroke-width:17;stroke-linecap:round;stroke-linejoin:round"/><polyline points="${zig(x)}" style="fill:none;stroke:var(--surface);stroke-width:10;stroke-linecap:round;stroke-linejoin:round"/>`;
+  const rot = { left: 180, right: 0, up: -90, down: 90 }, flip = { left: 'right', right: 'left', up: 'down', down: 'up' };
+  const chev = (x, y, dir) => { if (!heat) dir = flip[dir]; return `<path d="M -6 -9 L 6 0 L -6 9" transform="translate(${x} ${y}) rotate(${rot[dir]})" style="fill:none;stroke:var(--ink);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round"/>`; };
+  const badge = (n, x, y) => `<circle cx="${x}" cy="${y}" r="13" style="fill:var(--ink)"/><text x="${x}" y="${y + 5}" text-anchor="middle" style="fill:var(--surface);font:700 14px var(--f-mono)">${n}</text>`;
+  const harrow = (x0, x1, y) => { const d = Math.sign(x1 - x0); return `<line x1="${x0}" y1="${y}" x2="${x1 - d * 9}" y2="${y}" style="stroke:var(--energy);stroke-width:4;stroke-linecap:round"/><path d="M ${x1} ${y} L ${x1 - d * 11} ${y - 7} L ${x1 - d * 11} ${y + 7} Z" style="fill:var(--energy)"/>`; };
+  const txt = (x, y, str, anchor, style) => `<text x="${x}" y="${y}" text-anchor="${anchor}" style="${style}">${str}</text>`;
+  // which coil boils (step 1) and which condenses (step 3)
+  const leftBoils = !heat;
+  const leftRole = leftBoils ? t('boiling') : t('condensing'), rightRole = leftBoils ? t('condensing') : t('boiling');
+  const leftArrows = [195, 230, 265].map(y => leftBoils ? harrow(150, 198, y) : harrow(198, 150, y)).join('');
+  const rightArrows = [195, 230, 265].map(y => leftBoils ? harrow(828, 876, y) : harrow(876, 828, y)).join('');
+  const leftP = heat ? c.Ph : c.Pl, rightP = heat ? c.Pl : c.Ph;
+  const leftHL = heat ? t('high') : t('low'), rightHL = heat ? t('low') : t('high');
+  const leftT = heat ? `${t('condAt')} ${c.Tc} °C` : `${t('boilAt')} ${c.Te} °C`, rightT = heat ? `${t('boilAt')} ${c.Te} °C` : `${t('condAt')} ${c.Tc} °C`;
+  const B = 'font:700 13px var(--f-body);fill:var(--ink)', Sm = 'font:12px var(--f-body);fill:var(--muted)', E = 'font:700 12px var(--f-body);fill:var(--energy)';
+  return `<svg viewBox="0 0 1000 400" role="img" aria-label="Simplified heat pump loop">
+    <rect x="0" y="0" width="487" height="400" style="fill:var(--inBg)"/><rect x="513" y="0" width="487" height="400" style="fill:var(--outBg)"/>
+    <rect x="487" y="0" width="26" height="400" style="fill:var(--wall)"/>
+    ${txt(20, 30, t('inside'), 'start', 'font:700 15px var(--f-body);fill:var(--ink);letter-spacing:.08em')}
+    ${txt(20, 52, `${t('roomAir')}: ${c.Tin} °C`, 'start', Sm)}
+    ${txt(980, 30, t('outside'), 'end', 'font:700 15px var(--f-body);fill:var(--ink);letter-spacing:.08em')}
+    ${txt(980, 52, `${t('outAir')}: ${c.To} °C`, 'end', Sm)}
+    ${pipe('M 626 110 H 230 V 155', L)}${pipe('M 230 295 V 320 H 646', L)}${coil(230, L)}
+    ${pipe('M 674 320 H 800 V 295', Rc)}${pipe('M 800 155 V 110 H 694', Rc)}${coil(800, Rc)}
+    ${chev(430, 110, 'left')}${chev(230, 138, 'down')}${chev(440, 320, 'right')}${chev(740, 320, 'right')}${chev(800, 138, 'up')}${chev(748, 110, 'left')}
+    <circle cx="660" cy="110" r="34" style="fill:var(--surface);stroke:var(--ink);stroke-width:3"/>
+    <path d="${heat ? "M 674 98 L 646 110 L 674 122" : "M 646 98 L 674 110 L 646 122"}" style="fill:none;stroke:var(--ink);stroke-width:3;stroke-linejoin:round"/>
+    ${txt(660, 166, t('compressor'), 'middle', B)}
+    <path d="M 712 48 L 700 68 L 709 68 L 704 84 L 720 62 L 711 62 Z" style="fill:var(--elec)"/>${txt(726, 70, t('electricity'), 'start', 'font:700 12px var(--f-body);fill:var(--elec)')}
+    <path d="M 646 306 L 674 334 L 674 306 L 646 334 Z" style="fill:var(--ink)"/>
+    ${txt(660, 294, t('valve'), 'middle', B)}
+    ${badge(2, 612, 76)}${badge(4, 612, 352)}
+    ${badge(leftBoils ? 1 : 3, 45, 134)}${txt(65, 139, t('indoorCoil'), 'start', B)}${txt(45, 158, leftRole, 'start', E)}
+    ${badge(leftBoils ? 3 : 1, 838, 134)}${txt(858, 139, t('outdoorCoil'), 'start', B)}${txt(838, 158, rightRole, 'start', E)}
+    ${leftArrows}${txt(150, 298, leftBoils ? t('energyIn') : t('energyOut'), 'middle', E)}
+    ${rightArrows}${txt(852, 298, leftBoils ? t('energyOut') : t('energyIn'), 'middle', E)}
+    ${txt(262, 205, leftHL, 'start', `font:700 14px var(--f-body);fill:${L};letter-spacing:.06em`)}${txt(262, 226, `${heat ? c.Ph : c.Pl} kPa`, 'start', 'font:700 14px var(--f-mono);fill:var(--ink)')}${txt(262, 246, leftT, 'start', Sm)}
+    ${txt(768, 205, rightHL, 'end', `font:700 14px var(--f-body);fill:${Rc};letter-spacing:.06em`)}${txt(768, 226, `${heat ? c.Pl : c.Ph} kPa`, 'end', 'font:700 14px var(--f-mono);fill:var(--ink)')}${txt(768, 246, rightT, 'end', Sm)}
+  </svg>`;
+}
+function szig(x) { const p = [[x, 155]]; for (let y = 165, i = 0; y <= 285; y += 12, i++) p.push([x + (i % 2 ? 18 : -18), y]); p.push([x, 295]); return p; }
+const SGEOM = () => [[[660, 110], [626, 110]], [[626, 110], [230, 110], [230, 155]], szig(230), [[230, 295], [230, 320], [646, 320]], [[646, 320], [674, 320]], [[674, 320], [800, 320], [800, 295]], [...szig(800)].reverse(), [[800, 155], [800, 110], [694, 110]], [[694, 110], [660, 110]]];
+function flowFromPieces(pieces) {
+  const samples = [];
+  pieces.forEach(({ pts, role }) => {
+    const segs = []; let L = 0;
+    for (let k = 0; k < pts.length - 1; k++) { const [x0, y0] = pts[k], [x1, y1] = pts[k + 1], l = Math.hypot(x1 - x0, y1 - y0); segs.push({ x0, y0, x1, y1, l, s0: L }); L += l; }
+    const n = Math.max(4, Math.round(L / 2));
+    for (let j = 0; j < n; j++) {
+      const s = (j + 0.5) / n * L, sg = segs.find(q => s <= q.s0 + q.l) || segs[segs.length - 1];
+      const u = (s - sg.s0) / sg.l, dx = (sg.x1 - sg.x0) / sg.l, dy = (sg.y1 - sg.y0) / sg.l;
+      samples.push({ x: sg.x0 + (sg.x1 - sg.x0) * u, y: sg.y0 + (sg.y1 - sg.y0) * u, nx: -dy, ny: dx, role, f: s / L, ds: L / n });
+    }
+  });
+  const cum = []; let tot = 0;
+  for (const p of samples) { const q = stateAt(p.role, p.f, nominal).q; tot += p.ds * (1 + 3 * (1 - q)); cum.push(tot); }
+  return { samples, cum, total: tot };
+}
+function sampleIn(F, q) { const target = q * F.total, c = F.cum; let lo = 0, hi = c.length - 1; while (lo < hi) { const m = (lo + hi) >> 1; if (c[m] < target) lo = m + 1; else hi = m; } return lo; }
+let sFlow = null, sDots = [], sVt = 0;
+function buildSimpleFlow() {
+  const g = SGEOM();
+  const pieces = sMode === 'heat' ? g.map((pts, i) => ({ pts, role: ROLES[i] })) : [...g].reverse().map((pts, i) => ({ pts: [...pts].reverse(), role: ROLES[i] }));
+  sFlow = flowFromPieces(pieces);
+  if (!sDots.length) for (let i = 0; i < 120; i++) sDots.push({ q: (i + Math.random() * 0.6) / 120, u: 0.03 + Math.random() * 0.94, lane: Math.random() - 0.5, ph: Math.random() * 6.28 });
+}
+function drawSimpleLoop(dt) {
+  const cv = $('sLoop'); if (!cv || !sFlow) return;
+  const { ctx } = sizeCanvas(cv, 1000); ctx.clearRect(0, 0, 1000, 400);
+  const c = sCtx().raw; sVt += dt * sMotion; const now = sVt;
+  for (const d of sDots) {
+    d.q = (d.q + dt * sMotion / 24) % 1;
+    const s = sFlow.samples[sampleIn(sFlow, d.q)], st = stateAt(s.role, s.f, c), gas = st.q > d.u, kin = clamp((st.T + 40) / 140, 0, 1);
+    let off, along = 0;
+    if (gas) { const a = 1 + 2.2 * kin; off = d.lane * 6 + Math.sin(now * (6 + 10 * kin) + d.ph) * a; along = Math.cos(now * (7 + 9 * kin) + d.ph * 1.7) * a; }
+    else off = d.lane * 4;
+    off = clamp(off, -3, 3); along = clamp(along, -3, 3);
+    const x = s.x + s.nx * off + s.ny * along, y = s.y + s.ny * off - s.nx * along;
+    ctx.beginPath(); ctx.arc(x, y, gas ? 2.3 : 3, 0, 6.283); ctx.fillStyle = gas ? tempColor(st.T, 0.95) : tempColor(st.T); ctx.fill();
+      }
+}
+function loopBands(ctx, L, T, pw, ph, F) {
+  const names = STR[lang].stepName;
+  for (let i = 0; i < 4; i++) {
+    const x0 = L + i / 4 * pw; ctx.fillStyle = i % 2 ? 'rgba(127,127,127,0.07)' : 'rgba(127,127,127,0)'; ctx.fillRect(x0, T, pw / 4, ph);
+    ctx.fillStyle = col.ink; ctx.font = '700 12px ' + F; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(`${i + 1} · ${names[i]}`, x0 + pw / 8, T - 4);
+  }
+}
+function vArrow(ctx, x, ya, yb, label, F) {
+  if (Math.abs(yb - ya) < 8) return;
+  const d = Math.sign(yb - ya); ctx.strokeStyle = col.energy; ctx.fillStyle = col.energy; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(x, ya); ctx.lineTo(x, yb - d * 7); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, yb); ctx.lineTo(x - 5, yb - d * 8); ctx.lineTo(x + 5, yb - d * 8); ctx.closePath(); ctx.fill();
+  ctx.font = '700 11px ' + F; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, x + 7, (ya + yb) / 2);
+}
+function drawSimpleGraphs() {
+  if (page !== 'simple') return;
+  const c = sCtx(), r = c.raw, F = FONT();
+  { // temperature
+    const { ctx, w: W, h: H } = sizeCanvas($('sTempG')); ctx.clearRect(0, 0, W, H);
+    const L = 44, Rm = 14, T = 24, B = 34, pw = W - L - Rm, ph = H - T - B;
+    let lo = Math.floor((Math.min(r.Te, c.Tin, c.To) - 5) / 10) * 10, hi = Math.ceil((Math.max(r.Tdis, c.Tin, c.To) + 5) / 10) * 10;
+    const X = v => L + v / 4 * pw, Y = v => T + ph - (v - lo) / (hi - lo) * ph;
+    loopBands(ctx, L, T, pw, ph, F);
+    ctx.font = '12px ' + F; ctx.strokeStyle = col.line; ctx.fillStyle = col.muted; ctx.lineWidth = 1;
+    for (let v = lo; v <= hi; v += (hi - lo > 80 ? 20 : 10)) { ctx.beginPath(); ctx.moveTo(L, Y(v)); ctx.lineTo(L + pw, Y(v)); ctx.stroke(); ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(v, L - 6, Y(v)); }
+    ctx.save(); ctx.translate(12, T + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.fillStyle = col.ink; ctx.fillText(t('axT'), 0, 0); ctx.restore();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = col.ink; ctx.fillText(t('xLoop'), L + pw / 2, T + ph + 10);
+    // air lines
+    const airs = [[c.Tin, col.warm, `${t('roomAir')} ${c.Tin} °C`], [c.To, col.cold, `${t('outAir')} ${c.To} °C`]];
+    for (const [v, cc, lab] of airs) { ctx.strokeStyle = cc; ctx.lineWidth = 2; ctx.setLineDash([6, 5]); ctx.beginPath(); ctx.moveTo(L, Y(v)); ctx.lineTo(L + pw, Y(v)); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = cc; ctx.font = '700 11px ' + F; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.fillText(lab, L + pw - 4, Y(v) - 3); }
+    // refrigerant line
+    const pts = [[0, r.Te], [0.85, r.Te], [1, r.Tsuct], [2, r.Tdis], [2.2, r.Tc], [2.88, r.Tc], [3, r.Tsub], [4, r.Te]];
+    ctx.strokeStyle = col.ink; ctx.lineWidth = 3.5; ctx.lineJoin = 'round'; ctx.beginPath(); pts.forEach(([x, v], i) => i ? ctx.lineTo(X(x), Y(v)) : ctx.moveTo(X(x), Y(v))); ctx.stroke();
+    for (const [x, v] of pts) { ctx.beginPath(); ctx.arc(X(x), Y(v), 3.5, 0, 6.283); ctx.fillStyle = tempColor(v); ctx.fill(); }
+    ctx.fillStyle = col.ink; ctx.font = '700 11px ' + F; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText(t('refrig'), X(2) + 6, Y(r.Tdis) + 2);
+    vArrow(ctx, X(0.45), Y(c.Tsrc), Y(r.Te), t('energyIn'), F);
+    vArrow(ctx, X(2.55), Y(r.Tc), Y(c.Tsink), t('energyOut'), F);
+    $('sTempExp').innerHTML = STR[lang].tExp(c);
+  }
+  { // pressure
+    const { ctx, w: W, h: H } = sizeCanvas($('sPresG')); ctx.clearRect(0, 0, W, H);
+    const L = 52, Rm = 14, T = 24, B = 34, pw = W - L - Rm, ph = H - T - B;
+    const hi = Math.ceil((r.Ph + 600) / 1000) * 1000, X = v => L + v / 4 * pw, Y = v => T + ph - v / hi * ph;
+    loopBands(ctx, L, T, pw, ph, F);
+    ctx.font = '12px ' + F; ctx.strokeStyle = col.line; ctx.fillStyle = col.muted; ctx.lineWidth = 1;
+    for (let v = 0; v <= hi; v += 1000) { ctx.beginPath(); ctx.moveTo(L, Y(v)); ctx.lineTo(L + pw, Y(v)); ctx.stroke(); ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(v, L - 6, Y(v)); }
+    ctx.save(); ctx.translate(12, T + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.fillStyle = col.ink; ctx.fillText(t('axP'), 0, 0); ctx.restore();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = col.ink; ctx.fillText(t('xLoop'), L + pw / 2, T + ph + 10);
+    const pts = [[0, r.Pl], [1, r.Pl], [2, r.Ph], [3, r.Ph], [3.3, r.Pl], [4, r.Pl]];
+    ctx.lineWidth = 4; ctx.lineJoin = 'round';
+    for (let i = 0; i < pts.length - 1; i++) { const [x0, a] = pts[i], [x1, b] = pts[i + 1]; ctx.strokeStyle = (a + b) / 2 > (r.Pl + r.Ph) / 2 ? col.warm : (a === b ? col.cold : col.ink); ctx.beginPath(); ctx.moveTo(X(x0), Y(a)); ctx.lineTo(X(x1), Y(b)); ctx.stroke(); }
+    ctx.font = '700 12px ' + F; ctx.textBaseline = 'bottom'; ctx.textAlign = 'center';
+    ctx.fillStyle = col.cold; ctx.fillText(`${t('loShort')} · ${c.Pl} kPa`, X(0.5), Y(r.Pl) - 6);
+    ctx.fillStyle = col.warm; ctx.fillText(`${t('hiShort')} · ${c.Ph} kPa`, X(2.5), Y(r.Ph) - 6);
+    ctx.font = '11px ' + F; ctx.fillStyle = col.muted; ctx.textBaseline = 'top';
+    ctx.fillText(`${t('boilAt')} ${c.Te} °C`, X(0.5), Y(r.Pl) + 6); ctx.fillText(`${t('condAt')} ${c.Tc} °C`, X(2.5), Y(r.Ph) + 6);
+    $('sPresExp').innerHTML = STR[lang].pExp(c);
+  }
+}
+function renderSimple() {
+  $('sDiagram').innerHTML = simpleSVG(); drawSimpleGraphs();
+  const c = sCtx(), S = STR[lang];
+  const where = [t('whereEvap', sMode), t('whereComp'), t('whereCond', sMode), t('whereValve')];
+  const pcls = ['loP', '', 'hiP', ''];
+  $('wins').innerHTML = [0, 1, 2, 3].map(i => `<div class="win"><div class="whead"><span class="wn">${i + 1}</span><div><div class="wwhere">${where[i]}</div><b>${S.stepTitle[i]}</b></div></div>
+    <canvas id="win${i}" aria-label="${S.stepTitle[i]}"></canvas>
+    <div class="wcap"><span class="${pcls[i]}">${S.sP[i](c)}</span><span>${S.sT[i](c)}</span><span>${S.sE[i](c)}</span></div></div>`).join('');
+}
+const WIN_P = 9, BX = { x0: 30, x1: 210, y0: 34, y1: 152 };
+const wins = [0, 1, 2, 3].map(i => ({ i, t: 0, last: -1, dots: [] }));
+const rnd = (a, b) => a + Math.random() * (b - a);
+function slotsGrid(n, x0, x1, yb, sp) {
+  const cols = Math.floor((x1 - x0 - 4) / sp), out = [];
+  for (let k = 0; k < n; k++) { const r = Math.floor(k / cols), c = k % cols; out.push({ x: x0 + sp / 2 + 2 + c * sp + (r % 2 ? sp / 2 : 0), y: yb - sp / 2 - 1 - r * sp * 0.86 }); }
+  return out;
+}
+function randGas(b) { const a = rnd(0, 6.283); return { x: rnd(b.x0 + 6, b.x1 - 6), y: rnd(b.y0 + 6, b.y1 - 6), vx: Math.cos(a), vy: Math.sin(a), ph: rnd(0, 6.28) }; }
+function resetWin(w) {
+  const c = sCtx().raw; w.dots = []; w.nRight = 0;
+  if (w.i === 0 || w.i === 2) {
+    const sl = slotsGrid(40, BX.x0, BX.x1, BX.y1, 9);
+    sl.forEach((q, k) => {
+      if (w.i === 0) w.dots.push({ sx: q.x, sy: q.y, x: q.x, y: q.y, st: 'liq', at: 0.08 + 0.72 * (39 - k) / 39, ph: rnd(0, 6.28) });
+      else { const g = randGas(BX); w.dots.push({ ...g, sx: q.x, sy: q.y, st: 'gas', at: 0.08 + 0.72 * k / 39 }); }
+    });
+  } else if (w.i === 1) {
+    for (let k = 0; k < 26; k++) w.dots.push({ ...randGas({ ...BX, y0: BX.y0 + 4 }), st: 'gas' });
+  } else {
+    const L = slotsGrid(28, 30, 105, BX.y1, 9); w.right = slotsGrid(28, 135, 210, BX.y1, 9);
+    L.forEach((q, k) => w.dots.push({ sx: q.x, sy: q.y, x: q.x, y: q.y, st: 'wait', at: 0.08 + 0.7 * (27 - k) / 27, gas: ((k * 37) % 100) / 100 < c.x, ph: rnd(0, 6.28) }));
+  }
+}
+function moveGas(d, dt, spd, b) {
+  d.x += d.vx * spd * dt; d.y += d.vy * spd * dt;
+  if (d.x < b.x0 + 3) { d.x = b.x0 + 3; d.vx = Math.abs(d.vx); } if (d.x > b.x1 - 3) { d.x = b.x1 - 3; d.vx = -Math.abs(d.vx); }
+  if (d.y < b.y0 + 3) { d.y = b.y0 + 3; d.vy = Math.abs(d.vy); } if (d.y > b.y1 - 3) { d.y = b.y1 - 3; d.vy = -Math.abs(d.vy); }
+}
+function harrowC(ctx, x0, x1, y) {
+  const d = Math.sign(x1 - x0); ctx.strokeStyle = col.energy; ctx.fillStyle = col.energy; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1 - d * 6, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x1 - d * 8, y - 5); ctx.lineTo(x1 - d * 8, y + 5); ctx.closePath(); ctx.fill();
+}
+const smooth = x => x * x * (3 - 2 * x);
+function drawWin(w, dt) {
+  const cv = $('win' + w.i); if (!cv) return;
+  const sdt = dt * sMotion; w.t += sdt;
+  const n = Math.floor(w.t / WIN_P); if (n !== w.last) { w.last = n; resetWin(w); }
+  const tc = w.t % WIN_P, p = tc / WIN_P, c = sCtx().raw, F = FONT();
+  const { ctx } = sizeCanvas(cv, 240); ctx.clearRect(0, 0, 240, 170);
+  const dot = (x, y, T, gas) => { ctx.beginPath(); ctx.arc(x, y, gas ? 3 : 3.6, 0, 6.283); ctx.fillStyle = tempColor(T); ctx.fill(); };
+  const label = (x, y, s, color, align) => { ctx.font = '700 12px ' + F; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'alphabetic'; ctx.fillText(s, x, y); };
+  ctx.strokeStyle = col.pipe; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+  if (w.i === 0 || w.i === 2) {
+    ctx.strokeRect(BX.x0, BX.y0, BX.x1 - BX.x0, BX.y1 - BX.y0);
+    const boil = w.i === 0, T = boil ? c.Te : c.Tc;
+    for (const d of w.dots) {
+      if (boil) {
+        if (d.st === 'liq' && p >= d.at) { const a = rnd(-Math.PI * 0.85, -Math.PI * 0.15); d.st = 'gas'; d.vx = Math.cos(a); d.vy = Math.sin(a); }
+        if (d.st === 'gas') { moveGas(d, sdt, 55, BX); dot(d.x, d.y, T, true); }
+        else dot(d.sx + Math.sin(w.t * 9 + d.ph) * 0.6, d.sy, T, false);
+      } else {
+        if (d.st === 'gas' && p >= d.at) { d.st = 'liq'; d.cx = d.x; d.cy = d.y; d.ct = tc; }
+        if (d.st === 'gas') { moveGas(d, sdt, 55, BX); dot(d.x, d.y, T, true); }
+        else { const k = smooth(clamp((tc - d.ct) / 0.6, 0, 1)); dot(d.cx + (d.sx - d.cx) * k, d.cy + (d.sy - d.cy) * k, T, false); }
+      }
+    }
+    for (const y of [80, 118]) { if (boil) { harrowC(ctx, 4, 26, y); harrowC(ctx, 236, 214, y); } else { harrowC(ctx, 26, 4, y); harrowC(ctx, 214, 236, y); } }
+    label(BX.x0, 22, `${r0(T)} °C`, col.ink, 'left');
+    label(BX.x1, 22, boil ? `${t('loShort')} · ${r0(c.Pl)} kPa` : `${t('hiShort')} · ${r0(c.Ph)} kPa`, boil ? col.cold : col.warm, 'right');
+    label(120, 166, boil ? t('energyIn') : t('energyOut'), col.energy, 'center');
+  } else if (w.i === 1) {
+    const k = smooth(clamp((p - 0.08) / 0.7, 0, 1)), top = BX.y0 + 72 * k;
+    const T = c.Tsuct + (c.Tdis - c.Tsuct) * k, P = c.Pl * Math.pow(c.Ph / c.Pl, k);
+    ctx.beginPath(); ctx.moveTo(BX.x0, BX.y0 - 4); ctx.lineTo(BX.x0, BX.y1); ctx.lineTo(BX.x1, BX.y1); ctx.lineTo(BX.x1, BX.y0 - 4); ctx.stroke();
+    const b = { ...BX, y0: top };
+    for (const d of w.dots) { if (d.y < top + 3) { d.y = top + 3; d.vy = Math.abs(d.vy); } moveGas(d, sdt, 45 * (1 + 1.4 * k), b); dot(d.x, d.y, T, true); }
+    ctx.fillStyle = col.pipe; ctx.fillRect(BX.x0 + 2, top - 7, BX.x1 - BX.x0 - 4, 7); ctx.fillRect(116, 24, 8, top - 30);
+    ctx.fillStyle = col.elec; ctx.beginPath(); ctx.moveTo(140, 4); ctx.lineTo(132, 17); ctx.lineTo(138, 17); ctx.lineTo(135, 28); ctx.lineTo(146, 13); ctx.lineTo(140, 13); ctx.closePath(); ctx.fill();
+    label(BX.x0, 22, `${r0(T)} °C`, col.ink, 'left');
+    label(BX.x1, 22, `${r0(P)} kPa`, tempColor(T), 'right');
+    label(120, 166, t('electricity'), col.elec, 'center');
+  } else {
+    ctx.beginPath(); ctx.moveTo(30, 34); ctx.lineTo(30, 152); ctx.lineTo(210, 152); ctx.lineTo(210, 34); ctx.lineTo(135, 34); ctx.lineTo(135, 138); ctx.lineTo(105, 138); ctx.lineTo(105, 34); ctx.closePath(); ctx.stroke();
+    const rb = { x0: 135, x1: 210, y0: 34, y1: 152 };
+    for (const d of w.dots) {
+      if (d.st === 'wait' && p >= d.at) { d.st = 'move'; d.mt = tc; d.cx = d.x; d.cy = d.y; }
+      if (d.st === 'wait') { dot(d.sx + Math.sin(w.t * 9 + d.ph) * 0.6, d.sy, c.Tsub, false); continue; }
+      if (d.st === 'move') {
+        const e = (tc - d.mt) / 0.8;
+        if (e < 0.6) { const k = e / 0.6; d.x = d.cx + (100 - d.cx) * k; d.y = d.cy + (145 - d.cy) * k; dot(d.x, d.y, c.Tsub, false); }
+        else if (e < 1) { d.x = 100 + 40 * (e - 0.6) / 0.4; d.y = 145; dot(d.x, d.y, c.Tsub + (c.Te - c.Tsub) * (e - 0.6) / 0.4, false); }
+        else if (d.gas) { const a = rnd(-Math.PI * 0.8, -Math.PI * 0.2); d.st = 'gas'; d.vx = Math.cos(a); d.vy = Math.sin(a); d.x = 140; }
+        else { const q = w.right[w.nRight++] || w.right[w.right.length - 1]; d.st = 'liq'; d.sx = q.x; d.sy = q.y; d.cx = 140; d.cy = 145; d.ct = tc; }
+        if (d.st === 'move') continue;
+      }
+      if (d.st === 'gas') { moveGas(d, sdt, 50, rb); dot(d.x, d.y, c.Te, true); }
+      else { const k = smooth(clamp((tc - d.ct) / 0.5, 0, 1)); dot(d.cx + (d.sx - d.cx) * k, d.cy + (d.sy - d.cy) * k, c.Te, false); }
+    }
+    label(30, 22, `${t('hiShort')} · ${r0(c.Tsub)} °C`, col.warm, 'left');
+    label(210, 22, `${t('loShort')} · ${r0(c.Te)} °C`, col.cold, 'right');
+  }
+}
+function drawSimple(dt) { for (const w of wins) drawWin(w, dt); }
+$('sModeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; setPressed($('sModeSeg'), b); sMode = b.dataset.m;
+  const [mn, mx, dv] = S_RANGE[sMode], o = $('sOutT'); o.min = mn; o.max = mx; o.value = dv; sOut = dv; $('sOutOut').textContent = dv + ' °C';
+  buildSimpleFlow(); renderSimple(); wins.forEach(w => { w.t = 0; w.last = -1; }); });
+$('sOutT').addEventListener('input', e => { sOut = +e.target.value; $('sOutOut').textContent = sOut + ' °C'; renderSimple(); });
+function setPage(pg) {
+  page = pg; $('pageSimple').hidden = pg !== 'simple'; $('pageFull').hidden = pg !== 'full';
+  $('pageSeg').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.pg === pg ? 'true' : 'false'));
+  try { localStorage.setItem('hpPage', pg); } catch (e) {}
+  if (pg === 'full') renderAll(); else renderSimple();
+}
+$('pageSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setPage(b.dataset.pg); });
+window.addEventListener('resize', drawSimpleGraphs);
+new MutationObserver(() => drawSimpleGraphs()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => setTimeout(drawSimpleGraphs, 0));
+$('sMotionSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; sMotion = +b.dataset.p; setPressed($('sMotionSeg'), b); });
+$('replayBtn').addEventListener('click', () => wins.forEach(w => { w.t = 0; w.last = -1; }));
+
+readColors(); initDots(); buildSimpleFlow(); applyMode('heat'); $('pSlider').value = pToSlider(84); applyLang();
+try { if (localStorage.getItem('hpPage') === 'full' || location.hash === '#full') setPage('full'); } catch (e) {}
+requestAnimationFrame(frame);
+</script>
+
+</body>
+</html>

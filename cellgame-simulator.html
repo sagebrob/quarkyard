@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Cell Cycle Simulator — Long-Run Results</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --ink-soft: #45484c;
+    --paper: #faf9f6;
+    --panel: #ffffff;
+    --line: #d8d6cf;
+    --line-soft: #eae8e2;
+    --checkpoint: #1a1a1a;
+    --noncancer: #35618c;
+    --noncancer-soft: #e4ebef;
+    --cancer: #a8352a;
+    --cancer-soft: #f4e1db;
+    --destroyed: #6b6f74;
+    --destroyed-soft: #e9eaec;
+    --good: #3f7d4f;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    --sans: 'Segoe UI', 'Calibri', system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+  }
+  .app { max-width: 1120px; margin: 0 auto; padding: 0 0 60px; }
+
+  .masthead { background: var(--ink); color: #fff; padding: 18px 24px 20px; }
+  .back-row { margin-bottom: 10px; }
+  .back-link { color: #fff; font-size: 11.5px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; opacity: .85; }
+  .back-link:hover { opacity: 1; }
+  .kicker { font-size: 11px; letter-spacing: 1.6px; font-weight: 700; color: #c7c5bf; text-transform: uppercase; margin-bottom: 6px; }
+  .masthead h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.2px; }
+  .masthead p { margin: 6px 0 0; font-size: 13.5px; color: #d6d4ce; max-width: 760px; line-height: 1.5; }
+
+  .controls { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; background: var(--panel); border-bottom: 1px solid var(--line); padding: 16px 24px; }
+  .run-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .run-btns button { border: 1px solid var(--ink); background: #fff; color: var(--ink); font-family: var(--sans); font-size: 13px; font-weight: 700; padding: 10px 16px; border-radius: 4px; cursor: pointer; transition: background .12s, color .12s; }
+  .run-btns button:hover { background: var(--ink); color: #fff; }
+  .run-btns button:disabled { opacity: .5; cursor: default; background: #fff; color: var(--ink); }
+  .reset-btn { border: 1px solid var(--line); background: #fff; color: var(--ink-soft); font-family: var(--sans); font-size: 12px; font-weight: 600; padding: 9px 14px; border-radius: 4px; cursor: pointer; }
+  .reset-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
+  .status-note { font-size: 12px; color: var(--ink-soft); }
+
+  .section { margin: 22px 24px 0; }
+  .section h2 { margin: 0 0 4px; font-size: 13px; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .section h2 .sq { width: 9px; height: 9px; background: var(--ink); flex: none; }
+  .section .sub { font-size: 12.5px; color: var(--ink-soft); margin: 0 0 14px; max-width: 780px; line-height: 1.5; }
+
+  .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .results-grid { grid-template-columns: 1fr; } }
+
+  .round-card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px; }
+  .round-card .rhead { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 2px; }
+  .round-card .rhead .rtitle { font-size: 15px; font-weight: 800; }
+  .round-card .rhead .rn { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
+  .round-card .rdesc { font-size: 12px; color: var(--ink-soft); margin: 2px 0 16px; line-height: 1.5; }
+
+  .stat-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .stat-box { flex: 1; border-radius: 5px; padding: 12px 14px; }
+  .stat-box.non { background: var(--noncancer-soft); }
+  .stat-box.can { background: var(--cancer-soft); }
+  .stat-box.des { background: var(--destroyed-soft); }
+  .stat-box .n { font-family: var(--mono); font-size: 24px; font-weight: 800; line-height: 1.1; }
+  .stat-box.non .n { color: var(--noncancer); }
+  .stat-box.can .n { color: var(--cancer); }
+  .stat-box.des .n { color: var(--destroyed); }
+  .stat-box .lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--ink-soft); margin-top: 4px; }
+  .stat-box .pct { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
+  .bar { height: 22px; border-radius: 4px; overflow: hidden; display: flex; background: var(--line-soft); margin-bottom: 6px; }
+  .bar .seg.non { background: var(--noncancer); }
+  .bar .seg.can { background: var(--cancer); }
+  .bar .seg.des { background: var(--destroyed); }
+  .bar-caption { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-soft); }
+
+  .death-row { display: flex; align-items: baseline; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .death-n { font-family: var(--mono); font-size: 17px; font-weight: 800; color: var(--ink); flex: none; }
+  .death-txt { font-size: 11.5px; color: var(--ink-soft); line-height: 1.4; }
+  .death-avg { white-space: nowrap; }
+
+  .journey-block { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .journey-heading { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--ink-soft); margin-bottom: 8px; }
+  .journey-bar { margin-bottom: 10px; }
+  .jseg.jclean { background: var(--good, #3f7d4f); }
+  .jseg.jheld { background: #b8892b; }
+  .jseg.jdestroyed { background: #6b6f74; }
+  .jseg.jcancer { background: var(--cancer); }
+  .journey-list { display: flex; flex-direction: column; gap: 6px; }
+  .journey-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .jswatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+  .jswatch.jclean { background: var(--good, #3f7d4f); }
+  .jswatch.jheld { background: #b8892b; }
+  .jswatch.jdestroyed { background: #6b6f74; }
+  .jswatch.jcancer { background: var(--cancer); }
+  .journey-label { flex: 1; color: var(--ink-soft); }
+  .journey-n { font-family: var(--mono); font-weight: 700; color: var(--ink); }
+  .journey-pct { font-family: var(--mono); color: var(--ink-soft); width: 42px; text-align: right; }
+
+  .empty-state { color: var(--ink-soft); font-size: 13px; padding: 30px 0; text-align: center; }
+
+  .journey-cols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  @media (max-width: 980px) { .journey-cols { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 640px) { .journey-cols { grid-template-columns: 1fr; } }
+  .journey-col-card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; }
+  .journey-col-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+  .journey-col-title { font-size: 13.5px; font-weight: 800; }
+  .journey-col-title.jc-cancer { color: var(--cancer); }
+  .journey-col-title.jc-healthy { color: var(--noncancer); }
+  .journey-col-title.jc-destroyed { color: var(--destroyed); }
+  .journey-col-avg { font-size: 11.5px; color: var(--ink-soft); margin-bottom: 12px; line-height: 1.4; }
+  .journey-col-avg b { color: var(--ink); font-family: var(--mono); }
+
+  .cell-sample-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .cell-sample-table th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: .3px; color: var(--ink-soft); font-weight: 700; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  .cell-sample-table td { padding: 7px 8px; border-bottom: 1px solid var(--line-soft); font-family: var(--mono); }
+  .cell-sample-table td.label-col { font-family: var(--sans); color: var(--ink-soft); }
+  .cell-sample-table .skip-hit { color: var(--cancer); font-weight: 800; }
+  .cell-sample-table .skip-zero { color: var(--line); }
+  .sample-note { font-size: 11px; color: var(--ink-soft); margin-top: 10px; }
+
+  .totals-note { font-size: 11.5px; color: var(--ink-soft); margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+
+  footer { margin: 40px 24px 0; padding-top: 16px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="masthead">
+    <div class="back-row"><a class="back-link" href="cellgame.html">&larr; Back to the game</a></div>
+    <div class="kicker">Biology — Prototype</div>
+    <h1>Cell Cycle Simulator — Long-Run Results</h1>
+    <p>This page runs the exact same rules as the game itself — the same checkpoint math, the same Cellular Chance deck — but plays it out automatically, over and over, without needing anyone to roll dice. Use it to see what the checkpoint (Round 1) vs. mutated-p53 (Round 2) conditions actually do to the odds if the game were played a huge number of times.</p>
+  </div>
+
+  <div class="controls">
+    <div class="run-btns">
+      <button data-n="10">Run 10 cells</button>
+      <button data-n="100">Run 100 cells</button>
+      <button data-n="1000">Run 1000 cells</button>
+    </div>
+    <div class="status-note" id="statusNote">Each run plays that many cells through Round 1 and that many through Round 2, using fresh dice every time.</div>
+    <button class="reset-btn" id="resetBtn">Reset totals</button>
+  </div>
+
+  <div class="section">
+    <h2><span class="sq"></span>Most Recent Run</h2>
+    <p class="sub">Results from the last batch you ran, shown side by side for the two round conditions.</p>
+    <div class="results-grid" id="lastRunGrid">
+      <div class="empty-state">Click "Run 10 cells", "Run 100 cells", or "Run 1000 cells" above to simulate that many cells going through the cell cycle under each round's rules.</div>
+    </div>
+  </div>
+
+  <div class="section" id="journeySection" style="display:none;">
+    <h2><span class="sq"></span>Round 2 — Individual Cell Journeys</h2>
+    <p class="sub">For each cell, how many Chance cards said "p53 is working well," how many said "p53 is not working," and how many of those actually skipped an honest checkpoint check. The point: a card saying p53 "isn't working" is usually just a setback — it takes a checkpoint actually being skipped to cause cancer.</p>
+    <div id="journeyContent"></div>
+  </div>
+
+  <div class="section" id="cumulativeSection" style="display:none;">
+    <h2><span class="sq"></span>Running Total (this session)</h2>
+    <p class="sub">Adds up every batch you've run so far on this page — a stand-in for "if the game kept going for a really long time."</p>
+    <div class="results-grid" id="cumulativeGrid"></div>
+  </div>
+
+  <footer>
+    Prototype simulator for classroom use — companion to the Cell Cycle Simulator game. Not indexed for search.
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  // =========================================================================
+  // Game rules, transcribed exactly from cellgame.html so this simulator's
+  // odds match the real game. If the game's rules ever change, mirror the
+  // change here too.
+  // =========================================================================
+
+  function buildSpaces() {
+    const s = [];
+    s.push({ type: 'START' });
+    for (let i = 0; i < 6; i++) s.push({ type: 'G1', chance: i % 2 === 1 });
+    s.push({ type: 'G1_CHECK' });
+    for (let i = 0; i < 8; i++) s.push({ type: 'S', chance: i % 2 === 1 });
+    for (let i = 0; i < 7; i++) s.push({ type: 'G2', chance: i % 2 === 1 });
+    s.push({ type: 'G2_CHECK' });
+    for (let i = 1; i <= 5; i++) s.push({ type: 'M', need: i, chance: i % 2 === 0 });
+    s.push({ type: 'M_CHECK' });
+    s.push({ type: 'FINISH' });
+    return s;
+  }
+  const SPACES = buildSpaces();
+
+  const IDX = {
+    START: 0,
+    G1_FIRST: 1, G1_LAST: 6,
+    G1_CHECK: 7,
+    S_FIRST: 8, S_LAST: 15,
+    G2_FIRST: 16, G2_LAST: 22,
+    G2_CHECK: 23,
+    M_FIRST: 24, M_LAST: 28,
+    M_CHECK: 29,
+    FINISH: 30,
+  };
+
+  const REQ = { g1: { nutrients: 3, proteins: 3, organelles: 3 }, g2dna: 4 };
+
+  // worksWell mirrors the real card text: "p53 is working well!" vs.
+  // "p53 is not working!" — this is independent of whether the card actually
+  // ends up helping or hurting the cell (a "working well" destroy card still
+  // sends the cell back to the start).
+  const CHANCE_DECK_SOURCE = [
+    { effect: 'extraRoll', worksWell: true }, { effect: 'extraRoll', worksWell: true }, { effect: 'extraRoll', worksWell: true },
+    { effect: 'destroy', worksWell: true }, { effect: 'destroy', worksWell: true }, { effect: 'destroy', worksWell: true },
+    { effect: 'fillDNA', worksWell: true },
+    { effect: 'skipCheckpointBypass', worksWell: false },
+    { effect: 'extraRoll', worksWell: true },
+    { effect: 'moveToFinishRed', worksWell: false },
+    { effect: 'loseTurn', worksWell: false },
+    { effect: 'extraRoll', worksWell: true },
+    { effect: 'ahead3', worksWell: false },
+    { effect: 'skipToFinalCheckpoint', worksWell: false },
+  ];
+
+  function shuffled(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function freshResources() { return { nutrients: 0, proteins: 0, organelles: 0, chromosomes: 0 }; }
+  function isCheckpointType(t) { return t === 'G1_CHECK' || t === 'G2_CHECK' || t === 'M_CHECK'; }
+  function nextCheckpointIndex(pos) {
+    return [IDX.G1_CHECK, IDX.G2_CHECK, IDX.M_CHECK].find(idx => idx > pos) || IDX.M_CHECK;
+  }
+  function d6() { return 1 + Math.floor(Math.random() * 6); }
+
+  function computeG1(p) {
+    const r = p.resources;
+    if (r.nutrients === 0 || r.proteins === 0 || r.organelles === 0) return 'destroy';
+    if (r.nutrients === 1 || r.proteins === 1 || r.organelles === 1) return 'back5';
+    if (r.nutrients === 2 || r.proteins === 2 || r.organelles === 2) return 'back3';
+    return 'pass';
+  }
+  function computeG2(p) {
+    const r = p.resources;
+    if (r.nutrients === 0 || r.proteins === 0 || r.organelles === 0) return 'destroy';
+    if (r.chromosomes < REQ.g2dna) return 'backfirst';
+    return 'pass';
+  }
+  function computeM(p) {
+    const r = p.resources, req = REQ.g1;
+    const ok = r.nutrients >= req.nutrients && r.proteins >= req.proteins && r.organelles >= req.organelles && r.chromosomes >= REQ.g2dna;
+    return ok ? 'divide' : 'backfirst';
+  }
+
+  // A destroy — from a failed checkpoint or a "cell destroyed" Chance card —
+  // is terminal. It is its own final outcome, on equal footing with healthy
+  // and cancer, never a reset-and-continue: the cell that just failed does
+  // not come back later as a healthy or cancer cell. (In the real game this
+  // is the moment a player sets that cell chip aside and picks up a new one
+  // — a brand-new cell, counted separately if it's simulated at all.)
+  function destroyCellSim(p) {
+    p.finished = true;
+    p.outcome = 'destroyed';
+  }
+
+  function moveOrFinishSim(p, targetPos) {
+    if (targetPos >= IDX.FINISH) {
+      p.cellFlagged = true;
+      p.position = IDX.FINISH;
+      p.finished = true;
+      p.outcome = 'cancer';
+    } else {
+      p.position = targetPos;
+    }
+  }
+
+  function applyOutcomeSim(p, checkType, result) {
+    switch (result) {
+      case 'pass':
+        if (checkType === 'G1_CHECK') p.position = IDX.S_FIRST;
+        else if (checkType === 'G2_CHECK') p.g2RollPending = true;
+        break;
+      case 'back3': p.position = Math.max(IDX.G1_FIRST, IDX.G1_CHECK - 3); p.hadCheckpointHold = true; break;
+      case 'back5': p.position = Math.max(IDX.G1_FIRST, IDX.G1_CHECK - 5); p.hadCheckpointHold = true; break;
+      case 'backfirst': p.position = IDX.G1_FIRST; p.hadCheckpointHold = true; break;
+      case 'destroy': destroyCellSim(p); break;
+      case 'divide': p.finished = true; p.outcome = p.cellFlagged ? 'cancer' : 'healthy'; break;
+    }
+  }
+
+  // deck is a shared, cycling queue (drawn card goes to the bottom) — same as
+  // the real game's shared Cellular Chance deck for a round.
+  function drawChance(deck) {
+    const card = deck.shift();
+    deck.push(card);
+    return card;
+  }
+
+  function applyChanceEffectSim(p, card, deck) {
+    // Track the "p53 is working well!" vs. "p53 is not working!" flavor of
+    // every card drawn, plus a separate count of how many times a checkpoint
+    // was actually skipped without an honest scorecard check — the thing
+    // that actually causes cancer, as distinct from just a bad-luck draw.
+    if (card.worksWell) p.p53Worked++; else p.p53NotWorked++;
+
+    switch (card.effect) {
+      case 'extraRoll': return true; // same cell acts again immediately
+      case 'destroy': destroyCellSim(p); return false;
+      case 'fillDNA': p.resources.chromosomes = Math.max(p.resources.chromosomes, REQ.g2dna); return false;
+      case 'skipCheckpointBypass': {
+        const idx = nextCheckpointIndex(p.position);
+        p.cellFlagged = true;
+        p.checkpointsSkipped++;
+        moveOrFinishSim(p, idx + 1);
+        return false;
+      }
+      case 'moveToFinishRed':
+        p.cellFlagged = true;
+        p.checkpointsSkipped++;
+        p.position = IDX.FINISH;
+        p.finished = true;
+        p.outcome = 'cancer';
+        return false;
+      case 'loseTurn': return false;
+      case 'ahead3': {
+        const wasFlagged = p.cellFlagged;
+        moveOrFinishSim(p, p.position + 3);
+        if (p.cellFlagged && !wasFlagged) p.checkpointsSkipped++; // rare: jumped straight to Finish
+        return false;
+      }
+      case 'skipToFinalCheckpoint': p.position = IDX.M_CHECK; return false;
+    }
+    return false;
+  }
+
+  // Plays a single cell from Start through to a finished division (cancer or
+  // not) under the given round's rules. Each cell gets its own freshly
+  // shuffled Chance deck (rather than sharing one continuously-cycling deck
+  // across every cell in a batch) so that many independent cells give a
+  // stable estimate of the true odds, instead of one batch's luck of the
+  // draw skewing the whole run.
+  function simulateOneCell(round) {
+    const deck = shuffled(CHANCE_DECK_SOURCE);
+    const p = { position: IDX.START, resources: freshResources(), cellFlagged: false, g2RollPending: false, finished: false, outcome: null, hadCheckpointHold: false, p53Worked: 0, p53NotWorked: 0, checkpointsSkipped: 0 };
+    let guard = 0;
+    while (!p.finished && guard++ < 20000) {
+      const sp = SPACES[p.position];
+
+      if (p.g2RollPending) {
+        if (d6() === 1) { p.g2RollPending = false; p.position = IDX.M_FIRST; }
+        continue;
+      }
+
+      if (isCheckpointType(sp.type)) {
+        const result = sp.type === 'G1_CHECK' ? computeG1(p) : sp.type === 'G2_CHECK' ? computeG2(p) : computeM(p);
+        applyOutcomeSim(p, sp.type, result);
+        continue;
+      }
+
+      // Normal dice-consuming step
+      let moved = true;
+      if (sp.type === 'START') {
+        p.position = IDX.G1_FIRST;
+      } else if (sp.type === 'G1' || sp.type === 'G2') {
+        for (let i = 0; i < 4; i++) {
+          const r = d6();
+          if (r === 1) p.resources.nutrients++;
+          else if (r === 2) p.resources.proteins++;
+          else if (r === 3) p.resources.organelles++;
+          else if (r === 4 && sp.type === 'G2') p.resources.chromosomes++;
+        }
+        p.position++;
+      } else if (sp.type === 'S') {
+        for (let i = 0; i < 4; i++) { if (d6() === 4) p.resources.chromosomes++; }
+        p.position++;
+      } else if (sp.type === 'M') {
+        if (d6() === sp.need) p.position++; else moved = false;
+      }
+
+      if (!moved) continue;
+
+      const newSp = SPACES[p.position];
+      if (isCheckpointType(newSp.type)) continue;
+      if (round === 2 && newSp.chance) {
+        const card = drawChance(deck);
+        applyChanceEffectSim(p, card, deck);
+      }
+    }
+    // Journey classification: each completed cell lands in exactly one bucket.
+    // "destroyed" and "cancer" are already final outcomes (destroy is terminal
+    // — it never becomes a later healthy or cancer cell); "held" vs. "clean"
+    // just describes whether a surviving, non-cancer cell got sent back at a
+    // checkpoint along the way before it went on to divide normally.
+    let journey;
+    if (p.outcome === 'destroyed') journey = 'destroyed';
+    else if (p.outcome === 'cancer') journey = 'cancer';
+    else if (p.hadCheckpointHold) journey = 'held';     // back3/back5/backfirst at least once, still divided
+    else journey = 'clean';                             // passed every checkpoint on the first try
+
+    return {
+      outcome: p.outcome,
+      journey,
+      p53Worked: p.p53Worked,
+      p53NotWorked: p.p53NotWorked,
+      checkpointsSkipped: p.checkpointsSkipped,
+    };
+  }
+
+  const SAMPLE_CAP = 8; // individual journeys to keep per outcome, for display
+
+  function runBatch(round, n) {
+    let healthy = 0, cancer = 0, destroyed = 0;
+    const journeys = { clean: 0, held: 0, destroyed: 0, cancer: 0 };
+    // Per-cell p53 journey tallies, split by final outcome, so we can both
+    // show individual examples and report the average pattern for each.
+    const p53Sum = {
+      cancer: { worked: 0, notWorked: 0, skipped: 0, count: 0 },
+      healthy: { worked: 0, notWorked: 0, skipped: 0, count: 0 },
+      destroyed: { worked: 0, notWorked: 0, skipped: 0, count: 0 },
+    };
+    const samples = { cancer: [], healthy: [], destroyed: [] };
+
+    for (let i = 0; i < n; i++) {
+      const result = simulateOneCell(round);
+      if (result.outcome === 'cancer') cancer++;
+      else if (result.outcome === 'destroyed') destroyed++;
+      else healthy++;
+      journeys[result.journey]++;
+
+      if (round === 2) {
+        const bucket = p53Sum[result.outcome];
+        bucket.worked += result.p53Worked;
+        bucket.notWorked += result.p53NotWorked;
+        bucket.skipped += result.checkpointsSkipped;
+        bucket.count++;
+        if (samples[result.outcome].length < SAMPLE_CAP) {
+          samples[result.outcome].push({
+            n: i + 1,
+            worked: result.p53Worked,
+            notWorked: result.p53NotWorked,
+            skipped: result.checkpointsSkipped,
+          });
+        }
+      }
+    }
+    return { healthy, cancer, destroyed, total: n, journeys, p53Sum, samples };
+  }
+
+  // =========================================================================
+  // UI wiring
+  // =========================================================================
+
+  function emptyStats() {
+    return { healthy: 0, cancer: 0, destroyed: 0, total: 0, journeys: { clean: 0, held: 0, destroyed: 0, cancer: 0 } };
+  }
+  const cumulative = { 1: emptyStats(), 2: emptyStats() };
+
+  function pct(n, total) { return total === 0 ? '0.0' : (100 * n / total).toFixed(1); }
+
+  const JOURNEY_META = {
+    clean:     { label: 'Clean run — passed every checkpoint the first time, divided normally', cls: 'jclean' },
+    held:      { label: 'Held/sent back at a checkpoint, but still divided normally', cls: 'jheld' },
+    destroyed: { label: 'Destroyed — a checkpoint failure or Chance card ended it before it could divide', cls: 'jdestroyed' },
+    cancer:    { label: 'Became a cancer cell', cls: 'jcancer' },
+  };
+
+  function roundCardHTML(title, note, stats) {
+    const hPct = pct(stats.healthy, stats.total);
+    const dPct = pct(stats.destroyed, stats.total);
+    const cPct = pct(stats.cancer, stats.total);
+    const j = stats.journeys;
+    const jPct = key => pct(j[key], stats.total);
+    const journeyBar = ['clean', 'held', 'destroyed', 'cancer']
+      .map(key => `<div class="jseg ${JOURNEY_META[key].cls}" style="width:${jPct(key)}%"></div>`).join('');
+    const journeyRows = ['clean', 'held', 'destroyed', 'cancer'].map(key => `
+      <div class="journey-row">
+        <span class="jswatch ${JOURNEY_META[key].cls}"></span>
+        <span class="journey-label">${JOURNEY_META[key].label}</span>
+        <span class="journey-n">${j[key].toLocaleString()}</span>
+        <span class="journey-pct">${jPct(key)}%</span>
+      </div>`).join('');
+    return `
+      <div class="round-card">
+        <div class="rhead"><span class="rtitle">${title}</span><span class="rn">${stats.total.toLocaleString()} cells started</span></div>
+        <div class="rdesc">${note}</div>
+        <div class="stat-row">
+          <div class="stat-box non">
+            <div class="n">${stats.healthy.toLocaleString()}</div>
+            <div class="lbl">🔵 Healthy cells</div>
+            <div class="pct">${hPct}%</div>
+          </div>
+          <div class="stat-box des">
+            <div class="n">${stats.destroyed.toLocaleString()}</div>
+            <div class="lbl">⚪ Destroyed cells</div>
+            <div class="pct">${dPct}%</div>
+          </div>
+          <div class="stat-box can">
+            <div class="n">${stats.cancer.toLocaleString()}</div>
+            <div class="lbl">🔴 Cancer cells</div>
+            <div class="pct">${cPct}%</div>
+          </div>
+        </div>
+        <div class="bar">
+          <div class="seg non" style="width:${hPct}%"></div>
+          <div class="seg des" style="width:${dPct}%"></div>
+          <div class="seg can" style="width:${cPct}%"></div>
+        </div>
+        <div class="bar-caption"><span>Healthy</span><span>Destroyed</span><span>Cancer</span></div>
+
+        <div class="journey-block">
+          <div class="journey-heading">How these ${stats.total.toLocaleString()} cells got there</div>
+          <div class="bar journey-bar">${journeyBar}</div>
+          <div class="journey-list">${journeyRows}</div>
+        </div>
+      </div>`;
+  }
+
+  function renderLastRun(r1, r2) {
+    document.getElementById('lastRunGrid').innerHTML =
+      roundCardHTML('Round 1 — Normal p53', 'Every checkpoint is checked honestly. Chance squares do nothing this round.', r1) +
+      roundCardHTML('Round 2 — Mutated p53', 'Chance squares are active — some let a cell divide without an honest checkpoint check.', r2);
+  }
+
+  function sampleTableHTML(rows, kind) {
+    if (rows.length === 0) return `<p class="sample-note">No ${kind} cells in this batch to show.</p>`;
+    const body = rows.map(r => `
+      <tr>
+        <td class="label-col">Cell #${r.n}</td>
+        <td>${r.worked}</td>
+        <td>${r.notWorked}</td>
+        <td class="${r.skipped > 0 ? 'skip-hit' : 'skip-zero'}">${r.skipped}</td>
+      </tr>`).join('');
+    return `
+      <table class="cell-sample-table">
+        <thead><tr><th></th><th>p53 worked</th><th>p53 didn't work</th><th>Checkpoint skipped</th></tr></thead>
+        <tbody>${body}</tbody>
+      </table>`;
+  }
+
+  function renderJourneySample(r2) {
+    const section = document.getElementById('journeySection');
+    if (r2.total === 0) { section.style.display = 'none'; return; }
+    section.style.display = '';
+
+    const avgLine = (sum) => {
+      if (sum.count === 0) return 'None in this batch.';
+      return `avg <b>${(sum.worked / sum.count).toFixed(1)}</b> worked, <b>${(sum.notWorked / sum.count).toFixed(1)}</b> not working, <b>${(sum.skipped / sum.count).toFixed(2)}</b> checkpoints skipped (${sum.count.toLocaleString()} cells)`;
+    };
+
+    document.getElementById('journeyContent').innerHTML = `
+      <div class="journey-cols">
+        <div class="journey-col-card">
+          <div class="journey-col-head"><span class="journey-col-title jc-cancer">🔴 Sample cancer cells</span></div>
+          <div class="journey-col-avg">${avgLine(r2.p53Sum.cancer)}</div>
+          ${sampleTableHTML(r2.samples.cancer, 'cancer')}
+          <p class="sample-note">First ${SAMPLE_CAP} cancer cells encountered in this batch, in the order they were simulated.</p>
+        </div>
+        <div class="journey-col-card">
+          <div class="journey-col-head"><span class="journey-col-title jc-destroyed">⚪ Sample destroyed cells</span></div>
+          <div class="journey-col-avg">${avgLine(r2.p53Sum.destroyed)}</div>
+          ${sampleTableHTML(r2.samples.destroyed, 'destroyed')}
+          <p class="sample-note">First ${SAMPLE_CAP} destroyed cells — their p53 card history right up until the checkpoint or card that ended them.</p>
+        </div>
+        <div class="journey-col-card">
+          <div class="journey-col-head"><span class="journey-col-title jc-healthy">🔵 Sample healthy cells</span></div>
+          <div class="journey-col-avg">${avgLine(r2.p53Sum.healthy)}</div>
+          ${sampleTableHTML(r2.samples.healthy, 'healthy')}
+          <p class="sample-note">First ${SAMPLE_CAP} healthy cells encountered in this batch, in the order they were simulated.</p>
+        </div>
+      </div>`;
+  }
+
+  function renderCumulative() {
+    if (cumulative[1].total === 0 && cumulative[2].total === 0) {
+      document.getElementById('cumulativeSection').style.display = 'none';
+      return;
+    }
+    document.getElementById('cumulativeSection').style.display = '';
+    document.getElementById('cumulativeGrid').innerHTML =
+      roundCardHTML('Round 1 — Normal p53', 'Total across every batch run on this page so far.', cumulative[1]) +
+      roundCardHTML('Round 2 — Mutated p53', 'Total across every batch run on this page so far.', cumulative[2]);
+  }
+
+  function addToCumulative(round, stats) {
+    cumulative[round].healthy += stats.healthy;
+    cumulative[round].cancer += stats.cancer;
+    cumulative[round].destroyed += stats.destroyed;
+    cumulative[round].total += stats.total;
+    for (const key of ['clean', 'held', 'destroyed', 'cancer']) {
+      cumulative[round].journeys[key] += stats.journeys[key];
+    }
+  }
+
+  const buttons = [...document.querySelectorAll('.run-btns button')];
+
+  function runN(n) {
+    buttons.forEach(b => b.disabled = true);
+    document.getElementById('statusNote').textContent = `Running ${n.toLocaleString()} cells through each round…`;
+    // setTimeout lets the "disabled" state paint before the (synchronous) run.
+    setTimeout(() => {
+      const r1 = runBatch(1, n);
+      const r2 = runBatch(2, n);
+      renderLastRun(r1, r2);
+      renderJourneySample(r2);
+      addToCumulative(1, r1);
+      addToCumulative(2, r2);
+      renderCumulative();
+      document.getElementById('statusNote').textContent = `Each run plays that many cells through Round 1 and that many through Round 2, using fresh dice every time.`;
+      buttons.forEach(b => b.disabled = false);
+    }, 10);
+  }
+
+  buttons.forEach(b => b.addEventListener('click', () => runN(Number(b.dataset.n))));
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    cumulative[1] = emptyStats();
+    cumulative[2] = emptyStats();
+    renderCumulative();
+  });
+})();
+</script>
+</body>
+</html>

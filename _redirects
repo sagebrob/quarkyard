@@ -1,0 +1,13 @@
+# Old hub URL -> new homepage
+/simulators/*   /   301
+/simulators     /   301
+
+# Old lesson-numbered simulator URLs -> topic-based URLs (carried over from ipassedmath)
+/lesson10-simulator/*      /energy-transfer-simulator/:splat      301
+/lesson10-simulator        /energy-transfer-simulator/            301
+/lesson10-closed-system/*  /energy-transfer-simulator/            301
+/lesson10-closed-system    /energy-transfer-simulator/            301
+/open-closed-system-simulator/*  /energy-transfer-simulator/      301
+/open-closed-system-simulator    /energy-transfer-simulator/      301
+/lesson11-simulator/*      /water-ice-simulator/:splat            301
+/lesson11-simulator        /water-ice-simulator/                  301

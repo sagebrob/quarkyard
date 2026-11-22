@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Simulador de Síntesis de Proteínas p53 — Prototipo</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --ink-soft: #45484c;
+    --paper: #faf9f6;
+    --panel: #ffffff;
+    --line: #d8d6cf;
+    --line-soft: #eae8e2;
+    --nucleus: #5b7a91;
+    --nucleus-soft: #e4ebef;
+    --ribosome: #b8892b;
+    --ribosome-soft: #f5ecd8;
+    --result: #a8452f;
+    --result-soft: #f4e1db;
+    --good: #3f7d4f;
+    --good-soft: #eaf4ec;
+    --warn: #b8892b;
+    --bad: #a8352a;
+    --bad-soft: #f7e6e3;
+    --loc-nuc: #a8452f;
+    --loc-nuc-soft: #f4e1db;
+    --loc-nuc-line: #d98b73;
+    --loc-cyto: #93750f;
+    --loc-cyto-soft: #f7edc2;
+    --loc-cyto-line: #d9c060;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    --sans: 'Segoe UI', 'Calibri', system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); }
+  .app { max-width: 1020px; margin: 0 auto; padding: 0 0 48px; }
+
+  .masthead { background: var(--ink); color: #fff; padding: 18px 24px 20px; }
+  .kicker { font-size: 11px; letter-spacing: 1.6px; font-weight: 700; color: #c7c5bf; text-transform: uppercase; margin-bottom: 6px; }
+  .masthead h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.2px; }
+  .masthead p { margin: 6px 0 0; font-size: 13.5px; color: #d6d4ce; max-width: 700px; line-height: 1.5; }
+
+  .stepper { display: flex; gap: 2px; background: var(--panel); border-bottom: 1px solid var(--line); padding: 0 24px; overflow-x: auto; }
+  .step { flex: 1; min-width: 110px; padding: 12px 8px; text-align: center; font-size: 11px; font-weight: 700; color: var(--ink-soft); border-bottom: 3px solid var(--line-soft); white-space: nowrap; }
+  .step.active { color: var(--ink); border-bottom-color: var(--ink); }
+  .step.done { color: var(--good); border-bottom-color: var(--good); }
+
+  .grid { padding: 20px 24px 0; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 18px 20px; }
+  .panel + .panel { margin-top: 20px; }
+  .panel h2 { margin: 0 0 12px; font-size: 13px; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .panel h2 .sq { width: 9px; height: 9px; background: var(--ink); flex: none; }
+  .panel .sub { font-size: 12.5px; color: var(--ink-soft); line-height: 1.55; margin: -6px 0 14px; }
+  .panel.loc-nuc { border-left: 6px solid var(--loc-nuc); }
+  .panel.loc-cyto { border-left: 6px solid var(--loc-cyto); }
+
+  .loc-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; }
+  .loc-badge.nuc { background: var(--loc-nuc-soft); color: var(--loc-nuc); border: 1px solid var(--loc-nuc-line); }
+  .loc-badge.cyto { background: var(--loc-cyto-soft); color: var(--loc-cyto); border: 1px solid var(--loc-cyto-line); }
+
+  .overview-flow { display: flex; gap: 14px; flex-wrap: wrap; align-items: stretch; margin-top: 12px; }
+  .overview-box { flex: 1; min-width: 240px; border-radius: 8px; padding: 14px 16px; border: 2px solid; font-size: 12.5px; line-height: 1.55; }
+  .overview-box.nuc { background: var(--loc-nuc-soft); border-color: var(--loc-nuc-line); }
+  .overview-box.cyto { background: var(--loc-cyto-soft); border-color: var(--loc-cyto-line); }
+  .overview-box .ov-loc { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+  .overview-box.nuc .ov-loc { color: var(--loc-nuc); }
+  .overview-box.cyto .ov-loc { color: var(--loc-cyto); }
+  .overview-arrow { display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--ink-soft); padding: 0 2px; }
+  .overview-note { font-size: 12px; color: var(--ink-soft); margin-top: 10px; line-height: 1.5; }
+
+  .strand-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .strand-card { flex: 1; min-width: 220px; border: 2px solid var(--line); border-radius: 8px; padding: 14px; cursor: pointer; background: #fff; }
+  .strand-card:hover { border-color: var(--nucleus); }
+  .strand-card.selected { border-color: var(--nucleus); background: var(--nucleus-soft); }
+  .strand-card .label { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+  .strand-card .seq { font-family: var(--mono); font-size: 11px; word-break: break-all; color: var(--ink-soft); line-height: 1.5; }
+
+  .refrow-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); font-weight: 700; margin: 12px 0 4px; }
+  .letter-row { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 4px; }
+  .letter-ref { font-family: var(--mono); font-weight: 700; font-size: 13px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 4px; background: var(--line-soft); color: var(--ink-soft); }
+  .letter-blank { font-family: var(--mono); font-weight: 700; font-size: 15px; width: 30px; height: 32px; text-align: center; border: 2px solid var(--ink); border-radius: 4px; text-transform: uppercase; padding: 0; }
+  .letter-blank.correct { border-color: var(--good); background: var(--good-soft); color: var(--good); }
+  .letter-blank.incorrect { border-color: var(--bad); background: var(--bad-soft); color: var(--bad); }
+  .letter-blank:disabled { opacity: 1; }
+  .group-gap { width: 8px; }
+
+  .letter-bank { display: flex; gap: 8px; margin-top: 12px; }
+  .letter-btn { width: 44px; height: 44px; border-radius: 6px; border: 2px solid var(--ink); background: #fff; font-family: var(--mono); font-weight: 700; font-size: 17px; cursor: pointer; }
+  .letter-btn:hover { background: var(--nucleus-soft); }
+
+  .btn { font-family: var(--sans); font-size: 13px; font-weight: 600; padding: 10px 18px; border-radius: 4px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; letter-spacing: 0.2px; }
+  .btn:hover { opacity: 0.88; }
+  .btn:disabled { opacity: 0.35; cursor: default; }
+  .btn.secondary { background: #fff; color: var(--ink); }
+  .btn.small { padding: 6px 12px; font-size: 12px; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+
+  .feedback { margin-top: 10px; padding: 10px 12px; border-radius: 5px; font-size: 12.5px; border: 1.5px solid var(--line); }
+  .feedback.good { border-color: var(--good); background: var(--good-soft); color: var(--good); font-weight: 600; }
+  .feedback.bad { border-color: var(--bad); background: var(--bad-soft); color: var(--bad); font-weight: 600; }
+
+  .codon-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+  .codon { font-family: var(--mono); font-weight: 700; font-size: 13px; border: 1.5px solid var(--ink); border-radius: 5px; padding: 6px 8px; position: relative; background: #fff; text-align: center; min-width: 44px; }
+  .codon .idx { position: absolute; top: -9px; left: 3px; font-size: 9px; color: var(--ink-soft); background: var(--paper); padding: 0 3px; }
+  .codon.spliceable { cursor: pointer; }
+  .codon.spliceable:hover { border-color: var(--warn); }
+  .codon.crossed { text-decoration: line-through; color: var(--bad); border-color: var(--bad); background: var(--bad-soft); opacity: .7; }
+  .codon.incorrect { border-color: var(--bad); box-shadow: 0 0 0 2px var(--bad-soft); opacity: 1; }
+
+  .card-flip { display: flex; align-items: center; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
+  .card-flip .arrow { font-size: 20px; color: var(--ink-soft); }
+  .aa-card { width: 92px; height: 92px; border-radius: 50%; border: 2.5px solid var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; }
+  .aa-card .aa { font-weight: 700; font-size: 16px; }
+  .aa-card .word { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+
+  .aa-ref-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; margin-top: 10px; }
+  .aa-ref-card { border: 2px solid var(--line); border-radius: 8px; padding: 10px 6px; text-align: center; background: #fff; cursor: pointer; }
+  .aa-ref-card:hover { border-color: var(--ribosome); }
+  .aa-ref-card .aa { font-weight: 700; font-size: 14px; }
+  .aa-ref-card .word { font-size: 11px; color: var(--ink-soft); margin: 2px 0 6px; }
+  .aa-ref-card .acodon { font-family: var(--mono); font-weight: 700; font-size: 12px; border-top: 1px dashed var(--line); padding-top: 4px; }
+  .aa-ref-card.disabled { cursor: default; opacity: .45; }
+  .aa-ref-card.disabled:hover { border-color: var(--line); }
+
+  .codon.tslot { min-width: 84px; min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; }
+  .codon.tslot .ref { font-size: 10.5px; color: var(--ink-soft); }
+  .codon.tslot .pick { font-size: 13px; font-weight: 700; min-height: 16px; }
+  .codon.tslot.current { border-color: var(--ribosome); box-shadow: 0 0 0 3px var(--ribosome-soft); }
+  .codon.tslot.correct { border-color: var(--good); background: var(--good-soft); cursor: default; }
+  .codon.tslot.incorrect { border-color: var(--bad); background: var(--bad-soft); }
+
+  .sentence-box { margin-top: 14px; padding: 14px; border: 2px dashed var(--line); border-radius: 6px; font-size: 18px; font-weight: 700; letter-spacing: 0.2px; min-height: 30px; }
+  .sentence-box .word-chip { display: inline-block; margin: 2px 4px 2px 0; padding: 2px 6px; border-radius: 4px; background: var(--ribosome-soft); }
+
+  .result-banner { margin-top: 14px; padding: 16px; border-radius: 6px; text-align: center; border: 2px solid var(--line); }
+  .result-banner.normal { background: #e9f0f6; border-color: var(--good); }
+  .result-banner.missing { background: #f5ecd8; border-color: var(--warn); }
+  .result-banner.different { background: #efe8f7; border-color: #7c4fbf; }
+  .result-banner .glyph { font-size: 34px; }
+  .result-banner .title { font-weight: 700; font-size: 16px; margin-top: 4px; }
+  .result-banner .sub { font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
+
+  table.logtbl { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+  table.logtbl th, table.logtbl td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; }
+  table.logtbl th { background: var(--line-soft); font-weight: 700; }
+
+  .progress-line { font-size: 12px; color: var(--ink-soft); margin: 4px 0 10px; }
+  .progress-line .chip { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--line); font-weight: 700; font-size: 11px; margin-right: 4px; }
+  .progress-line .chip.got { border-color: var(--good); background: var(--good-soft); color: var(--good); }
+
+  .assumptions { margin-top: 20px; font-size: 11.5px; color: var(--ink-soft); line-height: 1.6; border-top: 1px solid var(--line); padding: 16px 24px 0; }
+  .assumptions summary { cursor: pointer; font-weight: 700; color: var(--ink); font-size: 12.5px; }
+  .assumptions ul { margin: 8px 0 0; padding-left: 18px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="masthead">
+    <div class="kicker" style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap;">
+      <span>Biología — Prototipo</span>
+      <a href="index.html" style="color:#d6d4ce; text-decoration:underline; font-size:11px; letter-spacing:0.4px; text-transform:none; font-weight:700; white-space:nowrap;">View in English →</a>
+    </div>
+    <h1>Simulador de Síntesis de Proteínas p53</h1>
+    <p>Una versión digital del Modelo Cinestésico de la clase. Elige una hebra de ADN en el "núcleo" y luego escribe tú mismo la copia, la copia editada y cada traducción — el simulador revisa tu trabajo y señala los errores en lugar de hacerlo por ti. Cada hebra construye una versión diferente de la proteína p53, y cada versión envía un mensaje diferente sobre sí misma. Prueba las tres hebras para reunir los tres mensajes.</p>
+  </div>
+
+  <div class="stepper" id="stepper"></div>
+
+  <div class="grid">
+
+    <div class="panel" id="overviewPanel">
+      <h2><span class="sq"></span>Cómo Funciona: Del ADN a la Proteína</h2>
+      <div class="sub">Hacer una proteína requiere dos paradas dentro de la célula — y dos rondas de emparejar bases complementarias.</div>
+      <div class="overview-flow">
+        <div class="overview-box nuc">
+          <div class="ov-loc">🔴 Núcleo</div>
+          El ADN se copia en ARN. Esto se llama <strong>transcripción</strong> — emparejas cada base de ADN con su base complementaria de ARN. El ARN se parece casi exactamente al ADN, excepto que el ARN cambia la timina (T) por una base diferente llamada <strong>uracilo (U)</strong>.
+        </div>
+        <div class="overview-arrow">➜</div>
+        <div class="overview-box cyto">
+          <div class="ov-loc">🟡 Citoplasma</div>
+          El ARN sale del núcleo, viaja al citoplasma y se empareja con un <strong>ribosoma</strong>. Esto se llama <strong>traducción</strong> — vuelves a emparejar bases complementarias, esta vez para buscar un aminoácido por cada codón de 3 letras. Une los aminoácidos y obtienes una proteína.
+        </div>
+      </div>
+      <div class="overview-note">Los paneles de abajo están codificados por color para que coincidan: un borde izquierdo rojo significa que estás trabajando en el <strong>núcleo</strong>; un borde izquierdo amarillo significa que estás trabajando en el <strong>citoplasma</strong>.</div>
+    </div>
+
+    <div class="panel loc-nuc" id="step1Panel">
+      <h2><span class="sq"></span>Paso 1 — Ubicación 1: Elige una Hebra de ADN <span class="loc-badge nuc">🔴 Núcleo</span></h2>
+      <div class="sub">Elige la Hebra A, B o C. Cada una codifica una versión diferente de p53.</div>
+      <div class="strand-row" id="strandRow"></div>
+    </div>
+
+    <div class="panel loc-nuc" id="step2aPanel" style="display:none;">
+      <h2><span class="sq"></span>Paso 2a — Escribe la Copia (Transcripción) <span class="loc-badge nuc">🔴 Núcleo</span></h2>
+      <div class="sub">Antes de poder usarse, el ADN tiene que convertirse en ARN — un proceso llamado transcripción. El ARN se parece casi exactamente al ADN, con una diferencia clave: en lugar de timina (T), el ARN usa una base llamada uracilo (U). Para cada letra de ADN, escribe su base complementaria de ARN en la casilla de abajo (A↔U, C↔G — no hay T en el ARN). Escribe una letra, o selecciona una de los botones y se llenará la siguiente casilla vacía. Revisa tu trabajo cuando estés listo.</div>
+      <div class="refrow-label">ADN (hebra molde)</div>
+      <div class="letter-row" id="dnaRefRow"></div>
+      <div class="refrow-label">Tu copia de ARN — fíjate: no hay T, solo U</div>
+      <div class="letter-row" id="copyBlankRow"></div>
+      <div class="letter-bank" id="copyLetterBank"></div>
+      <div class="feedback" id="copyFeedback" style="display:none;"></div>
+      <div class="btn-row">
+        <button class="btn secondary small" id="copyClearBtn">Borrar</button>
+        <button class="btn" id="copyCheckBtn">Revisar Mi Copia</button>
+      </div>
+    </div>
+
+    <div class="panel loc-nuc" id="step2bPanel" style="display:none;">
+      <h2><span class="sq"></span>Paso 2b — Edita la Copia (Empalme) <span class="loc-badge nuc">🔴 Núcleo</span></h2>
+      <div class="sub">Todavía en el núcleo, y esto sigue siendo ARN — no ADN. Tu copia de ARN recién hecha todavía no está lista para usarse: está formada por secciones que codifican, llamadas <strong>exones</strong>, mezcladas con secciones que no codifican, llamadas <strong>intrones</strong>. Antes de que el ARN pueda salir del núcleo, un proceso llamado <strong>empalme (splicing)</strong> corta los intrones y vuelve a unir los exones — esa es la "edición" que estás a punto de hacer. En este modelo, los grupos <strong>2, 3, 5 y 6</strong> representan los intrones. Haz clic en esos grupos para tacharlos, luego vuelve a escribir los codones restantes (los exones) en orden, sin espacios, en las casillas de abajo.</div>
+      <div class="codon-row" id="copyCodonRow"></div>
+      <div class="feedback" id="spliceFeedback" style="display:none;"></div>
+      <div class="btn-row">
+        <button class="btn secondary small" id="resetSpliceBtn">Reiniciar selección</button>
+        <button class="btn small" id="checkSpliceBtn">Revisar Selección</button>
+      </div>
+      <div id="editedWriteArea" style="display:none;">
+        <div class="refrow-label">Vuelve a escribir el ARN editado (todavía sin T — solo U)</div>
+        <div class="letter-row" id="editedBlankRow"></div>
+        <div class="letter-bank" id="editedLetterBank"></div>
+        <div class="feedback" id="editedFeedback" style="display:none;"></div>
+        <div class="btn-row">
+          <button class="btn secondary small" id="editedClearBtn">Borrar</button>
+          <button class="btn" id="editedCheckBtn">Revisar Mi Copia Editada</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel loc-cyto" id="step3Panel" style="display:none;">
+      <h2><span class="sq"></span>Paso 3 — Ubicación 2: Traduce en el Ribosoma <span class="loc-badge cyto">🟡 Citoplasma</span></h2>
+      <div class="sub">Tu ARN terminado ya salió del núcleo y viajó al citoplasma, donde se empareja con un ribosoma. Esto es la <strong>traducción</strong> — el ARN se "lee" y se convierte en una cadena de aminoácidos. La traducción funciona igual que la transcripción: vuelves a emparejar bases complementarias <em>otra vez</em>. Esta vez, por cada codón de 3 letras en tu ARN, buscas la tarjeta de aminoácido cuyo codón es el <em>complemento</em> de ese codón. Haz clic en una casilla de codón de abajo para activarla (la primera casilla vacía empieza activa), luego haz clic en la tarjeta de aminoácido que corresponda — tu elección se escribirá en la casilla. Cuando todas las casillas estén llenas, presiona Revisar Todo para ver cómo te fue.</div>
+      <div class="refrow-label">Los codones de tu copia editada → tus tarjetas elegidas</div>
+      <div class="codon-row" id="translateSlots"></div>
+      <div class="feedback" id="translateFeedback" style="display:none;"></div>
+      <div class="btn-row">
+        <button class="btn secondary small" id="translateClearBtn">Borrar todas las selecciones</button>
+        <button class="btn" id="translateCheckBtn" disabled>Revisar Todos los Codones</button>
+      </div>
+      <div class="sentence-box" id="sentenceBox"></div>
+      <div class="refrow-label" style="margin-top:18px;">Todas las Tarjetas de Aminoácidos — haz clic en una para llenar la casilla activa de arriba</div>
+      <div class="aa-ref-grid" id="aaRefGrid"></div>
+    </div>
+
+    <div class="panel loc-cyto" id="step4Panel" style="display:none;">
+      <h2><span class="sq"></span>Paso 4 — El Mensaje de Tu Proteína p53 <span class="loc-badge cyto">🟡 Citoplasma</span></h2>
+      <div class="sub">El trabajo de una proteína a menudo depende de su forma. Las palabras que acabas de traducir forman un mensaje sobre la forma de esta proteína p53 — y si todavía puede hacer su trabajo de proteger a la célula del cáncer.</div>
+      <div id="resultArea"></div>
+      <div class="btn-row">
+        <button class="btn" id="tryAnotherBtn">Probar Otra Hebra (Obtener Otro Mensaje)</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2><span class="sq"></span>Mis Mensajes de Proteína</h2>
+      <div class="sub" id="logEmpty">Ejecuta el simulador para empezar a reunir tus mensajes de proteína. Prueba las tres hebras — A, B y C — para ver los tres mensajes posibles que puede producir este gen p53. (Esta lista existe solo en este navegador — son tus propios datos, no un registro compartido de la clase.)</div>
+      <div class="progress-line" id="strandProgress" style="display:none;"></div>
+      <table class="logtbl" id="logTable" style="display:none;">
+        <thead><tr><th>#</th><th>Hebra</th><th>Mensaje</th><th>Resultado</th></tr></thead>
+        <tbody id="logBody"></tbody>
+      </table>
+      <div class="btn-row"><button class="btn secondary small" id="resetLogBtn">Reiniciar mis mensajes</button></div>
+    </div>
+  </div>
+
+  <details class="assumptions">
+    <summary>Sobre este prototipo — qué se simplificó</summary>
+    <ul>
+      <li>Las tres hebras de ADN y los 12 codones de las tarjetas de aminoácidos se transcribieron directamente de los documentos de la clase "Secuencias de ADN de Referencia del Maestro" y "Tarjetas de Aminoácidos de Referencia del Maestro" — no fueron inventados.</li>
+      <li>El proceso coincide exactamente con la hoja de trabajo: copiar el ADN usando bases complementarias (A↔U, C↔G), agrupar en codones, tachar los grupos 2, 3, 5 y 6 y volver a escribir lo que queda, y luego buscar el <em>complemento</em> de cada codón restante en las tarjetas de aminoácidos (el propio ejemplo de la hoja: una copia de UGC se empareja con una tarjeta que dice ACG).</li>
+      <li>Las tres hebras usan exactamente la misma lógica de codones que la versión en inglés. Los mensajes en español son una traducción nueva creada para esta versión (no vienen de un documento de referencia en español): Hebra A → "Yo soy una proteína p53 con una amariposada forma", Hebra B → "Yo soy una proteína p53 a la que le falta una pieza", Hebra C → "Yo soy una proteína p53 con una diferente forma".</li>
+      <li>Cada letra en la copia, la copia editada y cada codón traducido debe ser escrita o seleccionada por el estudiante, y se revisa individualmente — las letras correctas se bloquean en verde, las incorrectas se marcan en rojo para poder corregirlas, igual que como un maestro revisaría el trabajo en cada estación en lugar de que la herramienta escriba por el estudiante.</li>
+      <li>La entrada es escribiendo o haciendo clic en un botón de letra para llenar la siguiente casilla vacía — no es arrastrar y soltar físicamente las fichas de letras, lo cual no es práctico de simular de forma confiable en un navegador de la misma manera que funciona con las tarjetas físicas.</li>
+      <li>Se agregó en esta revisión: el marco explícito de transcripción/traducción (ADN→ARN, uracilo vs. timina, y la idea de que "la traducción vuelve a emparejar bases complementarias"), el código de colores rojo/amarillo para los pasos de núcleo vs. citoplasma, y un registro renombrado "Mis Mensajes de Proteína" (antes "Datos de la Clase") — ese registro siempre fue privado de una sola sesión de navegador, nunca se compartió realmente entre estudiantes, así que el nuevo nombre coincide con lo que siempre ha hecho. Las palabras de las tarjetas de aminoácidos en español son una traducción nueva hecha para esta versión — cada codón sigue emparejado de forma consistente con una sola palabra en español, y el orden de las palabras se ajustó (en vez de traducirse palabra por palabra) para que las oraciones resultantes se lean de forma natural en español.</li>
+    </ul>
+  </details>
+
+</div>
+
+<script>
+(function () {
+  const STRANDS = {
+    A: 'AAGCCAAGATCACGCCACTCCCCATAATGGTCCCTTCTG',
+    B: 'AAGCCAAGATCACGCCACTCCCCATAAGAATCCCGA',
+    C: 'AAGCCAAGATCACGCCACTCCCCATAATGGTCCTTTCTG',
+  };
+  const COMP1 = { A: 'U', T: 'A', C: 'G', G: 'C' }; // ADN -> copia (transcripción)
+  const COMP2 = { A: 'U', U: 'A', C: 'G', G: 'C' }; // codón de copia -> codón de tarjeta (búsqueda de complemento)
+  const SPLICE_OUT = [2, 3, 5, 6]; // grupos eliminados (indexados desde 1)
+  const BASES = ['A', 'U', 'C', 'G'];
+
+  const CARDS = [
+    { aa: 'Phe', word: 'Yo', codon: 'AAG' },
+    { aa: 'Ser', word: 'soy', codon: 'UCA' },
+    { aa: 'Arg', word: 'una', codon: 'UCC' },
+    { aa: 'Gly', word: 'proteína', codon: 'CCA' },
+    { aa: 'Ile', word: 'p53', codon: 'UAA' },
+    { aa: 'Lys', word: 'diferente', codon: 'UUU' },
+    { aa: 'Thr', word: 'con', codon: 'UGG' },
+    { aa: 'Glu', word: 'amariposada', codon: 'CUU' },
+    { aa: 'Asp', word: 'forma', codon: 'CUG' },
+    { aa: 'Pro', word: 'a la que le falta', codon: 'GAA' },
+    { aa: 'Ala', word: 'pieza', codon: 'CGA' },
+    { aa: 'Arg', word: 'una', codon: 'UCC' },
+  ];
+  const CARD_BY_CODON = {};
+  CARDS.forEach(c => { CARD_BY_CODON[c.codon] = c; });
+
+  function transcribe(dna) { return dna.split('').map(b => COMP1[b]).join(''); }
+  function groupCodons(seq) {
+    const groups = [];
+    for (let i = 0; i < seq.length; i += 3) groups.push(seq.slice(i, i + 3));
+    return groups;
+  }
+  function cardCodonFor(copyCodon) { return copyCodon.split('').map(b => COMP2[b]).join(''); }
+
+  const state = {
+    strand: null,
+    copyGroups: [],
+    crossedOut: new Set(),
+    editedGroups: [],
+    editedString: '',
+    translateIndex: 0,
+    words: [],
+    resultKind: null,
+    log: [],
+  };
+
+  const els = {
+    stepper: document.getElementById('stepper'),
+    strandRow: document.getElementById('strandRow'),
+    step1: document.getElementById('step1Panel'),
+    step2a: document.getElementById('step2aPanel'),
+    step2b: document.getElementById('step2bPanel'),
+    step3: document.getElementById('step3Panel'),
+    step4: document.getElementById('step4Panel'),
+    dnaRefRow: document.getElementById('dnaRefRow'),
+    copyBlankRow: document.getElementById('copyBlankRow'),
+    copyLetterBank: document.getElementById('copyLetterBank'),
+    copyFeedback: document.getElementById('copyFeedback'),
+    copyClearBtn: document.getElementById('copyClearBtn'),
+    copyCheckBtn: document.getElementById('copyCheckBtn'),
+    copyCodonRow: document.getElementById('copyCodonRow'),
+    spliceFeedback: document.getElementById('spliceFeedback'),
+    resetSpliceBtn: document.getElementById('resetSpliceBtn'),
+    checkSpliceBtn: document.getElementById('checkSpliceBtn'),
+    editedWriteArea: document.getElementById('editedWriteArea'),
+    editedBlankRow: document.getElementById('editedBlankRow'),
+    editedLetterBank: document.getElementById('editedLetterBank'),
+    editedFeedback: document.getElementById('editedFeedback'),
+    editedClearBtn: document.getElementById('editedClearBtn'),
+    editedCheckBtn: document.getElementById('editedCheckBtn'),
+    translateSlots: document.getElementById('translateSlots'),
+    translateFeedback: document.getElementById('translateFeedback'),
+    translateClearBtn: document.getElementById('translateClearBtn'),
+    translateCheckBtn: document.getElementById('translateCheckBtn'),
+    sentenceBox: document.getElementById('sentenceBox'),
+    aaRefGrid: document.getElementById('aaRefGrid'),
+    resultArea: document.getElementById('resultArea'),
+    tryAnotherBtn: document.getElementById('tryAnotherBtn'),
+    logEmpty: document.getElementById('logEmpty'),
+    strandProgress: document.getElementById('strandProgress'),
+    logTable: document.getElementById('logTable'),
+    logBody: document.getElementById('logBody'),
+    resetLogBtn: document.getElementById('resetLogBtn'),
+  };
+
+  const STEP_LABELS = ['1. Núcleo', '2a. Copia', '2b. Editar', '3. Ribosoma', '4. Resultado'];
+  function renderStepper(activeIdx) {
+    els.stepper.innerHTML = STEP_LABELS.map((label, i) => {
+      let cls = '';
+      if (i < activeIdx) cls = 'done';
+      else if (i === activeIdx) cls = 'active';
+      return `<div class="step ${cls}">${label}</div>`;
+    }).join('');
+  }
+
+  // ---------- Ayudante genérico de fila de casillas de letras ----------
+  function buildBlankRow(container, length, groupEvery) {
+    container.innerHTML = '';
+    const inputs = [];
+    for (let i = 0; i < length; i++) {
+      if (groupEvery && i > 0 && i % groupEvery === 0) {
+        const gap = document.createElement('div');
+        gap.className = 'group-gap';
+        container.appendChild(gap);
+      }
+      const inp = document.createElement('input');
+      inp.className = 'letter-blank';
+      inp.maxLength = 1;
+      inp.autocomplete = 'off';
+      inp.dataset.idx = i;
+      inp.addEventListener('input', () => {
+        inp.value = inp.value.toUpperCase().replace(/[^AUCG]/g, '');
+        inp.classList.remove('correct', 'incorrect');
+        if (inp.value && inputs[i + 1] && !inputs[i + 1].disabled) inputs[i + 1].focus();
+      });
+      container.appendChild(inp);
+      inputs.push(inp);
+    }
+    return inputs;
+  }
+
+  function buildRefRow(container, seq, groupEvery) {
+    container.innerHTML = '';
+    for (let i = 0; i < seq.length; i++) {
+      if (groupEvery && i > 0 && i % groupEvery === 0) {
+        const gap = document.createElement('div');
+        gap.className = 'group-gap';
+        container.appendChild(gap);
+      }
+      const box = document.createElement('div');
+      box.className = 'letter-ref';
+      box.textContent = seq[i];
+      container.appendChild(box);
+    }
+  }
+
+  function buildLetterBank(container, inputs) {
+    container.innerHTML = '';
+    BASES.forEach(letter => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'letter-btn';
+      b.textContent = letter;
+      b.onclick = () => {
+        let target = inputs.find(i => document.activeElement === i && !i.disabled);
+        if (!target) target = inputs.find(i => !i.disabled && !i.value);
+        if (!target) return;
+        target.value = letter;
+        target.classList.remove('correct', 'incorrect');
+        const idx = Number(target.dataset.idx);
+        if (inputs[idx + 1] && !inputs[idx + 1].disabled) inputs[idx + 1].focus();
+      };
+      container.appendChild(b);
+    });
+  }
+
+  // Revisa las casillas contra el texto objetivo. Bloquea las correctas, marca las incorrectas.
+  // Devuelve true si todas las casillas son correctas.
+  function checkRow(inputs, target) {
+    let allCorrect = true;
+    inputs.forEach((inp, i) => {
+      if (inp.disabled) return;
+      const val = (inp.value || '').toUpperCase();
+      if (val === target[i]) {
+        inp.classList.add('correct');
+        inp.classList.remove('incorrect');
+        inp.disabled = true;
+      } else {
+        inp.classList.add('incorrect');
+        inp.classList.remove('correct');
+        allCorrect = false;
+      }
+    });
+    return allCorrect;
+  }
+
+  // ---------- Paso 1: selector de hebra ----------
+  function renderStrandPicker() {
+    els.strandRow.innerHTML = Object.keys(STRANDS).map(key => `
+      <div class="strand-card ${state.strand === key ? 'selected' : ''}" data-strand="${key}">
+        <div class="label">Hebra ${key}</div>
+        <div class="seq">${STRANDS[key]}</div>
+      </div>`).join('');
+    [...els.strandRow.querySelectorAll('.strand-card')].forEach(card => {
+      card.onclick = () => pickStrand(card.dataset.strand);
+    });
+  }
+
+  function pickStrand(key) {
+    state.strand = key;
+    const dna = STRANDS[key];
+    state.copyGroups = [];
+    state.crossedOut = new Set();
+    state.editedGroups = [];
+    state.editedString = '';
+    state.translateIndex = 0;
+    state.words = [];
+    state.resultKind = null;
+    renderStrandPicker();
+
+    // Configuración del Paso 2a
+    buildRefRow(els.dnaRefRow, dna);
+    const copyInputs = buildBlankRow(els.copyBlankRow, dna.length);
+    buildLetterBank(els.copyLetterBank, copyInputs);
+    els.copyFeedback.style.display = 'none';
+    els.copyCheckBtn.onclick = () => {
+      const correctSeq = transcribe(dna);
+      const ok = checkRow(copyInputs, correctSeq);
+      els.copyFeedback.style.display = '';
+      if (ok) {
+        els.copyFeedback.className = 'feedback good';
+        els.copyFeedback.textContent = '¡Todo correcto! Cada base es el complemento del ADN de arriba.';
+        state.copyGroups = groupCodons(correctSeq);
+        setupStep2b();
+        els.step2b.style.display = '';
+      } else {
+        els.copyFeedback.className = 'feedback bad';
+        els.copyFeedback.textContent = 'Algunas bases no son correctas — las casillas en rojo necesitan otra revisión. Recuerda: A↔U y C↔G.';
+      }
+    };
+    els.copyClearBtn.onclick = () => {
+      copyInputs.forEach(i => { if (!i.disabled) { i.value = ''; i.classList.remove('correct', 'incorrect'); } });
+    };
+
+    els.step2a.style.display = '';
+    els.step2b.style.display = 'none';
+    els.step3.style.display = 'none';
+    els.step4.style.display = 'none';
+    els.editedWriteArea.style.display = 'none';
+    renderStepper(1);
+  }
+
+  // ---------- Paso 2b: empalme + reescritura de la copia editada ----------
+  function setupStep2b() {
+    state.spliceLocked = false;
+    state.spliceChecked = false;
+    els.spliceFeedback.style.display = 'none';
+    els.editedWriteArea.style.display = 'none';
+    renderCopyCodonRow();
+    renderStepper(2);
+  }
+
+  function renderCopyCodonRow() {
+    els.copyCodonRow.innerHTML = state.copyGroups.map((g, i) => {
+      const num = i + 1;
+      const crossed = state.crossedOut.has(num);
+      const wrongPick = state.spliceChecked && crossed && !SPLICE_OUT.includes(num);
+      const cls = ['codon', state.spliceLocked ? '' : 'spliceable', crossed ? 'crossed' : '', wrongPick ? 'incorrect' : ''].filter(Boolean).join(' ');
+      return `<div class="${cls}" data-idx="${num}"><span class="idx">${num}</span>${g}</div>`;
+    }).join('');
+    if (!state.spliceLocked) {
+      [...els.copyCodonRow.querySelectorAll('.codon')].forEach(el => {
+        el.onclick = () => {
+          const idx = Number(el.dataset.idx);
+          if (state.crossedOut.has(idx)) state.crossedOut.delete(idx);
+          else state.crossedOut.add(idx);
+          state.spliceChecked = false;
+          els.spliceFeedback.style.display = 'none';
+          renderCopyCodonRow();
+        };
+      });
+    }
+  }
+
+  els.resetSpliceBtn.onclick = () => {
+    state.crossedOut = new Set();
+    state.spliceChecked = false;
+    els.spliceFeedback.style.display = 'none';
+    renderCopyCodonRow();
+  };
+
+  els.checkSpliceBtn.onclick = () => {
+    const correct = SPLICE_OUT.every(n => state.crossedOut.has(n)) && state.crossedOut.size === SPLICE_OUT.length;
+    state.spliceChecked = true;
+    els.spliceFeedback.style.display = '';
+    if (correct) {
+      state.spliceLocked = true;
+      els.spliceFeedback.className = 'feedback good';
+      els.spliceFeedback.textContent = 'Correcto — los grupos 2, 3, 5 y 6 están tachados. Ahora vuelve a escribir lo que queda abajo.';
+      state.editedGroups = state.copyGroups.filter((g, i) => !state.crossedOut.has(i + 1));
+      state.editedString = state.editedGroups.join('');
+      renderCopyCodonRow();
+      setupEditedWriteArea();
+    } else {
+      els.spliceFeedback.className = 'feedback bad';
+      els.spliceFeedback.textContent = 'No es correcto — los grupos resaltados en rojo no deberían estar tachados, y puede que te falten algunos de los grupos 2, 3, 5 y 6. Ajusta tu selección y revisa de nuevo.';
+      renderCopyCodonRow();
+    }
+  };
+
+  function setupEditedWriteArea() {
+    els.editedWriteArea.style.display = '';
+    const editedInputs = buildBlankRow(els.editedBlankRow, state.editedString.length, 3);
+    buildLetterBank(els.editedLetterBank, editedInputs);
+    els.editedFeedback.style.display = 'none';
+    els.editedCheckBtn.onclick = () => {
+      const ok = checkRow(editedInputs, state.editedString);
+      els.editedFeedback.style.display = '';
+      if (ok) {
+        els.editedFeedback.className = 'feedback good';
+        els.editedFeedback.textContent = 'Correcto — esa es tu copia editada. Ahora al ribosoma.';
+        setupStep3();
+        els.step3.style.display = '';
+        renderStepper(3);
+      } else {
+        els.editedFeedback.className = 'feedback bad';
+        els.editedFeedback.textContent = 'Algunas letras no coinciden con los codones que dejaste — revisa las casillas en rojo contra los codones de arriba.';
+      }
+    };
+    els.editedClearBtn.onclick = () => {
+      editedInputs.forEach(i => { if (!i.disabled) { i.value = ''; i.classList.remove('correct', 'incorrect'); } });
+    };
+  }
+
+  // ---------- Paso 3: elige una tarjeta para cada codón, luego Revisar Todo ----------
+  function setupStep3() {
+    const n = state.editedGroups.length;
+    state.translatePicks = new Array(n).fill(null);
+    state.translateLocked = new Array(n).fill(false);
+    state.translateChecked = false;
+    state.translateActiveIndex = 0;
+    els.translateFeedback.style.display = 'none';
+    renderTranslateSlots();
+    renderAaRefGrid();
+    renderSentencePreview();
+  }
+
+  function renderSentencePreview() {
+    const chips = state.editedGroups.map((g, i) => {
+      const pick = state.translatePicks[i];
+      return pick
+        ? `<span class="word-chip">${pick.word}</span>`
+        : `<span class="word-chip" style="opacity:.35;">___</span>`;
+    }).join('');
+    els.sentenceBox.innerHTML = chips || '<span style="color:var(--ink-soft); font-weight:400; font-size:14px;">(la oración se construirá aquí)</span>';
+  }
+
+  function renderTranslateSlots() {
+    els.translateSlots.innerHTML = state.editedGroups.map((g, i) => {
+      const pick = state.translatePicks[i];
+      const locked = state.translateLocked[i];
+      const wrong = state.translateChecked && pick && !locked;
+      const isActive = i === state.translateActiveIndex && !locked;
+      const cls = ['codon', 'tslot', locked ? 'correct' : '', wrong ? 'incorrect' : '', isActive ? 'current' : ''].filter(Boolean).join(' ');
+      return `<div class="${cls}" data-idx="${i}"><span class="idx">${i + 1}</span><span class="ref">${g}</span><span class="pick">${pick ? pick.word : ''}</span></div>`;
+    }).join('');
+    [...els.translateSlots.querySelectorAll('.tslot')].forEach(el => {
+      const i = Number(el.dataset.idx);
+      if (state.translateLocked[i]) return;
+      el.onclick = () => {
+        state.translateActiveIndex = i;
+        renderTranslateSlots();
+        renderAaRefGrid();
+      };
+    });
+    const allFilled = state.translatePicks.every(p => p !== null);
+    els.translateCheckBtn.disabled = !allFilled;
+  }
+
+  // Cuadrícula de referencia persistente y con clic de las 12 tarjetas de aminoácidos — esta es
+  // tanto la referencia de búsqueda como el método de entrada: hacer clic en una tarjeta la escribe
+  // en la casilla de codón actualmente activa de arriba.
+  function renderAaRefGrid() {
+    const activeIdx = state.translateActiveIndex;
+    const noActiveSlot = activeIdx == null || state.translateLocked[activeIdx];
+    els.aaRefGrid.innerHTML = CARDS.map((card, ci) => {
+      const cls = ['aa-ref-card', noActiveSlot ? 'disabled' : ''].filter(Boolean).join(' ');
+      return `<div class="${cls}" data-ci="${ci}"><div class="aa">${card.aa}</div><div class="word">${card.word}</div><div class="acodon">${card.codon}</div></div>`;
+    }).join('');
+    if (noActiveSlot) return;
+    [...els.aaRefGrid.querySelectorAll('.aa-ref-card')].forEach(el => {
+      el.onclick = () => {
+        const card = CARDS[Number(el.dataset.ci)];
+        state.translatePicks[state.translateActiveIndex] = card;
+        state.translateChecked = false;
+        els.translateFeedback.style.display = 'none';
+        // avanza a la siguiente casilla abierta y no bloqueada
+        let next = state.translateActiveIndex + 1;
+        while (next < state.translateLocked.length && state.translateLocked[next]) next++;
+        state.translateActiveIndex = next < state.translateLocked.length ? next : null;
+        renderTranslateSlots();
+        renderAaRefGrid();
+        renderSentencePreview();
+      };
+    });
+  }
+
+  els.translateClearBtn.onclick = () => {
+    state.translatePicks = state.translatePicks.map((p, i) => (state.translateLocked[i] ? p : null));
+    state.translateChecked = false;
+    state.translateActiveIndex = state.translateLocked.findIndex(l => !l);
+    if (state.translateActiveIndex === -1) state.translateActiveIndex = null;
+    els.translateFeedback.style.display = 'none';
+    renderTranslateSlots();
+    renderAaRefGrid();
+    renderSentencePreview();
+  };
+
+  els.translateCheckBtn.onclick = () => {
+    state.translateChecked = true;
+    let allCorrect = true;
+    state.editedGroups.forEach((copyCodon, i) => {
+      if (state.translateLocked[i]) return;
+      const correctCardCodon = cardCodonFor(copyCodon);
+      if (state.translatePicks[i] && state.translatePicks[i].codon === correctCardCodon) {
+        state.translateLocked[i] = true;
+      } else {
+        allCorrect = false;
+      }
+    });
+    els.translateFeedback.style.display = '';
+    if (allCorrect) {
+      els.translateFeedback.className = 'feedback good';
+      els.translateFeedback.textContent = '¡Todos los codones se tradujeron correctamente!';
+      state.translateActiveIndex = null;
+      renderTranslateSlots();
+      renderAaRefGrid();
+      state.words = state.editedGroups.map((g, i) => state.translatePicks[i].word);
+      finishTranslation();
+    } else {
+      els.translateFeedback.className = 'feedback bad';
+      els.translateFeedback.textContent = 'Los codones marcados en rojo no coinciden — haz clic en uno para activarlo de nuevo, elige una tarjeta diferente y vuelve a revisar.';
+      state.translateActiveIndex = state.translateLocked.findIndex(l => !l);
+      renderTranslateSlots();
+      renderAaRefGrid();
+    }
+  };
+
+  function finishTranslation() {
+    const sentence = state.words.join(' ');
+    let kind, title, sub, glyph;
+    if (sentence === 'Yo soy una proteína p53 con una amariposada forma') {
+      kind = 'normal'; glyph = '\u{1F98B}';
+      title = 'Proteína p53 normal'; sub = 'Cada codón se tradujo correctamente — esta p53 puede hacer su trabajo revisando las células en los puntos de control.';
+    } else if (sentence.includes('falta')) {
+      kind = 'missing'; glyph = '\u{1F9E9}';
+      title = 'Proteína p53 a la que le falta una pieza'; sub = 'Esta hebra produjo una secuencia más corta, dejando la proteína incompleta.';
+    } else {
+      kind = 'different'; glyph = '\u{1F300}';
+      title = 'Proteína p53 con una forma diferente'; sub = 'Un codón cambiado introdujo una palabra diferente, alterando la forma de la proteína.';
+    }
+    state.resultKind = kind;
+    els.resultArea.innerHTML = `
+      <div class="result-banner ${kind}">
+        <div class="glyph">${glyph}</div>
+        <div class="title">${title}</div>
+        <div class="sub">Mensaje: "${sentence}"</div>
+        <div class="sub">${sub}</div>
+      </div>`;
+    els.step4.style.display = '';
+    renderStepper(4);
+    state.log.push({ strand: state.strand, sentence, kind });
+    renderLog();
+  }
+
+  function renderLog() {
+    if (state.log.length === 0) {
+      els.logEmpty.style.display = '';
+      els.strandProgress.style.display = 'none';
+      els.logTable.style.display = 'none';
+      return;
+    }
+    els.logEmpty.style.display = 'none';
+    els.strandProgress.style.display = '';
+    els.logTable.style.display = '';
+    const tried = new Set(state.log.map(r => r.strand));
+    const chips = ['A', 'B', 'C'].map(k => `<span class="chip ${tried.has(k) ? 'got' : ''}">${k}</span>`).join('');
+    els.strandProgress.innerHTML = `Mensajes reunidos: <strong>${tried.size} de 3</strong> &nbsp; ${chips}` + (tried.size < 3 ? ' — ¡prueba la(s) hebra(s) que no has visto!' : ' — ¡has reunido los tres mensajes!');
+    els.logBody.innerHTML = state.log.map((r, i) => `
+      <tr><td>${i + 1}</td><td>Hebra ${r.strand}</td><td>${r.sentence}</td><td>${r.kind}</td></tr>
+    `).join('');
+  }
+
+  els.resetLogBtn.onclick = () => { state.log = []; renderLog(); };
+
+  els.tryAnotherBtn.onclick = () => {
+    state.strand = null;
+    renderStrandPicker();
+    els.step2a.style.display = 'none';
+    els.step2b.style.display = 'none';
+    els.step3.style.display = 'none';
+    els.step4.style.display = 'none';
+    renderStepper(0);
+  };
+
+  renderStepper(0);
+  renderStrandPicker();
+  renderLog();
+})();
+</script>
+</body>
+</html>

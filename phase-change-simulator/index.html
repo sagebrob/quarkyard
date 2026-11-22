@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Phase Change Simulator</title>
+<meta name="description" content="Heat and cool water through all six phase changes. Watch particles, temperature probes, and energy arrows show why the temperature stays flat while the phase changes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root {
+  --bg: #eef2f5; --surface: #ffffff; --sunk: #f6f8fa; --ink: #15202b; --muted: #566473; --line: #d3dbe2;
+  --warm: #cf4f22; --cold: #2f6fd6; --accent: #1c3956; --accent-ink: #ffffff; --energy: #d68a00;
+  --pS: #7b3fb0; --pL: #0b7f86; --pG: #b23a6b;
+  --glass: #9fb3c4; --liquid: #dbe9f4; --ice: #e3f5f7; --ice-edge: #7cc6cc; --bond: #8a9aaa;
+  --warnbg: #fff4dc; --warnink: #6b4a00; --okbg: #e3f4e8; --okink: #1d6b38;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e141a; --surface: #161f28; --sunk: #111920; --ink: #e4ebf1; --muted: #93a2b0; --line: #2a3744;
+  --warm: #f2885b; --cold: #6fa3ff; --accent: #9cc3ea; --accent-ink: #0e141a; --energy: #f2b437;
+  --pS: #c79af2; --pL: #3cc6bd; --pG: #f07aa8;
+  --glass: #4d6273; --liquid: #1b2d3d; --ice: #24474d; --ice-edge: #4fb5bc; --bond: #6c7f91;
+  --warnbg: #3a2e12; --warnink: #f3d58e; --okbg: #15301f; --okink: #8fdcaa; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e141a; --surface: #161f28; --sunk: #111920; --ink: #e4ebf1; --muted: #93a2b0; --line: #2a3744;
+  --warm: #f2885b; --cold: #6fa3ff; --accent: #9cc3ea; --accent-ink: #0e141a; --energy: #f2b437;
+  --pS: #c79af2; --pL: #3cc6bd; --pG: #f07aa8;
+  --glass: #4d6273; --liquid: #1b2d3d; --ice: #24474d; --ice-edge: #4fb5bc; --bond: #6c7f91;
+  --warnbg: #3a2e12; --warnink: #f3d58e; --okbg: #15301f; --okink: #8fdcaa; color-scheme: dark }
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.45 }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 12px 16px 40px; display: grid; gap: 12px }
+header { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; justify-content: space-between }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700 }
+h1 { margin: 0; font-size: clamp(24px, 3vw, 30px); line-height: 1.1 }
+h2 { margin: 0; font-size: 16px }
+.lede { margin: 6px 0 0; color: var(--muted); max-width: 70ch }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface) }
+.seg button { font: inherit; font-size: 14px; border: 0; background: transparent; color: var(--ink); padding: 7px 14px; cursor: pointer; min-height: 36px }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700 }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--cold); outline-offset: 2px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; min-width: 0 }
+.small { font-size: 13px; color: var(--muted) }
+/* stations */
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center }
+.stations { display: flex; flex-wrap: wrap; gap: 6px }
+.st { font: inherit; font-size: 14px; font-weight: 700; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 14px; cursor: pointer; min-height: 36px }
+.st[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent) }
+.st .seen { color: var(--okink) } .st[aria-pressed="true"] .seen { color: inherit }
+/* bench */
+.lab { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 12px }
+#cv { width: 100%; height: clamp(290px, 41vh, 390px); display: block; background: var(--sunk); border-radius: 8px }
+.controls { display: grid; gap: 10px; align-content: start }
+.ctl > .lab2 { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; gap: 8px }
+.rate { font-family: var(--f-mono); font-weight: 700; font-size: 15px }
+.rate.in { color: var(--warm) } .rate.out { color: var(--cold) }
+input[type=range] { width: 100%; accent-color: var(--accent) }
+.rangeEnds { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700 }
+.rangeEnds .o { color: var(--cold) } .rangeEnds .i { color: var(--warm) }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+.btn { font: inherit; font-weight: 700; border-radius: 8px; padding: 9px 16px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); min-height: 40px }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line) }
+.clock { font-family: var(--f-mono); font-weight: 700; font-size: 20px; margin-left: auto }
+.clock small { font-family: var(--f-body); font-weight: 400; font-size: 12.5px; color: var(--muted); margin-right: 6px }
+.probes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px }
+.probe { background: var(--sunk); border-radius: 8px; padding: 8px 10px; border-left: 4px solid var(--pc) }
+.probe .pl { font-size: 12px; font-weight: 700; color: var(--pc) }
+.probe .pv { font-family: var(--f-mono); font-weight: 700; font-size: clamp(18px, 2.4vw, 24px); font-variant-numeric: tabular-nums; line-height: 1.15 }
+.probe.off .pv { color: var(--muted); font-size: 15px }
+.probe.s { --pc: var(--pS) } .probe.l { --pc: var(--pL) } .probe.g { --pc: var(--pG) }
+.amounts { display: grid; gap: 5px }
+.amt { display: grid; grid-template-columns: 86px 1fr 62px; gap: 8px; align-items: center; font-size: 13px }
+.amt .bar { height: 12px; background: var(--sunk); border-radius: 6px; overflow: hidden; border: 1px solid var(--line) }
+.amt .bar i { display: block; height: 100% }
+.amt b { font-family: var(--f-mono); text-align: right; font-size: 13px }
+.status { border-radius: 8px; padding: 10px 12px; font-size: 14.5px; background: var(--sunk); border-left: 4px solid var(--muted) }
+.status.pc { background: var(--warnbg); color: var(--warnink); border-left-color: var(--energy) }
+.status b { display: block; font-size: 15px; margin-bottom: 2px }
+.chip { display: inline-block; font-size: 12.5px; background: var(--sunk); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; color: var(--muted) }
+/* record */
+#graph { width: 100%; height: clamp(160px, 23vh, 230px); display: block }
+.rowhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px }
+.etotal { font-family: var(--f-mono); font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums }
+.etotal.in { color: var(--warm) } .etotal.out { color: var(--cold) }
+.split { display: grid; gap: 10px; margin-top: 10px }
+.split .row { display: grid; gap: 4px }
+.split .row .t { display: flex; justify-content: space-between; gap: 8px; font-size: 14px }
+.split .row .t b { font-family: var(--f-mono) }
+.split .bar { height: 14px; background: var(--sunk); border-radius: 7px; overflow: hidden; border: 1px solid var(--line) }
+.split .bar i { display: block; height: 100% }
+.i-temp { background: var(--warm) } .i-phase { background: var(--energy) }
+details { background: var(--sunk); border-radius: 8px; padding: 10px 12px }
+summary { cursor: pointer; font-weight: 700 }
+details p { margin: 8px 0 0; font-size: 14.5px }
+.keyrow { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted) }
+.keyrow i { display: inline-block; vertical-align: -2px; margin-right: 5px }
+@media (max-width: 820px) { .lab { grid-template-columns: 1fr } #cv { height: 360px } #graph { height: 230px } }
+@media (max-width: 420px) { .probes { grid-template-columns: 1fr } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow" data-i="eyebrow">Chemistry · Phase changes</div>
+      <h1 data-i="title">Phase Change Simulator</h1>
+    </div>
+    <div class="seg" role="group" aria-label="Language">
+      <button id="lang-en" aria-pressed="true">English</button><button id="lang-es" aria-pressed="false">Español</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="stations" id="stations" role="group" aria-label="Phase change"></div>
+    <span class="small" id="seenCount"></span>
+  </div>
+
+  <section class="lab">
+    <div class="card" style="display:grid;gap:8px">
+      <canvas id="cv" aria-label="Particle view of the water in its chamber"></canvas>
+      <div class="keyrow">
+        <span><i style="width:18px;height:3px;background:var(--bond)"></i><span data-i="keyBond">attraction between particles</span></span>
+        <span><i style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid var(--energy)"></i><span data-i="keyEnergy">energy</span></span>
+        <span class="chip" id="pressChip"></span>
+      </div>
+    </div>
+    <div class="card controls">
+      <div class="ctl">
+        <div class="lab2"><span data-i="rateLab">Energy flow</span><span class="rate" id="rateOut">0</span></div>
+        <input id="rate" type="range" min="-60" max="60" step="5" value="20" aria-label="Energy flow, calories per second">
+        <div class="rangeEnds"><span class="o" data-i="cool">← Remove energy (cool)</span><span class="i" data-i="heat">Add energy (heat) →</span></div>
+      </div>
+      <div class="btns">
+        <button class="btn" id="runBtn" data-i="start">Start</button>
+        <button class="btn ghost" id="resetBtn" data-i="reset">Reset</button>
+        <div class="seg" role="group" id="speedSeg" aria-label="Speed"><button data-s="1">1×</button><button data-s="5" aria-pressed="true">5×</button><button data-s="20">20×</button></div>
+        <div class="clock"><small data-i="time">Time</small><span id="clock">0 s</span></div>
+      </div>
+      <div class="probes">
+        <div class="probe s" id="prS"><div class="pl" data-i="probeS">Ice probe</div><div class="pv">—</div></div>
+        <div class="probe l" id="prL"><div class="pl" data-i="probeL">Water probe</div><div class="pv">—</div></div>
+        <div class="probe g" id="prG"><div class="pl" data-i="probeG">Vapor probe</div><div class="pv">—</div></div>
+      </div>
+      <div class="amounts" id="amounts"></div>
+      <div class="status" id="status"></div>
+    </div>
+    <div class="card">
+      <div class="rowhead"><h2 data-i="graphTitle">Temperature of the water over time</h2></div>
+      <canvas id="graph" aria-label="Graph of temperature over time"></canvas>
+    </div>
+    <div class="card">
+      <div class="rowhead"><h2 data-i="enTitle">Energy account</h2></div>
+      <div class="small" id="eLab"></div>
+      <div class="etotal" id="eTotal">0 cal</div>
+      <div class="split">
+        <div class="row"><div class="t"><span data-i="eTemp">Changed the temperature (particle speed)</span><b id="eTempV">0 cal</b></div><div class="bar"><i class="i-temp" id="eTempB" style="width:0"></i></div></div>
+        <div class="row"><div class="t"><span data-i="ePhase">Changed the phase (attractions between particles)</span><b id="ePhaseV">0 cal</b></div><div class="bar"><i class="i-phase" id="ePhaseB" style="width:0"></i></div></div>
+      </div>
+      <p class="small" style="margin:10px 0 0" data-i="eNote">Counted from when you pressed Start. Positive = energy went into the water. Negative = energy came out of the water.</p>
+    </div>
+  </section>
+
+  <section class="card" style="display:grid;gap:10px">
+    <details><summary data-i="w4q">What's simplified in this model?</summary><p data-i="w4a"></p></details>
+  </section>
+</div>
+
+<script>
+// ================= text =================
+const STR = {
+  en: {
+    eyebrow: 'Chemistry · Phase changes', title: 'Phase Change Simulator',
+    lede: 'Heat or cool 10 g of water. Watch the particles, the temperature probes, and where the energy goes during all six phase changes.',
+    pickTitle: 'Pick a phase change', seen: n => `Phase changes you've seen: ${n} of 6`,
+    keyBond: 'attraction between particles', keyEnergy: 'energy',
+    rateLab: 'Energy flow', cool: '← Remove energy (cool)', heat: 'Add energy (heat) →', off: '0 (off)',
+    start: 'Start', pause: 'Pause', resume: 'Resume', reset: 'Reset', time: 'Time',
+    probeS: 'Ice probe', probeL: 'Water probe', probeG: 'Vapor probe', none: { s: 'no ice', l: 'no liquid', g: 'no vapor' },
+    aS: 'Ice', aL: 'Liquid water', aG: 'Water vapor',
+    pN: 'Pressure: 1 atm (normal)', pLo: 'Pressure: 0.003 atm (very low)',
+    graphTitle: 'Temperature of the water over time', axT: 'Time (s)', axY: 'Temperature (°C)',
+    ref: { m: 'melts / freezes', b: 'boils / condenses', s: 'sublimes / deposits' },
+    enTitle: 'Energy account', eIn: 'Total energy put into the water', eOut: 'Total energy taken out of the water', eZero: 'Total energy moved',
+    eTemp: 'Changed the temperature (particle speed)', ePhase: 'Changed the phase (attractions between particles)',
+    eNote: 'Counted from when you pressed Start. Positive = energy went into the water. Negative = energy came out of the water.',
+    cvHeat: 'heater', cvCool: 'cooler', cvOff: 'off', cvIn: 'energy in', cvOut: 'energy out',
+    st: {
+      melt: 'Melting', freeze: 'Freezing',
+      boil: 'Boiling', cond: 'Condensation',
+      subl: 'Sublimation', dep: 'Deposition',
+    },
+    proc: {
+      melt: ['Melting', t => `Energy is going in, but the temperature stays at ${t}. The energy is breaking the attractions that hold the ice particles in place.`],
+      freeze: ['Freezing', t => `Energy is coming out, but the temperature stays at ${t}. As particles lock into place, attractions form and give off energy.`],
+      boil: ['Boiling', t => `Energy is going in, but the temperature stays at ${t}. The energy pulls liquid particles completely apart into a gas.`],
+      cond: ['Condensing', t => `Energy is coming out, but the temperature stays at ${t}. Gas particles pull together into a liquid and give off energy.`],
+      subl: ['Sublimation', t => `Energy is going in, but the temperature stays at ${t}. At this very low pressure, ice particles break free straight into a gas.`],
+      dep: ['Deposition', t => `Energy is coming out, but the temperature stays at ${t}. Gas particles lock straight into solid ice and give off energy.`],
+      warm: { s: 'Warming the ice', l: 'Warming the liquid water', g: 'Warming the water vapor' },
+      coolp: { s: 'Cooling the ice', l: 'Cooling the liquid water', g: 'Cooling the water vapor' },
+      warmTxt: 'The energy makes the particles move faster, so the temperature goes up.',
+      coolTxt: 'Taking energy out makes the particles move slower, so the temperature goes down.',
+      idle: ['No energy flowing', 'The heater and cooler are off. Nothing changes until energy moves in or out.'],
+      max: ['Too hot for this chamber', 'The chamber stops at 200 °C. Turn the energy flow down or remove energy.'],
+      min: ['Too cold for this chamber', 'The chamber stops at −50 °C. Turn the energy flow up or add energy.'],
+      ready: ['Ready', 'Set the energy flow, then press Start.'],
+    },
+    w4q: "What's simplified in this model?",
+    w4a: 'Each dot stands for a large group of water particles. Speeds and colors are exaggerated. The water is kept at one temperature throughout, and the heater/cooler moves energy at exactly the rate you set. Ice floats because it is less dense than liquid water, so freezing starts at the surface and the ice melts from underneath. At the low-pressure stations there is no liquid, so frost builds up on the cold bottom. Real ice also keeps a little vapor above it at any pressure; this model only shows the two phases taking part in each change.',
+  },
+  es: {
+    eyebrow: 'Química · Cambios de fase', title: 'Simulador de cambios de fase',
+    lede: 'Calienta o enfría 10 g de agua. Observa las partículas, las sondas de temperatura y a dónde va la energía en los seis cambios de fase.',
+    pickTitle: 'Elige un cambio de fase', seen: n => `Cambios de fase que has visto: ${n} de 6`,
+    keyBond: 'atracción entre partículas', keyEnergy: 'energía',
+    rateLab: 'Flujo de energía', cool: '← Quitar energía (enfriar)', heat: 'Agregar energía (calentar) →', off: '0 (apagado)',
+    start: 'Iniciar', pause: 'Pausar', resume: 'Continuar', reset: 'Reiniciar', time: 'Tiempo',
+    probeS: 'Sonda en el hielo', probeL: 'Sonda en el agua', probeG: 'Sonda en el vapor', none: { s: 'no hay hielo', l: 'no hay líquido', g: 'no hay vapor' },
+    aS: 'Hielo', aL: 'Agua líquida', aG: 'Vapor de agua',
+    pN: 'Presión: 1 atm (normal)', pLo: 'Presión: 0.003 atm (muy baja)',
+    graphTitle: 'Temperatura del agua en el tiempo', axT: 'Tiempo (s)', axY: 'Temperatura (°C)',
+    ref: { m: 'se derrite / se congela', b: 'hierve / se condensa', s: 'se sublima / se deposita' },
+    enTitle: 'Cuenta de energía', eIn: 'Energía total que entró al agua', eOut: 'Energía total que salió del agua', eZero: 'Energía total movida',
+    eTemp: 'Cambió la temperatura (rapidez de las partículas)', ePhase: 'Cambió la fase (atracciones entre partículas)',
+    eNote: 'Se cuenta desde que presionaste Iniciar. Positivo = la energía entró al agua. Negativo = la energía salió del agua.',
+    cvHeat: 'calentador', cvCool: 'enfriador', cvOff: 'apagado', cvIn: 'entra energía', cvOut: 'sale energía',
+    st: {
+      melt: 'Fusión', freeze: 'Solidificación',
+      boil: 'Ebullición', cond: 'Condensación',
+      subl: 'Sublimación', dep: 'Deposición',
+    },
+    proc: {
+      melt: ['Fusión (se derrite)', t => `Está entrando energía, pero la temperatura se queda en ${t}. La energía rompe las atracciones que mantienen fijas las partículas del hielo.`],
+      freeze: ['Solidificación (se congela)', t => `Está saliendo energía, pero la temperatura se queda en ${t}. Cuando las partículas quedan fijas, se forman atracciones y se libera energía.`],
+      boil: ['Ebullición', t => `Está entrando energía, pero la temperatura se queda en ${t}. La energía separa por completo las partículas del líquido y forma un gas.`],
+      cond: ['Condensación', t => `Está saliendo energía, pero la temperatura se queda en ${t}. Las partículas del gas se juntan en un líquido y liberan energía.`],
+      subl: ['Sublimación', t => `Está entrando energía, pero la temperatura se queda en ${t}. A esta presión tan baja, las partículas del hielo pasan directo a gas.`],
+      dep: ['Deposición', t => `Está saliendo energía, pero la temperatura se queda en ${t}. Las partículas del gas pasan directo a hielo sólido y liberan energía.`],
+      warm: { s: 'Se calienta el hielo', l: 'Se calienta el agua líquida', g: 'Se calienta el vapor de agua' },
+      coolp: { s: 'Se enfría el hielo', l: 'Se enfría el agua líquida', g: 'Se enfría el vapor de agua' },
+      warmTxt: 'La energía hace que las partículas se muevan más rápido, así que la temperatura sube.',
+      coolTxt: 'Quitar energía hace que las partículas se muevan más lento, así que la temperatura baja.',
+      idle: ['No fluye energía', 'El calentador y el enfriador están apagados. Nada cambia hasta que entre o salga energía.'],
+      max: ['Demasiado caliente para esta cámara', 'La cámara llega hasta 200 °C. Baja el flujo de energía o quita energía.'],
+      min: ['Demasiado frío para esta cámara', 'La cámara llega hasta −50 °C. Sube el flujo de energía o agrega energía.'],
+      ready: ['Listo', 'Ajusta el flujo de energía y presiona Iniciar.'],
+    },
+    w4q: '¿Qué se simplifica en este modelo?',
+    w4a: 'Cada punto representa un grupo grande de partículas de agua. Las velocidades y los colores están exagerados. El agua se mantiene a una sola temperatura, y el calentador/enfriador mueve la energía exactamente a la rapidez que elijas. El hielo flota porque es menos denso que el agua líquida, así que la congelación empieza en la superficie y el hielo se derrite por debajo. En las estaciones de baja presión no hay líquido, así que la escarcha se acumula en el fondo frío. El hielo real también tiene un poco de vapor encima a cualquier presión; este modelo solo muestra las dos fases que participan en cada cambio.',
+  },
+};
+let lang = 'en';
+try { if (localStorage.getItem('pcLang') === 'es') lang = 'es'; } catch (e) {}
+const L = () => STR[lang];
+
+// ================= physics (calories, grams, °C, seconds) =================
+// h = energy per gram, measured from ice at −50 °C.
+const MASS = 10, TMIN = -50, TMAX = 200;
+const C_ICE = 0.5, C_WAT = 1.0, C_VAP = 0.48, L_FUS = 80, L_VAP = 540, L_SUB = 620;
+const P = {
+  n:  { Tm: 0, Tb: 100, A: 25, B: 105, C: 205, D: 745 },
+  lo: { Ts: -10, A: 20, D: 640 },
+};
+P.n.hmax = P.n.D + C_VAP * (TMAX - 100);
+P.lo.hmax = P.lo.D + C_VAP * (TMAX + 10);
+function hFromT(pk, T, ph) {
+  const p = P[pk];
+  if (ph === 's') return C_ICE * (T - TMIN);
+  if (pk === 'n') return ph === 'l' ? p.B + C_WAT * T : p.D + C_VAP * (T - 100);
+  return p.D + C_VAP * (T + 10);
+}
+function stateOf(pk, h) {
+  const p = P[pk];
+  if (pk === 'n') {
+    let T, fs, fg;
+    if (h < p.A) { T = TMIN + h / C_ICE; fs = 1; fg = 0; }
+    else if (h < p.B) { T = 0; fs = 1 - (h - p.A) / L_FUS; fg = 0; }
+    else if (h < p.C) { T = h - p.B; fs = 0; fg = 0; }
+    else if (h < p.D) { T = 100; fs = 0; fg = (h - p.C) / L_VAP; }
+    else { T = 100 + (h - p.D) / C_VAP; fs = 0; fg = 1; }
+    const fl = Math.max(0, 1 - fs - fg);
+    return { T, fs, fl, fg, lat: (1 - fs) * L_FUS + fg * L_VAP };
+  }
+  let T, fs;
+  if (h < p.A) { T = TMIN + h / C_ICE; fs = 1; }
+  else if (h < p.D) { T = -10; fs = 1 - (h - p.A) / L_SUB; }
+  else { T = -10 + (h - p.D) / C_VAP; fs = 0; }
+  return { T, fs, fl: 0, fg: 1 - fs, lat: (1 - fs) * L_SUB };
+}
+
+const STATIONS = {
+  melt:   { pk: 'n',  T: -20, ph: 's', rate: 20 },
+  freeze: { pk: 'n',  T: 20,  ph: 'l', rate: -20 },
+  boil:   { pk: 'n',  T: 80,  ph: 'l', rate: 40 },
+  cond:   { pk: 'n',  T: 130, ph: 'g', rate: -40 },
+  subl:   { pk: 'lo', T: -30, ph: 's', rate: 40 },
+  dep:    { pk: 'lo', T: 20,  ph: 'g', rate: -40 },
+};
+const ORDER = ['melt', 'freeze', 'boil', 'cond', 'subl', 'dep'];
+
+// ================= app state =================
+let station = 'melt', pk = 'n', h = 0, h0 = 0, rate = 20, simT = 0, running = false, started = false, speed = 5;
+let trace = [], traceAcc = 0, proc = 'ready';
+const seenTime = {}, seen = new Set();
+const $ = id => document.getElementById(id);
+
+function curState() { return stateOf(pk, h); }
+function process(s) {
+  if (!started) return 'ready';
+  if (rate > 0 && h >= P[pk].hmax - 1e-9) return 'max';
+  if (rate < 0 && h <= 1e-9) return 'min';
+  if (rate === 0) return 'idle';
+  const mid = f => f > 1e-6 && f < 1 - 1e-6;
+  const up = rate > 0;
+  if (pk === 'n') {
+    if (mid(s.fs) || (up && s.fs === 1 && Math.abs(s.T) < 1e-9) || (!up && s.fl === 1 && Math.abs(s.T) < 1e-9)) return up ? 'melt' : 'freeze';
+    if (mid(s.fg) || (up && s.fl === 1 && Math.abs(s.T - 100) < 1e-9) || (!up && s.fg === 1 && Math.abs(s.T - 100) < 1e-9)) return up ? 'boil' : 'cond';
+  } else if (mid(s.fs) || Math.abs(s.T + 10) < 1e-9) return up ? 'subl' : 'dep';
+  const ph = s.fs === 1 ? 's' : s.fg === 1 ? 'g' : 'l';
+  return (up ? 'warm:' : 'cool:') + ph;
+}
+
+// ================= particles =================
+// Ice is less dense than liquid water, so with liquid present it floats with about 90% below the
+// surface. It freezes from the surface down and melts from underneath. With no liquid (fully
+// frozen, or the low-pressure stations) it rests on the bottom.
+const N = 64, SP = 13, R = 5;
+let parts = [], effects = [];
+function rnd(a, b) { return a + Math.random() * (b - a); }
+let geo = null;
+function computeGeo() {
+  const cv = $('cv'), W = cv.clientWidth, H = cv.clientHeight;
+  const cw = Math.min(W - 60, 250), x0 = (W - cw) / 2, x1 = x0 + cw, top = 44, floor = H - 74;
+  const cols = Math.max(8, Math.floor((cw - 12) / SP));
+  const order = [...Array(cols).keys()].sort((p, q) => Math.abs(p - (cols - 1) / 2) - Math.abs(q - (cols - 1) / 2) || p - q);
+  geo = { W, H, x0, x1, top, floor, cw, cols, order };
+}
+function slotCR(i) { return { c: geo.order[i % geo.cols], r: Math.floor(i / geo.cols) }; }
+let G = null; // current layout: ice top/bottom, water surface, liquid zone
+function geom(c) {
+  const t = Math.ceil(c.s / geo.cols) * SP, hl = c.l * SP * SP * 2.2 / (geo.cw - 8), fl = geo.floor - 3;
+  if (!c.s) { const sf = geo.floor - hl; return { t, iceTop: pk === 'lo' ? fl : Math.min(fl - SP, sf - 0.1 * SP), iceBot: fl, surf: sf, liqTop: sf, gasBot: sf }; }
+  let surf = geo.floor - hl - 0.9 * t, iceBot = surf + 0.9 * t;
+  if (pk === 'lo' || !c.l || iceBot > fl) { iceBot = fl; surf = Math.min(surf, fl - t); }
+  const iceTop = iceBot - t;
+  return { t, iceTop, iceBot, surf, liqTop: iceBot, gasBot: Math.min(surf, iceTop) };
+}
+function slotXY(i) {
+  const q = slotCR(i), cx = (geo.x0 + geo.x1) / 2, x = cx + (q.c - (geo.cols - 1) / 2) * SP;
+  // low pressure: frost builds up from the cold bottom; normal pressure: rows hang down from the top of the ice
+  return { x, y: pk === 'lo' ? geo.floor - 3 - R - q.r * SP : G.iceTop + R + 1 + q.r * SP };
+}
+function counts() { let s = 0, l = 0, g = 0; for (const p of parts) p.ph === 's' ? s++ : p.ph === 'l' ? l++ : g++; return { s, l, g }; }
+function seedParticles() {
+  computeGeo();
+  const s = curState(); parts = []; effects = [];
+  const ns = Math.round(s.fs * N), ng = Math.round(s.fg * N), nl = N - ns - ng;
+  for (let i = 0; i < N; i++) {
+    const ph = i < ns ? 's' : i < ns + nl ? 'l' : 'g';
+    parts.push({ ph, x: rnd(geo.x0 + 10, geo.x1 - 10), y: geo.top + 10, a: rnd(0, 6.283), slot: ph === 's' ? i : -1, jp: rnd(0, 6.28) });
+  }
+  layoutTargets(true);
+}
+function layoutTargets(snap) {
+  const c = counts(); G = geom(c);
+  for (const p of parts) if (p.ph === 's') { const t = slotXY(p.slot); p.tx = t.x; p.ty = t.y; if (snap) { p.x = t.x; p.y = t.y; } }
+  if (snap) for (const p of parts) { if (p.ph === 'l') p.y = rnd(G.liqTop + R, geo.floor - R); if (p.ph === 'g') p.y = rnd(geo.top + R, G.gasBot - R - 2); }
+}
+function addEffect(x, y, kind) { if (effects.length < 7) effects.push({ x, y, kind, age: 0 }); }
+function freeSlot() { const used = new Set(parts.filter(p => p.ph === 's').map(p => p.slot)); for (let i = 0; i < N; i++) if (!used.has(i)) return i; return 0; }
+function syncPhases() {
+  const s = curState();
+  const ns = Math.round(s.fs * N), ng = Math.round(s.fg * N);
+  let c = counts();
+  while (c.s > ns) { // melting / sublimation: the top row of the ice lets go first
+    const sol = parts.filter(p => p.ph === 's').sort((a, b) => b.slot - a.slot)[0];
+    sol.ph = pk === 'lo' ? 'g' : 'l'; sol.slot = -1; sol.a = rnd(-2.8, -0.3);
+    addEffect(sol.x, sol.y, 'in'); c = counts();
+  }
+  while (c.s < ns) { // freezing / deposition: the nearest particle locks into the next spot on the ice layer
+    const src = pk === 'lo' ? 'g' : 'l';
+    const cand = parts.filter(p => p.ph === src); if (!cand.length) break;
+    const slot = freeSlot(), t = slotXY(slot);
+    cand.sort((a, b) => Math.hypot(a.x - t.x, a.y - t.y) - Math.hypot(b.x - t.x, b.y - t.y));
+    const p = cand[0]; p.slot = slot; p.ph = 's'; addEffect(t.x, t.y, 'out'); c = counts();
+  }
+  if (pk === 'n') {
+    while (c.g > ng) { const p = parts.filter(q => q.ph === 'g').sort((a, b) => b.y - a.y)[0]; p.ph = 'l'; addEffect(p.x, p.y, 'out'); c = counts(); }
+    while (c.g < ng) {
+      const liq = parts.filter(q => q.ph === 'l'); if (!liq.length) break;
+      const p = liq.sort((a, b) => a.y - b.y)[0]; p.ph = 'g'; p.a = rnd(-2.6, -0.5); addEffect(p.x, p.y, 'in'); c = counts();
+    }
+  }
+}
+function moveParticles(dt) {
+  const s = curState(), Tk = (s.T + 273) / 373;
+  layoutTargets(false);
+  const vL = 38 * Math.sqrt(Tk), vG = 150 * Math.sqrt(Tk), jit = 0.6 + 2.2 * Math.max(0, (s.T + 50) / 50);
+  const now = performance.now() / 1000;
+  for (const p of parts) {
+    if (p.ph === 's') {
+      const k = Math.min(1, dt * 5); p.x += (p.tx - p.x) * k; p.y += (p.ty - p.y) * k;
+      p.dx = Math.sin(now * 13 + p.jp) * jit * 0.5; p.dy = Math.cos(now * 11 + p.jp * 1.3) * jit * 0.5;
+      continue;
+    }
+    p.dx = p.dy = 0;
+    const v = p.ph === 'l' ? vL : vG;
+    p.a += rnd(-1, 1) * dt * (p.ph === 'l' ? 6 : 1.5);
+    p.x += Math.cos(p.a) * v * dt; p.y += Math.sin(p.a) * v * dt;
+    const xa = geo.x0 + R + 2, xb = geo.x1 - R - 2;
+    if (p.x < xa) { p.x = xa; p.a = Math.PI - p.a; } if (p.x > xb) { p.x = xb; p.a = Math.PI - p.a; }
+    if (p.ph === 'l') {
+      const ya = Math.min(G.liqTop + R, geo.floor - R), yb = geo.floor - R;
+      if (p.y < ya) { p.y += (ya - p.y) * Math.min(1, dt * 5); if (Math.sin(p.a) < 0) p.a = -p.a; }
+      if (p.y > yb) { p.y = yb; p.a = -p.a; }
+    } else {
+      const ya = geo.top + R + 2, yb = G.gasBot - R - 2;
+      if (p.y < ya) { p.y = ya; p.a = -p.a; }
+      if (p.y > yb) { p.y -= Math.min(p.y - yb, 200 * dt); if (Math.sin(p.a) > 0) p.a = -p.a; }
+    }
+  }
+  for (const e of effects) e.age += dt;
+  effects = effects.filter(e => e.age < 0.9);
+}
+
+// ================= drawing =================
+let colors = {};
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  for (const k of ['cold', 'warm', 'glass', 'liquid', 'ice', 'ice-edge', 'muted', 'ink', 'line', 'surface', 'sunk', 'energy', 'pS', 'pL', 'pG', 'bond']) colors[k] = cs.getPropertyValue('--' + k).trim();
+}
+function hexToRgb(hx) { hx = hx.replace('#', ''); if (hx.length === 3) hx = hx.split('').map(c => c + c).join(''); const n = parseInt(hx, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function mix(a, b, f) { const A = hexToRgb(a), B = hexToRgb(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * f)).join(',')})`; }
+function tempColor(T) { return mix(colors.cold, colors.warm, Math.max(0, Math.min(1, (T + 30) / 160))); }
+function sizeCanvas(cv) {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, hh = cv.clientHeight;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(hh * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(hh * dpr); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return ctx;
+}
+function arrow(ctx, x, y1, y2, w, col) { // vertical block arrow from y1 to y2
+  const dir = Math.sign(y2 - y1), head = Math.min(Math.abs(y2 - y1) * 0.5, w * 1.1);
+  ctx.fillStyle = col; ctx.beginPath();
+  ctx.moveTo(x - w / 2, y1); ctx.lineTo(x + w / 2, y1); ctx.lineTo(x + w / 2, y2 - dir * head);
+  ctx.lineTo(x + w, y2 - dir * head); ctx.lineTo(x, y2); ctx.lineTo(x - w, y2 - dir * head); ctx.lineTo(x - w / 2, y2 - dir * head);
+  ctx.closePath(); ctx.fill();
+}
+function miniArrow(ctx, x, y, ang, len, col) {
+  const ex = x + Math.cos(ang) * len, ey = y + Math.sin(ang) * len;
+  ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey); ctx.stroke();
+  ctx.fillStyle = col; ctx.beginPath();
+  ctx.moveTo(ex + Math.cos(ang) * 4, ey + Math.sin(ang) * 4);
+  ctx.lineTo(ex + Math.cos(ang + 2.4) * 5, ey + Math.sin(ang + 2.4) * 5);
+  ctx.lineTo(ex + Math.cos(ang - 2.4) * 5, ey + Math.sin(ang - 2.4) * 5); ctx.closePath(); ctx.fill();
+}
+function drawProbe(ctx, x, yTip, col, label, active, ly) {
+  ctx.globalAlpha = active ? 1 : 0.35;
+  ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, 6); ctx.lineTo(x, yTip - 3); ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, yTip, 4.5, 0, 6.283); ctx.fillStyle = col; ctx.fill();
+  ctx.font = '700 11px ' + getComputedStyle(document.body).fontFamily; ctx.textBaseline = 'middle';
+  const tw = ctx.measureText(label).width, right = x + 6 + tw < geo.W - 4;
+  ctx.textAlign = right ? 'left' : 'right'; ctx.fillText(label, right ? x + 6 : x - 6, ly); ctx.globalAlpha = 1;
+}
+function drawCanvas() {
+  const cv = $('cv'), ctx = sizeCanvas(cv); computeGeo();
+  const { W, H, x0, x1, top, floor } = geo, s = curState(), c = counts(); G = geom(c); const surf = G.surf;
+  ctx.clearRect(0, 0, W, H);
+  // liquid pool
+  if (c.l > 0) { ctx.fillStyle = colors.liquid; ctx.fillRect(x0 + 2, surf, x1 - x0 - 4, floor - surf); }
+  // ice layer frozen to the bottom: background per row, then attraction lines between neighbours
+  const sol = parts.filter(p => p.ph === 's');
+  if (sol.length) {
+    const rows = new Map();
+    for (const p of sol) { const q = slotCR(p.slot), t = slotXY(p.slot); const e = rows.get(q.r) || [1e9, -1e9, t.y]; e[0] = Math.min(e[0], t.x); e[1] = Math.max(e[1], t.x); rows.set(q.r, e); }
+    ctx.fillStyle = colors.ice; ctx.globalAlpha = 0.92;
+    for (const [, [xa, xb, yy]] of rows) ctx.fillRect(xa - 8, yy - SP / 2 - 1, xb - xa + 16, SP + 2);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = colors['ice-edge']; ctx.lineWidth = 1.5;
+    for (const [, [xa, xb, yy]] of rows) { ctx.beginPath(); ctx.moveTo(xa - 8, yy - SP / 2 - 1); ctx.lineTo(xb + 8, yy - SP / 2 - 1); ctx.stroke(); }
+    const byCR = new Map(sol.map(p => { const q = slotCR(p.slot); return [q.c + ',' + q.r, p]; }));
+    ctx.strokeStyle = colors.bond; ctx.lineWidth = 2;
+    for (const p of sol) {
+      const q = slotCR(p.slot);
+      for (const [dc, dr] of [[1, 0], [0, 1]]) {
+        const n = byCR.get((q.c + dc) + ',' + (q.r + dr));
+        if (n) { ctx.beginPath(); ctx.moveTo(p.x + p.dx, p.y + p.dy); ctx.lineTo(n.x + n.dx, n.y + n.dy); ctx.stroke(); }
+      }
+    }
+  }
+  // bonds: liquid (temporary attractions between close neighbours)
+  const liq = parts.filter(p => p.ph === 'l');
+  ctx.lineWidth = 1.5; ctx.globalAlpha = 0.55; ctx.strokeStyle = colors.bond;
+  for (let i = 0; i < liq.length; i++) for (let j = i + 1; j < liq.length; j++) {
+    const a = liq[i], b = liq[j], d = Math.hypot(a.x - b.x, a.y - b.y);
+    if (d < 19) { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+  }
+  ctx.globalAlpha = 1;
+  // particles
+  const col = tempColor(s.T);
+  for (const p of parts) { ctx.beginPath(); ctx.arc(p.x + (p.dx || 0), p.y + (p.dy || 0), R, 0, 6.283); ctx.fillStyle = col; ctx.fill(); }
+  // phase-change energy effects at particle level
+  for (const e of effects) {
+    const f = e.age / 0.9; ctx.globalAlpha = 1 - f;
+    for (let k = 0; k < 4; k++) {
+      const ang = k * Math.PI / 2 + Math.PI / 4;
+      if (e.kind === 'in') { const r0 = 20 - f * 8; miniArrow(ctx, e.x + Math.cos(ang) * r0, e.y + Math.sin(ang) * r0, ang + Math.PI, 7, colors.energy); }
+      else { const r0 = 8 + f * 10; miniArrow(ctx, e.x + Math.cos(ang) * r0, e.y + Math.sin(ang) * r0, ang, 7, colors.energy); }
+    }
+    ctx.globalAlpha = 1;
+  }
+  // container
+  ctx.strokeStyle = colors.glass; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(x0, top - 6); ctx.lineTo(x0, floor + 4); ctx.lineTo(x1, floor + 4); ctx.lineTo(x1, top - 6); ctx.stroke();
+  ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x0 - 8, top - 8); ctx.lineTo(x1 + 8, top - 8); ctx.stroke();
+  // probes
+  const cx = (x0 + x1) / 2, sx = x0 + geo.cw * 0.22;
+  drawProbe(ctx, sx, c.s > 0 ? (G.iceTop + G.iceBot) / 2 : floor - 8, colors.pS, L().probeS, c.s > 0, 12);
+  if (pk === 'n') drawProbe(ctx, x1 - 26, c.l > 0 ? Math.max(G.liqTop + 6, (G.liqTop + floor) / 2) : floor - 10, colors.pL, L().probeL, c.l > 0, 38);
+  drawProbe(ctx, cx + geo.cw * 0.2, top + 34, colors.pG, L().probeG, c.g > 0, 25);
+  // heater / cooler plate
+  const py = floor + 44, act = running && started && proc !== 'max' && proc !== 'min';
+  const f = Math.min(1, Math.abs(rate) / 60);
+  ctx.fillStyle = rate > 0 ? mix(colors.sunk, colors.warm, 0.25 + 0.75 * f) : rate < 0 ? mix(colors.sunk, colors.cold, 0.25 + 0.75 * f) : colors.line;
+  ctx.fillRect(x0 + 10, py, x1 - x0 - 20, 14);
+  ctx.font = '700 12px ' + getComputedStyle(document.body).fontFamily; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillStyle = rate === 0 ? colors.muted : colors.energy; ctx.fillText(rate > 0 ? `${L().cvHeat} · ${L().cvIn} ${rate} cal/s` : rate < 0 ? `${L().cvCool} · ${L().cvOut} ${-rate} cal/s` : L().cvHeat + ' / ' + L().cvCool + ': ' + L().cvOff, cx, py + 17);
+  // big energy arrows between plate and water
+  if (act && rate !== 0) {
+    const w = 6 + 12 * f, n = Math.abs(rate) >= 40 ? 3 : Math.abs(rate) >= 20 ? 2 : 1;
+    const xs = n === 1 ? [cx] : n === 2 ? [cx - 50, cx + 50] : [cx - 80, cx, cx + 80];
+    for (const ax of xs) rate > 0 ? arrow(ctx, ax, py - 2, floor + 7, w, colors.energy) : arrow(ctx, ax, floor + 7, py - 2, w, colors.energy);
+  }
+}
+
+// graph
+function drawGraph() {
+  const cv = $('graph'), ctx = sizeCanvas(cv), W = cv.clientWidth, H = cv.clientHeight;
+  ctx.clearRect(0, 0, W, H);
+  const Lm = 50, Rm = 12, Tm = 12, Bm = 44, pw = W - Lm - Rm, ph = H - Tm - Bm;
+  const steps = [30, 60, 120, 300, 600, 1200, 1800, 3600];
+  const tEnd = Math.max(60, simT); const st = steps.find(x => tEnd / x <= 8) || 3600; const xMax = Math.ceil(tEnd / st) * st;
+  const yMin = -50, yMax = 200;
+  const X = t => Lm + t / xMax * pw, Y = v => Tm + ph - (v - yMin) / (yMax - yMin) * ph;
+  const ff = getComputedStyle(document.body).fontFamily;
+  ctx.font = '12px ' + ff; ctx.strokeStyle = colors.line; ctx.fillStyle = colors.muted; ctx.lineWidth = 1;
+  for (let v = yMin; v <= yMax; v += 50) { ctx.beginPath(); ctx.moveTo(Lm, Y(v)); ctx.lineTo(Lm + pw, Y(v)); ctx.stroke(); ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(v, Lm - 6, Y(v)); }
+  for (let t = 0; t <= xMax; t += st) { ctx.beginPath(); ctx.moveTo(X(t), Tm); ctx.lineTo(X(t), Tm + ph); ctx.stroke(); ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(t, X(t), Tm + ph + 6); }
+  ctx.fillStyle = colors.ink; ctx.textAlign = 'center'; ctx.fillText(L().axT, Lm + pw / 2, Tm + ph + 24);
+  ctx.save(); ctx.translate(12, Tm + ph / 2); ctx.rotate(-Math.PI / 2); ctx.fillText(L().axY, 0, 0); ctx.restore();
+  // reference lines
+  const refs = pk === 'n' ? [[0, L().ref.m], [100, L().ref.b]] : [[-10, L().ref.s]];
+  ctx.setLineDash([6, 4]); ctx.strokeStyle = colors.energy; ctx.lineWidth = 1.5;
+  for (const [v, lab] of refs) { ctx.beginPath(); ctx.moveTo(Lm, Y(v)); ctx.lineTo(Lm + pw, Y(v)); ctx.stroke(); ctx.fillStyle = colors.energy; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.fillText(`${v} °C ${lab}`, Lm + pw - 4, Y(v) - 2); }
+  ctx.setLineDash([]);
+  if (trace.length > 1) {
+    ctx.lineWidth = 3; ctx.lineJoin = 'round';
+    for (let i = 1; i < trace.length; i++) {
+      const a = trace[i - 1], b = trace[i]; const flat = Math.abs(a.T - b.T) < 1e-6 && a.pc;
+      ctx.strokeStyle = flat ? colors.energy : colors.ink; ctx.beginPath(); ctx.moveTo(X(a.t), Y(a.T)); ctx.lineTo(X(b.t), Y(b.T)); ctx.stroke();
+    }
+  }
+}
+
+// ================= UI =================
+const fmtT = T => `${(Math.round(T * 10) / 10).toFixed(1).replace('-', '−')} °C`;
+const fmtCal = v => `${v > 0.5 ? '+' : v < -0.5 ? '−' : ''}${Math.abs(Math.round(v)).toLocaleString(lang === 'es' ? 'es' : 'en')} cal`;
+function renderStations() {
+  $('stations').innerHTML = ORDER.map(k => {
+    const n = L().st[k];
+    return `<button class="st" data-k="${k}" aria-pressed="${k === station}">${n}${seen.has(k) ? ' <span class="seen" aria-label="seen">✓</span>' : ''}</button>`;
+  }).join('');
+  $('seenCount').textContent = L().seen(seen.size);
+}
+function renderPanel() {
+  const s = curState(), c = { s: s.fs, l: s.fl, g: s.fg };
+  for (const k of ['s', 'l', 'g']) {
+    const el = $('pr' + k.toUpperCase()), on = c[k] > 1e-6;
+    el.classList.toggle('off', !on); el.querySelector('.pv').textContent = on ? fmtT(s.T) : L().none[k];
+  }
+  const amt = [['aS', s.fs, 'pS'], ['aL', s.fl, 'pL'], ['aG', s.fg, 'pG']].filter(a => pk === 'n' || a[0] !== 'aL');
+  $('amounts').innerHTML = amt.map(([k, f, c]) => `<div class="amt"><span>${L()[k]}</span><div class="bar"><i style="width:${(f * 100).toFixed(1)}%;background:var(--${c})"></i></div><b>${(f * MASS).toFixed(1)} g</b></div>`).join('');
+  // status
+  const P_ = L().proc; let title, txt, pc = false;
+  if (['melt', 'freeze', 'boil', 'cond', 'subl', 'dep'].includes(proc)) { [title, txt] = [P_[proc][0], P_[proc][1](fmtT(s.T))]; pc = true; }
+  else if (proc.startsWith('warm:')) { title = P_.warm[proc.slice(5)]; txt = P_.warmTxt; }
+  else if (proc.startsWith('cool:')) { title = P_.coolp[proc.slice(5)]; txt = P_.coolTxt; }
+  else [title, txt] = P_[proc];
+  $('status').className = 'status' + (pc ? ' pc' : ''); $('status').innerHTML = `<b>${title}</b>${txt}`;
+  // energy
+  const dH = MASS * (h - h0), dLat = MASS * (stateOf(pk, h).lat - stateOf(pk, h0).lat), dSen = dH - dLat;
+  $('eLab').textContent = dH > 0.5 ? L().eIn : dH < -0.5 ? L().eOut : L().eZero;
+  $('eTotal').textContent = fmtCal(dH); $('eTotal').className = 'etotal' + (dH > 0.5 ? ' in' : dH < -0.5 ? ' out' : '');
+  const mx = Math.max(1, Math.abs(dSen) + Math.abs(dLat));
+  $('eTempV').textContent = fmtCal(dSen); $('ePhaseV').textContent = fmtCal(dLat);
+  $('eTempB').style.width = (Math.abs(dSen) / mx * 100).toFixed(1) + '%'; $('ePhaseB').style.width = (Math.abs(dLat) / mx * 100).toFixed(1) + '%';
+  $('clock').textContent = `${Math.floor(simT)} s`;
+  $('runBtn').textContent = !started ? L().start : running ? L().pause : L().resume;
+  $('pressChip').textContent = pk === 'n' ? L().pN : L().pLo;
+  const ro = $('rateOut'); ro.textContent = rate === 0 ? L().off : `${rate > 0 ? '+' : '−'}${Math.abs(rate)} cal/s`; ro.className = 'rate' + (rate > 0 ? ' in' : rate < 0 ? ' out' : '');
+}
+function loadStation(k) {
+  station = k; const S = STATIONS[k]; pk = S.pk; h = h0 = hFromT(pk, S.T, S.ph); rate = S.rate; $('rate').value = rate;
+  simT = 0; running = false; started = false; trace = [{ t: 0, T: curState().T, pc: false }]; traceAcc = 0; proc = 'ready';
+  seedParticles(); renderStations(); renderPanel(); drawGraph();
+}
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i]').forEach(el => { const v = L()[el.dataset.i]; if (typeof v === 'string') el.textContent = v; });
+  $('lang-en').setAttribute('aria-pressed', lang === 'en'); $('lang-es').setAttribute('aria-pressed', lang === 'es');
+  renderStations(); renderPanel(); drawGraph();
+}
+
+// ================= loop =================
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  if (running) {
+    const simDt = dt * speed;
+    const before = h;
+    h = Math.max(0, Math.min(P[pk].hmax, h + rate * simDt / MASS));
+    simT += simDt;
+    const s = curState(); proc = process(s);
+    if (ORDER.includes(proc)) { seenTime[proc] = (seenTime[proc] || 0) + simDt; if (seenTime[proc] > 2 && !seen.has(proc)) { seen.add(proc); renderStations(); } }
+    traceAcc += simDt;
+    if (traceAcc >= 0.5 || h !== before && trace.length < 2) { trace.push({ t: simT, T: s.T, pc: ORDER.includes(proc) }); traceAcc = 0; if (trace.length > 6000) trace.splice(1, 1); }
+    syncPhases(); renderPanel(); drawGraph();
+  }
+  moveParticles(dt); drawCanvas();
+  requestAnimationFrame(frame);
+}
+
+// ================= wiring =================
+$('stations').addEventListener('click', e => { const b = e.target.closest('.st'); if (b) loadStation(b.dataset.k); });
+$('rate').addEventListener('input', e => { rate = +e.target.value; if (started) proc = process(curState()); renderPanel(); });
+$('runBtn').addEventListener('click', () => { if (!started) { started = true; h0 = h; } running = !running; proc = process(curState()); renderPanel(); });
+$('resetBtn').addEventListener('click', () => loadStation(station));
+$('speedSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; speed = +b.dataset.s; $('speedSeg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+$('lang-en').addEventListener('click', () => { lang = 'en'; try { localStorage.setItem('pcLang', 'en'); } catch (e) {} applyLang(); });
+$('lang-es').addEventListener('click', () => { lang = 'es'; try { localStorage.setItem('pcLang', 'es'); } catch (e) {} applyLang(); });
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { readColors(); drawGraph(); });
+new MutationObserver(() => { readColors(); drawGraph(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+window.addEventListener('resize', () => { computeGeo(); layoutTargets(true); drawGraph(); });
+
+readColors(); loadStation('melt'); applyLang();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

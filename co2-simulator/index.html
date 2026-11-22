@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>CO2 Investigation Simulator — Prototype</title>
+<style>
+:root {
+  --ink: #1a1a1a;
+  --ink-soft: #45484c;
+  --paper: #faf9f6;
+  --panel: #ffffff;
+  --line: #d8d6cf;
+  --line-soft: #eae8e2;
+  --a: #35618c;
+  --a-soft: #e4ebef;
+  --b: #b8892b;
+  --b-soft: #f5ecd8;
+  --c: #a8452f;
+  --c-soft: #f4e1db;
+  --good: #3f7d4f;
+  --warn: #b8892b;
+  --bad: #a8352a;
+  --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  --sans: 'Segoe UI', 'Calibri', system-ui, -apple-system, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); }
+.app { max-width: 1120px; margin: 0 auto; padding: 0 0 60px; }
+
+.masthead { background: var(--ink); color: #fff; padding: 18px 24px 20px; }
+.kicker { font-size: 11px; letter-spacing: 1.6px; font-weight: 700; color: #c7c5bf; text-transform: uppercase; margin-bottom: 6px; }
+.masthead h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.2px; }
+.masthead p { margin: 6px 0 0; font-size: 13.5px; color: #d6d4ce; max-width: 720px; line-height: 1.55; }
+.masthead .solo-note { margin-top: 10px; display: inline-block; font-size: 12px; font-weight: 700; background: #2d2d2d; border: 1px solid #565656; border-radius: 20px; padding: 6px 14px; color: #f0efe9; }
+
+.strip { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: var(--panel); border-bottom: 1px solid var(--line); padding: 12px 24px; }
+.progress-track { display: flex; gap: 6px; }
+.progress-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line); border: 1px solid var(--line); }
+.progress-dot.done { background: var(--good); border-color: var(--good); }
+.progress-dot.now { background: var(--ink); border-color: var(--ink); }
+.progress-label { font-size: 11.5px; color: var(--ink-soft); }
+.btn.small.glossary-btn { background: #fff; color: var(--ink); }
+
+.section { margin: 20px 24px 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 18px 20px; }
+.section h2 { margin: 0 0 4px; font-size: 13px; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.section h2 .sq { width: 9px; height: 9px; background: var(--ink); flex: none; }
+.section .sub { font-size: 12.5px; color: var(--ink-soft); margin: 0 0 14px; line-height: 1.5; }
+
+.term { border-bottom: 1.5px dotted var(--ink-soft); cursor: help; font-weight: 600; }
+
+.q-block { margin-bottom: 16px; }
+.q-block label, .q-block .q-label { display: block; font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+.q-block .hint { font-size: 11.5px; color: var(--ink-soft); margin-bottom: 6px; }
+textarea, input[type=text], input[type=number] { width: 100%; font-family: var(--sans); font-size: 13px; border: 1px solid var(--line); border-radius: 4px; padding: 10px; background: #fff; color: var(--ink); }
+textarea { min-height: 64px; resize: vertical; }
+
+.q-option { display: flex; align-items: flex-start; gap: 8px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 5px; margin-bottom: 8px; background: #fff; font-size: 13px; cursor: pointer; }
+.q-option:hover { background: var(--line-soft); }
+.q-option input { margin-top: 3px; }
+.q-option.active { border-color: var(--ink); background: var(--line-soft); }
+.q-option.correct { border-color: var(--good); background: #eaf4ec; }
+.q-option.incorrect { border-color: var(--bad); background: #f7e6e3; }
+.error-msg { font-size: 12.5px; color: #fff; background: var(--bad); border-radius: 4px; padding: 8px 12px; margin-top: 10px; font-weight: 600; display: none; }
+.error-msg.show { display: block; }
+.q-feedback { font-size: 12.5px; border-radius: 4px; padding: 10px 12px; margin-top: 4px; font-weight: 600; display: none; line-height: 1.5; }
+.q-feedback.show { display: block; }
+.q-feedback.good { background: #eaf4ec; color: var(--good); border: 1px solid var(--good); }
+.q-feedback.bad { background: #f7e6e3; color: var(--bad); border: 1px solid var(--bad); }
+.bottle-config.missing { outline: 2px solid var(--bad); outline-offset: 2px; }
+
+.hyp-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; background: var(--line-soft); border-radius: 4px; padding: 12px; }
+.hyp-row select { font-family: var(--sans); font-size: 13px; padding: 6px 8px; border: 1px solid var(--ink); border-radius: 4px; background: #fff; }
+
+.bottle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 900px) { .bottle-grid { grid-template-columns: 1fr; } }
+.bottle-config { border: 1px solid var(--line); border-radius: 6px; padding: 14px; }
+.bottle-config.a { background: var(--a-soft); }
+.bottle-config.b { background: var(--b-soft); }
+.bottle-config.c { background: var(--c-soft); }
+.bottle-config .bname { width: 100%; font-weight: 700; font-size: 13px; text-align: center; margin-bottom: 10px; border: none; border-bottom: 2px solid var(--ink); background: transparent; border-radius: 0; padding: 4px; }
+.bottle-diagram { background: #fff; border: 1px solid var(--line); border-radius: 4px; margin-bottom: 10px; }
+.field-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+.field-row label { flex: 1; font-weight: 600; }
+.field-row input[type=number] { width: 64px; padding: 5px 6px; font-size: 12px; }
+.field-row input[type=range] { flex: 1; margin: 0 8px; }
+.field-val { font-family: var(--mono); font-size: 12px; font-weight: 700; width: 30px; text-align: right; }
+
+.chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+.chip-btn { flex: 1; min-width: 30px; font-family: var(--mono); font-size: 12.5px; font-weight: 700; padding: 7px 0; text-align: center; border: 1.5px solid var(--ink); border-radius: 4px; background: #fff; color: var(--ink); cursor: pointer; }
+.chip-btn:hover { background: var(--line-soft); }
+.chip-btn.selected { background: var(--ink); color: #fff; }
+.chip-required-note { font-size: 10.5px; color: var(--bad); font-weight: 700; margin: -4px 0 8px; display: none; }
+.chip-required-note.show { display: block; }
+
+.setup-note { margin-top: 4px; font-size: 11.5px; color: var(--ink-soft); background: var(--line-soft); border-radius: 4px; padding: 10px 12px; border-left: 3px solid var(--warn); }
+
+.btn { font-family: var(--sans); font-size: 13px; font-weight: 600; padding: 10px 18px; border-radius: 4px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; letter-spacing: 0.2px; }
+.btn:hover { opacity: 0.88; }
+.btn:disabled { opacity: 0.35; cursor: default; }
+.btn.secondary { background: #fff; color: var(--ink); }
+.btn.small { padding: 6px 12px; font-size: 12px; }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+
+.run-status { font-size: 12.5px; color: var(--ink-soft); margin-top: 8px; min-height: 18px; }
+
+.chart-wrap { margin-top: 14px; border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: #fffef9; }
+.legend-row { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11.5px; margin-top: 8px; color: var(--ink-soft); }
+.legend-row span { display: inline-flex; align-items: center; gap: 5px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+table.data-table, table.setup-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 12.5px; }
+table.data-table { font-family: var(--mono); }
+table.data-table th, table.data-table td, table.setup-table th, table.setup-table td { border: 1px solid var(--line); padding: 6px 8px; text-align: center; }
+table.data-table th, table.setup-table th { background: var(--line-soft); font-family: var(--sans); font-weight: 700; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.3px; }
+td.col-a { color: var(--a); font-weight: 700; }
+td.col-b { color: var(--b); font-weight: 700; }
+td.col-c { color: var(--c); font-weight: 700; }
+
+.stem-line { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; font-size: 13.5px; line-height: 2.1; }
+.stem-line input { display: inline-block; width: auto; min-width: 140px; flex: 1 1 160px; border: none; border-bottom: 2px solid var(--ink); border-radius: 0; padding: 3px 4px; background: transparent; }
+.stem-line input:focus { outline: none; background: var(--line-soft); }
+.word-bank { margin-top: 10px; font-size: 11.5px; color: var(--ink-soft); background: var(--line-soft); border-radius: 4px; padding: 8px 10px; }
+.word-bank b { color: var(--ink); }
+
+.summary-box { border: 2px solid var(--ink); border-radius: 6px; padding: 16px; background: #fffef8; font-size: 12.5px; line-height: 1.7; white-space: pre-wrap; font-family: var(--mono); max-height: 420px; overflow-y: auto; }
+.summary-name-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.summary-name-row input { max-width: 260px; }
+.copy-flash { font-size: 12px; color: var(--good); font-weight: 700; margin-left: 8px; display: none; }
+
+.glossary-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+.glossary-modal.open { display: flex; }
+.glossary-card { background: #fff; border-radius: 8px; max-width: 480px; width: 100%; max-height: 80vh; overflow-y: auto; padding: 20px; }
+.glossary-card h3 { margin: 0 0 12px; font-size: 15px; }
+.glossary-item { margin-bottom: 12px; }
+.glossary-item .g-term { font-weight: 700; font-size: 13px; }
+.glossary-item .g-def { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; line-height: 1.5; }
+
+@media print {
+  .masthead, .strip, .btn-row, #glossaryModal, .no-print { display: none !important; }
+  .section { border: none; padding: 0; margin: 0 0 18px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="masthead">
+    <div class="kicker">Chemistry — Prototype</div>
+    <h1>CO2 Investigation Simulator</h1>
+    <p>The real version of this investigation uses heat lamps, water bottles, fizzing tablets, thermometers, and a small group working together at a station. This simulator runs the same investigation on your own device, so you can complete it by yourself, at your own pace, even if you missed the day your class ran it. You design the experiment — the results depend on the choices you make.</p>
+    <div class="solo-note">Built for one person — no lab partner or group needed</div>
+  </div>
+
+  <div class="strip">
+    <div class="progress-track" id="progressTrack"></div>
+    <button class="btn small secondary glossary-btn" id="openGlossary">Glossary</button>
+  </div>
+
+  <!-- SECTION 1: Question + Hypothesis -->
+  <div class="section">
+    <h2><span class="sq"></span>1. Investigation Question &amp; Hypothesis</h2>
+    <p class="sub">Every investigation starts with a question. Select one of the choices below.</p>
+
+    <div class="q-block" id="questionOptions">
+      <label class="q-option" data-q="q1">
+        <input type="radio" name="qChoice" value="q1">
+        <span>How does the amount of CO<sub>2</sub> in the air affect the temperature of a system?</span>
+      </label>
+      <label class="q-option" data-q="q2">
+        <input type="radio" name="qChoice" value="q2">
+        <span>How does the distance from a heat source affect the temperature of a system?</span>
+      </label>
+      <label class="q-option" data-q="q3">
+        <input type="radio" name="qChoice" value="q3">
+        <span>How does the amount of water in a bottle affect how fast (or how much) its temperature changes?</span>
+      </label>
+    </div>
+    <div class="error-msg" id="questionError">Select one investigation question before you continue.</div>
+    <div class="q-feedback" id="questionFeedback"></div>
+
+    <div class="q-block">
+      <div class="q-label">Build your hypothesis</div>
+      <div class="hint">Base this on the question you picked above.</div>
+      <div class="hyp-row">
+        <span>IF</span>
+        <select id="hypVar">
+          <option value="the number of CO2 tablets">the number of CO2 tablets</option>
+          <option value="the amount of water">the amount of water</option>
+          <option value="the distance from the heat source">the distance from the heat source</option>
+        </select>
+        <select id="hypDir1"><option value="increases">increases</option><option value="decreases">decreases</option></select>
+        <span>, THEN the temperature of the system will</span>
+        <select id="hypDir2"><option value="increase">increase</option><option value="decrease">decrease</option><option value="stay the same">stay the same</option></select>
+        <span>.</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SECTION 2: Design your bottles -->
+  <div class="section">
+    <h2><span class="sq"></span>2. Design Your Bottles</h2>
+    <p class="sub">You're in charge of the setup. For each bottle, choose the number of fizzing tablets (0–5), the amount of water, and how far the bottle sits from the heat lamp (or a sunny window). The temperature results you get will depend entirely on what you choose here.</p>
+
+    <div class="bottle-grid" id="bottleGrid"></div>
+
+    <div class="setup-note">Real scientists usually change only <b>one</b> variable at a time between setups and keep everything else the same — that's what makes it possible to tell what actually caused a difference. You don't have to do that here. Try it however you want, and you'll be asked to think about the consequences of your choices later.</div>
+  </div>
+
+  <!-- SECTION 3: Run -->
+  <div class="section">
+    <h2><span class="sq"></span>3. Run the Investigation</h2>
+    <p class="sub">Press Start. The simulator will turn on all three heat sources and record the air temperature inside each bottle every 2 minutes for 20 minutes, using the setup you designed above.</p>
+    <div class="btn-row">
+      <button class="btn" id="startBtn">Start Investigation</button>
+      <button class="btn secondary" id="skipBtn" disabled>Skip to End</button>
+      <button class="btn secondary" id="rerunBtn" disabled>Change Setup &amp; Run Again</button>
+    </div>
+    <div class="run-status" id="runStatus">Not started yet.</div>
+    <div class="error-msg" id="startError"></div>
+
+    <div class="chart-wrap">
+      <canvas id="chart" width="1040" height="320" style="width:100%; height:auto;"></canvas>
+      <div class="legend-row" id="chartLegend"></div>
+    </div>
+
+    <table class="data-table" id="dataTable">
+      <thead><tr id="dataTableHead"><th>Time (min)</th></tr></thead>
+      <tbody id="dataTableBody"></tbody>
+    </table>
+
+    <table class="setup-table" id="setupTable" style="margin-top:16px;">
+      <thead><tr><th>Bottle</th><th>Tablets</th><th>Water (mL)</th><th>Distance (in)</th></tr></thead>
+      <tbody id="setupTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 5: Summary -->
+  <div class="section">
+    <h2><span class="sq"></span>4. Your Summary</h2>
+    <p class="sub">This box pulls together your question, hypothesis, setup, and data. Copy it or print it.</p>
+    <div class="summary-name-row">
+      <input type="text" id="studentName" placeholder="Your name">
+      <input type="text" id="studentDate" placeholder="Date">
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="buildSummaryBtn">Build My Summary</button>
+      <button class="btn secondary" id="copySummaryBtn">Copy to Clipboard</button>
+      <button class="btn secondary" id="printSummaryBtn">Print</button>
+      <span class="copy-flash" id="copyFlash">Copied!</span>
+    </div>
+    <div class="summary-box" id="summaryBox" style="margin-top:12px;">Run the investigation, then press "Build My Summary."</div>
+  </div>
+
+</div>
+
+<div class="glossary-modal" id="glossaryModal">
+  <div class="glossary-card">
+    <h3>Glossary</h3>
+    <div class="glossary-item"><div class="g-term">Concentration</div><div class="g-def">How much of something (like CO2) is packed into a given amount of space. More CO2 molecules in the same size bottle = higher concentration.</div></div>
+    <div class="glossary-item"><div class="g-term">Mixture</div><div class="g-def">Two or more substances combined together, where each substance keeps its own properties (like air, which is a mixture of gases).</div></div>
+    <div class="glossary-item"><div class="g-term">Solution</div><div class="g-def">A mixture where one substance is fully dissolved evenly into another.</div></div>
+    <div class="glossary-item"><div class="g-term">Greenhouse effect</div><div class="g-def">The way certain gases in the atmosphere trap heat energy that would otherwise escape back into space, warming the air near Earth's surface.</div></div>
+    <div class="glossary-item"><div class="g-term">Greenhouse gases</div><div class="g-def">Gases (like CO2) that are especially good at trapping heat energy, causing the greenhouse effect.</div></div>
+    <div class="glossary-item"><div class="g-term">System</div><div class="g-def">The part of the world you're focused on studying — here, the water, air, and CO2 inside one sealed bottle.</div></div>
+    <div class="glossary-item"><div class="g-term">Controlled variable</div><div class="g-def">Something you deliberately keep the same across every trial, so it can't explain any differences in your results.</div></div>
+    <div class="glossary-item"><div class="g-term">Independent variable</div><div class="g-def">The one thing you deliberately change on purpose, to see what effect it has.</div></div>
+    <div class="glossary-item"><div class="g-term">Dependent variable</div><div class="g-def">What you measure, because you expect it to change depending on the independent variable.</div></div>
+    <div class="btn-row"><button class="btn secondary small" id="closeGlossary">Close</button></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ---------- Bottle state ----------
+  const BOTTLE_META = [
+    { id: 'a', label: 'Bottle A', color: '#35618c' },
+    { id: 'b', label: 'Bottle B', color: '#b8892b' },
+    { id: 'c', label: 'Bottle C', color: '#a8452f' },
+  ];
+  const bottles = {
+    a: { name: 'Bottle A', tablets: null, water: 100, distance: 6 },
+    b: { name: 'Bottle B', tablets: null, water: 100, distance: 6 },
+    c: { name: 'Bottle C', tablets: null, water: 100, distance: 6 },
+  };
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  // ---------- Beaker diagram ----------
+  function beakerSVG(id) {
+  const b = bottles[id];
+  const waterFrac = clamp(b.water / 250, 0.08, 1);
+  const tabletCount = b.tablets == null ? 0 : b.tablets;
+
+  const bodyX = 14, bodyW = 70, shoulderY = 50, bodyBottom = 112;
+  const neckW = 22, neckX = bodyX + (bodyW - neckW) / 2, neckTop = 26, neckBottom = shoulderY;
+  const capY = neckTop - 8, capH = 8;
+  const bodyH = bodyBottom - shoulderY;
+  const waterH = bodyH * waterFrac;
+  const waterY = bodyBottom - waterH;
+
+  let bubbles = '';
+  for (let i = 0; i < tabletCount; i++) {
+  const bx = bodyX + 14 + (i % 3) * 20;
+  const by = waterY + 12 + Math.floor(i / 3) * 15;
+  bubbles += `<circle cx="${bx}" cy="${Math.min(by, bodyBottom - 8)}" r="3.5" fill="#ffffff" fill-opacity="0.8" stroke="#ffffff"/>`;
+  }
+
+  // thermometer: stem through the cap, red bulb hanging in the air space
+  // above the water line (never submerged), inside the bottle.
+  const stemX = neckX + neckW / 2;
+  const stemTop = 6;
+  const bulbY = Math.max(waterY - 14, neckTop + 14);
+  const mercuryTop = Math.max(bulbY - 20, stemTop + 8);
+  const thermometer = `
+  <line x1="${stemX}" y1="${stemTop}" x2="${stemX}" y2="${bulbY}" stroke="#cfcfcf" stroke-width="6" stroke-linecap="round"/>
+  <line x1="${stemX}" y1="${mercuryTop}" x2="${stemX}" y2="${bulbY}" stroke="#e0503f" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="${stemX}" cy="${bulbY}" r="6.5" fill="#e0503f" stroke="#cfcfcf" stroke-width="1.5"/>
+  <circle cx="${stemX}" cy="${stemTop}" r="3" fill="#f4f4f4" stroke="#b9b9b9" stroke-width="1"/>
+  ${[0,1,2,3].map(i => `<line x1="${stemX-5}" y1="${stemTop+10+i*10}" x2="${stemX-2.5}" y2="${stemTop+10+i*10}" stroke="#9a9a9a" stroke-width="1"/>`).join('')}
+  `;
+
+  // bottle outline (neck + shoulder + rounded body); cap drawn last so it
+  // visually sits over the top of the thermometer stem.
+  const bottleOutline = `
+  <path d="M${neckX},${neckTop}
+  L${neckX},${neckBottom}
+  L${bodyX},${shoulderY+6}
+  L${bodyX},${bodyBottom-8}
+  Q${bodyX},${bodyBottom} ${bodyX+8},${bodyBottom}
+  L${bodyX+bodyW-8},${bodyBottom}
+  Q${bodyX+bodyW},${bodyBottom} ${bodyX+bodyW},${bodyBottom-8}
+  L${bodyX+bodyW},${shoulderY+6}
+  L${neckX+neckW},${neckBottom}
+  L${neckX+neckW},${neckTop}"
+  fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round"/>
+  <rect x="${neckX-3}" y="${capY}" width="${neckW+6}" height="${capH}" rx="2" fill="#5b5b5b"/>
+  `;
+
+  const waterFill = `
+  <clipPath id="clip-${id}">
+  <path d="M${neckX+1},${neckTop}
+  L${neckX+1},${neckBottom}
+  L${bodyX+1.5},${shoulderY+6}
+  L${bodyX+1.5},${bodyBottom-8}
+  Q${bodyX+1.5},${bodyBottom-1.5} ${bodyX+8},${bodyBottom-1.5}
+  L${bodyX+bodyW-8},${bodyBottom-1.5}
+  Q${bodyX+bodyW-1.5},${bodyBottom-1.5} ${bodyX+bodyW-1.5},${bodyBottom-8}
+  L${bodyX+bodyW-1.5},${shoulderY+6}
+  L${neckX+neckW-1},${neckBottom}
+  L${neckX+neckW-1},${neckTop} Z"/>
+  </clipPath>
+  <g clip-path="url(#clip-${id})">
+  <rect x="${bodyX}" y="${waterY}" width="${bodyW}" height="${bodyBottom-waterY}" fill="#a9c8de" fill-opacity="0.75"/>
+  ${bubbles}
+  </g>
+  `;
+
+  // lightbulb heat source, replacing the old lamp/cone
+  const lampX = clamp(200 - b.distance * 5, 128, 192);
+  const bulbCY = 34, bulbR = 15;
+  const lightbulb = `
+  <g>
+  <circle cx="${lampX}" cy="${bulbCY}" r="${bulbR+6}" fill="#ffe9a8" fill-opacity="0.35"/>
+  <circle cx="${lampX}" cy="${bulbCY}" r="${bulbR}" fill="#fff6d6" stroke="#e8b93a" stroke-width="1.5"/>
+  <path d="M${lampX-6},${bulbCY-4} q6,10 0,10 M${lampX},${bulbCY-6} q6,12 0,14 M${lampX+6},${bulbCY-4} q-6,10 0,10"
+  fill="none" stroke="#e8862a" stroke-width="1.3" stroke-linecap="round"/>
+  <path d="M${lampX-6},${bulbCY+bulbR-2} L${lampX+6},${bulbCY+bulbR-2} L${lampX+4},${bulbCY+bulbR+10} L${lampX-4},${bulbCY+bulbR+10} Z" fill="#c9c9c9" stroke="#8a8a8a" stroke-width="1"/>
+  ${[0,1,2].map(i => `<line x1="${lampX-4.5}" y1="${bulbCY+bulbR+1+i*3}" x2="${lampX+4.5}" y2="${bulbCY+bulbR+1+i*3}" stroke="#8a8a8a" stroke-width="1"/>`).join('')}
+  <line x1="${lampX-bulbR-4}" y1="${bulbCY}" x2="${lampX-bulbR-9}" y2="${bulbCY}" stroke="#e8b93a" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="${lampX+bulbR+4}" y1="${bulbCY}" x2="${lampX+bulbR+9}" y2="${bulbCY}" stroke="#e8b93a" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="${lampX}" y1="${bulbCY-bulbR-4}" x2="${lampX}" y2="${bulbCY-bulbR-9}" stroke="#e8b93a" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <line x1="${lampX}" y1="${bulbCY+bulbR+11}" x2="${bodyX+bodyW+6}" y2="${shoulderY+18}" stroke="#f2b544" stroke-width="1.5" stroke-dasharray="3,3"/>
+  `;
+
+  return `<svg viewBox="0 0 220 132" width="100%" height="120">
+  ${lightbulb}
+  ${waterFill}
+  ${bottleOutline}
+  ${thermometer}
+  <text x="${bodyX+bodyW/2}" y="${bodyBottom+22}" font-size="9" text-anchor="middle" fill="#45484c" font-family="sans-serif">${b.water} mL, ${b.tablets == null ? '? tablets' : (b.tablets + ' tablet' + (b.tablets===1?'':'s'))}</text>
+  <text x="${(lampX+bodyX+bodyW)/2}" y="12" font-size="9" text-anchor="middle" fill="#45484c" font-family="sans-serif">${b.distance} in</text>
+  </svg>`;
+  }
+
+  function renderBottleControls() {
+    const grid = document.getElementById('bottleGrid');
+    grid.innerHTML = BOTTLE_META.map(meta => {
+      const b = bottles[meta.id];
+      return `
+      <div class="bottle-config ${meta.id}">
+        <input class="bname" id="name-${meta.id}" value="${b.name}">
+        <div class="bottle-diagram" id="diagram-${meta.id}">${beakerSVG(meta.id)}</div>
+        <div class="q-label" style="font-size:12px;">Amount of CO2 (tablets) — required</div>
+        <div class="chip-row" id="tablets-${meta.id}">
+          ${[0,1,2,3,4,5].map(n => `<button type="button" class="chip-btn${b.tablets===n ? ' selected' : ''}" data-n="${n}">${n}</button>`).join('')}
+        </div>
+        <div class="chip-required-note" id="tabletsNote-${meta.id}">Select an amount of CO2 for this bottle.</div>
+        <div class="field-row">
+          <label>Water (mL)</label>
+          <input type="number" min="20" max="250" step="5" value="${b.water}" id="water-${meta.id}">
+        </div>
+        <div class="field-row">
+          <label>Distance (in)</label>
+          <input type="number" min="3" max="24" step="1" value="${b.distance}" id="distance-${meta.id}">
+        </div>
+      </div>`;
+    }).join('');
+
+    BOTTLE_META.forEach(meta => {
+      const id = meta.id;
+      document.getElementById(`name-${id}`).addEventListener('input', e => { bottles[id].name = e.target.value || meta.label; renderChartLegend(); renderDataHead(); renderSetupTable(); });
+      document.getElementById(`tablets-${id}`).querySelectorAll('.chip-btn').forEach(chip => {
+        chip.addEventListener('click', () => {
+          bottles[id].tablets = Number(chip.dataset.n);
+          document.getElementById(`tablets-${id}`).querySelectorAll('.chip-btn').forEach(c => c.classList.toggle('selected', c === chip));
+          document.getElementById(`tabletsNote-${id}`).classList.remove('show');
+          document.querySelector(`.bottle-config.${id}`).classList.remove('missing');
+          refreshDiagram(id);
+        });
+      });
+      document.getElementById(`water-${id}`).addEventListener('input', e => {
+        bottles[id].water = clamp(Number(e.target.value) || 20, 20, 250);
+        refreshDiagram(id);
+      });
+      document.getElementById(`distance-${id}`).addEventListener('input', e => {
+        bottles[id].distance = clamp(Number(e.target.value) || 3, 3, 24);
+        refreshDiagram(id);
+      });
+    });
+    renderSetupTable();
+  }
+
+  function refreshDiagram(id) {
+    document.getElementById(`diagram-${id}`).innerHTML = beakerSVG(id);
+    renderSetupTable();
+  }
+
+  function renderSetupTable() {
+    document.getElementById('setupTableBody').innerHTML = BOTTLE_META.map(meta => {
+      const b = bottles[meta.id];
+      return `<tr><td class="col-${meta.id}">${b.name}</td><td>${b.tablets == null ? '—' : b.tablets}</td><td>${b.water}</td><td>${b.distance}</td></tr>`;
+    }).join('');
+  }
+
+  // ---------- Question / hypothesis ----------
+  const QUESTIONS = {
+    q1: 'How does the amount of CO2 in the air affect the temperature of a system?',
+    q2: 'How does the distance from a heat source affect the temperature of a system?',
+    q3: 'How does the amount of water in a bottle affect how fast (or how much) its temperature changes?',
+  };
+  const CORRECT_QUESTION = 'q1';
+  document.querySelectorAll('input[name=qChoice]').forEach(r => {
+    r.addEventListener('change', () => {
+      document.querySelectorAll('.q-option').forEach(o => o.classList.remove('active', 'correct', 'incorrect'));
+      const opt = document.querySelector(`.q-option[data-q="${r.value}"]`);
+      document.getElementById('questionError').classList.remove('show');
+      const fb = document.getElementById('questionFeedback');
+      if (r.value === CORRECT_QUESTION) {
+        if (opt) opt.classList.add('correct');
+        fb.textContent = 'Correct — the bottles, tablets, water, and heat sources in this simulator are all set up to test exactly this: how the amount of CO2 in the system affects temperature.';
+        fb.className = 'q-feedback show good';
+      } else {
+        if (opt) opt.classList.add('incorrect');
+        fb.textContent = 'Not quite — this simulator is built to test the amount of CO2 in the system, not this. Select "How does the amount of CO2 in the air affect the temperature of a system?" to continue.';
+        fb.className = 'q-feedback show bad';
+      }
+    });
+  });
+  function currentQuestion() {
+    const sel = document.querySelector('input[name=qChoice]:checked');
+    if (!sel) return '(no question selected)';
+    return QUESTIONS[sel.value];
+  }
+
+  // ---------- Temperature model ----------
+  const TIMES = [0,2,4,6,8,10,12,14,16,18,20];
+
+  function paramsFor(b) {
+    const co2Extra = 46 + Math.pow(b.tablets, 2) * 2;
+    const distRatio = clamp(6 / Math.max(b.distance, 3), 0.3, 2.2);
+    const waterRatio = clamp(100 / Math.max(b.water, 20), 0.35, 2.5);
+    const thermalDamp = Math.sqrt(waterRatio);
+    const Tmax = 74 + co2Extra * distRatio * thermalDamp;
+    const k = 0.045 + 0.15 * distRatio * Math.sqrt(waterRatio);
+    return { T0: 74, Tmax, k };
+  }
+
+  function tempAt(params, t, noiseSeed) {
+    const base = params.T0 + (params.Tmax - params.T0) * (1 - Math.exp(-params.k * t));
+    const noise = (Math.sin((t + 1) * noiseSeed * 12.9898) * 43758.5453 % 1) * 1.6 - 0.8;
+    const f = base + noise;
+    return Math.round((f - 32) * 5 / 9 * 10) / 10;
+  }
+
+  let trialSeed = Math.random() * 100;
+  let running = false;
+  let stepIndex = 0;
+  let dataRows = [];
+  let timer = null;
+  let completedRun = false;
+  let setupLocked = false;
+
+  const els = {
+    startBtn: document.getElementById('startBtn'),
+    skipBtn: document.getElementById('skipBtn'),
+    rerunBtn: document.getElementById('rerunBtn'),
+    runStatus: document.getElementById('runStatus'),
+    dataTableBody: document.getElementById('dataTableBody'),
+    chart: document.getElementById('chart'),
+    progressTrack: document.getElementById('progressTrack'),
+  };
+  const ctx = els.chart.getContext('2d');
+
+  function renderProgress() {
+    const stages = 4;
+    let html = '';
+    for (let i = 1; i <= stages; i++) {
+      let cls = 'progress-dot';
+      if (i === 3 && running) cls += ' now';
+      else if (i < 3 || completedRun) cls += ' done';
+      html += `<span class="${cls}"></span>`;
+    }
+    els.progressTrack.innerHTML = html + `<span class="progress-label">Step ${completedRun ? '4' : (running ? '3' : '1–2')} of 4</span>`;
+  }
+
+  function renderChartLegend() {
+    const style = ['solid line, circle markers', 'dashed line, square markers', 'dotted line, triangle markers'];
+    document.getElementById('chartLegend').innerHTML = BOTTLE_META.map((meta, idx) =>
+      `<span><span class="legend-dot" style="background:${meta.color}"></span>${bottles[meta.id].name} — ${style[idx]}</span>`
+    ).join('');
+  }
+  function renderDataHead() {
+    document.getElementById('dataTableHead').innerHTML = '<th>Time (min)</th>' +
+      BOTTLE_META.map(meta => `<th>${bottles[meta.id].name} (°C)</th>`).join('');
+  }
+
+  function drawChart() {
+    const W = els.chart.width, H = els.chart.height;
+    ctx.clearRect(0, 0, W, H);
+    const padL = 46, padR = 14, padT = 14, padB = 30;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const minT = 15, maxT = 95;
+
+    ctx.strokeStyle = '#eae8e2';
+    ctx.fillStyle = '#45484c';
+    ctx.font = '11px sans-serif';
+    ctx.lineWidth = 1;
+    for (let temp = 20; temp <= 90; temp += 10) {
+      const y = padT + plotH - ((temp - minT) / (maxT - minT)) * plotH;
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+      ctx.fillText(temp + '°', 6, y + 4);
+    }
+    TIMES.forEach(t => {
+      const x = padL + (t / 20) * plotW;
+      ctx.fillText(t + '', x - 4, H - 10);
+    });
+    ctx.fillText('min', W - padR - 20, H - 10);
+
+    // Dash pattern + a tiny fixed pixel offset per series so that lines with
+    // identical data (e.g. all three bottles set up the same way) still all
+    // render as visibly separate traces instead of one hiding the others.
+    const DASH = [[], [7, 4], [2, 3]];
+    const PIXEL_OFFSET = [-2.5, 0, 2.5];
+    const MARKER = ['circle', 'square', 'triangle'];
+
+    function drawMarker(shape, x, y, color) {
+      ctx.fillStyle = color;
+      if (shape === 'circle') {
+        ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+      } else if (shape === 'square') {
+        ctx.fillRect(x - 3, y - 3, 6, 6);
+      } else {
+        ctx.beginPath(); ctx.moveTo(x, y - 3.5); ctx.lineTo(x + 3.5, y + 3); ctx.lineTo(x - 3.5, y + 3); ctx.closePath(); ctx.fill();
+      }
+    }
+
+    BOTTLE_META.forEach((meta, idx) => {
+      const pts = dataRows.filter(r => r[meta.id] != null);
+      if (pts.length === 0) return;
+      const dy = PIXEL_OFFSET[idx];
+      ctx.strokeStyle = meta.color;
+      ctx.lineWidth = 2.4;
+      ctx.setLineDash(DASH[idx]);
+      ctx.beginPath();
+      pts.forEach((r, i) => {
+        const x = padL + (r.t / 20) * plotW;
+        const y = padT + plotH - ((r[meta.id] - minT) / (maxT - minT)) * plotH + dy;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+      pts.forEach(r => {
+        const x = padL + (r.t / 20) * plotW;
+        const y = padT + plotH - ((r[meta.id] - minT) / (maxT - minT)) * plotH + dy;
+        drawMarker(MARKER[idx], x, y, meta.color);
+      });
+    });
+  }
+
+  function renderTable() {
+    els.dataTableBody.innerHTML = dataRows.map(r => `
+      <tr>
+        <td>${r.t}</td>
+        ${BOTTLE_META.map(meta => `<td class="col-${meta.id}">${r[meta.id] != null ? r[meta.id].toFixed(1) : '—'}</td>`).join('')}
+      </tr>`).join('');
+  }
+
+  function stepOnce() {
+    if (stepIndex >= TIMES.length) { finishRun(); return; }
+    const t = TIMES[stepIndex];
+    const row = { t };
+    BOTTLE_META.forEach(meta => {
+      const p = paramsFor(bottles[meta.id]);
+      row[meta.id] = tempAt(p, t, trialSeed + meta.id.length + bottles[meta.id].tablets);
+    });
+    dataRows.push(row);
+    renderTable();
+    drawChart();
+    els.runStatus.textContent = `Recording temperature at ${t} minutes...`;
+    stepIndex++;
+    if (stepIndex >= TIMES.length) finishRun();
+  }
+
+  function finishRun() {
+    running = false;
+    completedRun = true;
+    clearInterval(timer);
+    els.startBtn.disabled = true;
+    els.skipBtn.disabled = true;
+    els.rerunBtn.disabled = false;
+    const last = dataRows[dataRows.length - 1];
+    els.runStatus.textContent = `Investigation complete — 20 minutes recorded. ` +
+      BOTTLE_META.map(meta => `${bottles[meta.id].name}: ${last[meta.id].toFixed(1)}°C`).join(' · ');
+    renderProgress();
+  }
+
+  function setBottleFieldsDisabled(disabled) {
+    ['a','b','c'].forEach(id => {
+      ['water','distance','name'].forEach(f => {
+        const el = document.getElementById(`${f}-${id}`);
+        if (el) el.disabled = disabled;
+      });
+      document.getElementById(`tablets-${id}`).querySelectorAll('.chip-btn').forEach(c => c.disabled = disabled);
+    });
+  }
+
+  function validateSetup() {
+    let ok = true;
+    const startErr = document.getElementById('startError');
+    const qErr = document.getElementById('questionError');
+    startErr.classList.remove('show');
+    qErr.classList.remove('show');
+
+    const qSel = document.querySelector('input[name=qChoice]:checked');
+    if (!qSel) {
+      qErr.textContent = 'Select an investigation question before you continue.';
+      qErr.classList.add('show');
+      ok = false;
+    } else if (qSel.value !== CORRECT_QUESTION) {
+      qErr.textContent = 'This simulator is built to test the amount of CO2 in the system. Select the CO2 question above before you continue.';
+      qErr.classList.add('show');
+      ok = false;
+    }
+
+    const missing = [];
+    ['a','b','c'].forEach(id => {
+      const cfg = document.querySelector(`.bottle-config.${id}`);
+      if (bottles[id].tablets == null) {
+        missing.push(bottles[id].name);
+        cfg.classList.add('missing');
+        document.getElementById(`tabletsNote-${id}`).classList.add('show');
+      } else {
+        cfg.classList.remove('missing');
+        document.getElementById(`tabletsNote-${id}`).classList.remove('show');
+      }
+    });
+    if (missing.length) {
+      startErr.textContent = `Select the amount of CO2 (tablets) for: ${missing.join(', ')} before starting.`;
+      startErr.classList.add('show');
+      ok = false;
+    }
+    return ok;
+  }
+
+  els.startBtn.addEventListener('click', () => {
+    if (!validateSetup()) return;
+    running = true;
+    completedRun = false;
+    stepIndex = 0;
+    dataRows = [];
+    renderDataHead();
+    renderChartLegend();
+    renderTable();
+    drawChart();
+    renderSetupTable();
+    els.startBtn.disabled = true;
+    els.skipBtn.disabled = false;
+    els.rerunBtn.disabled = true;
+    setBottleFieldsDisabled(true);
+    renderProgress();
+    timer = setInterval(stepOnce, 550);
+    els.runStatus.textContent = 'Heat sources on. Recording begins...';
+  });
+
+  els.skipBtn.addEventListener('click', () => {
+    clearInterval(timer);
+    while (stepIndex < TIMES.length) stepOnce();
+  });
+
+  els.rerunBtn.addEventListener('click', () => {
+    trialSeed = Math.random() * 100;
+    els.startBtn.disabled = false;
+    els.rerunBtn.disabled = true;
+    dataRows = [];
+    renderTable();
+    drawChart();
+    setBottleFieldsDisabled(false);
+    els.runStatus.textContent = 'Change your setup above if you want, then press Start Investigation.';
+    completedRun = false;
+    renderProgress();
+  });
+
+  // ---------- Glossary ----------
+  const modal = document.getElementById('glossaryModal');
+  document.getElementById('openGlossary').addEventListener('click', () => modal.classList.add('open'));
+  document.getElementById('closeGlossary').addEventListener('click', () => modal.classList.remove('open'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('open'); });
+  document.querySelectorAll('.term').forEach(t => {
+    t.addEventListener('click', () => modal.classList.add('open'));
+  });
+
+  // ---------- Summary builder ----------
+  function val(id) { return document.getElementById(id).value.trim(); }
+  function buildSummary() {
+    const name = val('studentName') || '(name not entered)';
+    const date = val('studentDate') || '(date not entered)';
+    const question = currentQuestion();
+    const hyp = `IF ${document.getElementById('hypVar').value} ${document.getElementById('hypDir1').value}, THEN the temperature of the system will ${document.getElementById('hypDir2').value}.`;
+
+    let setupTxt = 'Bottle      Tablets  Water(mL)  Distance(in)\n';
+    BOTTLE_META.forEach(meta => {
+      const b = bottles[meta.id];
+      setupTxt += `${b.name.padEnd(12)}${String(b.tablets == null ? '-' : b.tablets).padEnd(9)}${String(b.water).padEnd(11)}${b.distance}\n`;
+    });
+
+    let tableTxt = 'Time(min)  ' + BOTTLE_META.map(m => (bottles[m.id].name + '(F)').padEnd(12)).join('') + '\n';
+    dataRows.forEach(r => {
+      tableTxt += `${String(r.t).padEnd(11)}` + BOTTLE_META.map(m => (r[m.id] != null ? r[m.id].toFixed(1) : '-').padEnd(12)).join('') + '\n';
+    });
+
+    const out =
+`CO2 INVESTIGATION — STUDENT SUMMARY
+Name: ${name}      Date: ${date}
+
+INVESTIGATION QUESTION
+${question}
+
+HYPOTHESIS
+${hyp}
+
+MY SETUP
+${setupTxt}
+DATA TABLE (2-minute intervals, 20 minutes total)
+${tableTxt}
+`;
+    document.getElementById('summaryBox').textContent = out;
+    return out;
+  }
+
+  document.getElementById('buildSummaryBtn').addEventListener('click', buildSummary);
+  document.getElementById('copySummaryBtn').addEventListener('click', () => {
+    const text = buildSummary();
+    navigator.clipboard.writeText(text).then(() => {
+      const flash = document.getElementById('copyFlash');
+      flash.style.display = 'inline';
+      setTimeout(() => flash.style.display = 'none', 1600);
+    }).catch(() => {});
+  });
+  document.getElementById('printSummaryBtn').addEventListener('click', () => {
+    buildSummary();
+    window.print();
+  });
+
+  // ---------- init ----------
+  renderBottleControls();
+  renderDataHead();
+  renderChartLegend();
+  renderProgress();
+  drawChart();
+})();
+</script>
+</body>
+</html>

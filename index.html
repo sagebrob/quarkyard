@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Quarkyard — Science Simulators</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --ink-soft: #45484c;
+    --paper: #faf9f6;
+    --panel: #ffffff;
+    --line: #d8d6cf;
+    --line-soft: #eae8e2;
+    --blue: #35618c;
+    --blue-soft: #e4ebef;
+    --gold: #b8892b;
+    --gold-soft: #f5ecd8;
+    --red: #a8452f;
+    --red-soft: #f4e1db;
+    --evergreen: #003b36;
+    --amber: #e98a15;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Barlow',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.5;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:40px 24px 80px;}
+  header.masthead{margin-bottom:40px;}
+  .back-link{
+    display:inline-block;
+    font-size:0.85rem;
+    font-weight:600;
+    color:var(--ink-soft);
+    text-decoration:none;
+    margin-bottom:20px;
+    border-bottom:1px solid transparent;
+  }
+  .back-link:hover{color:var(--evergreen);border-bottom-color:var(--evergreen);}
+  .kicker{
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:0.8rem;
+    font-weight:700;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--amber);
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:800;
+    font-size:clamp(2rem,5vw,2.8rem);
+    color:var(--evergreen);
+    letter-spacing:-0.01em;
+    margin-bottom:14px;
+  }
+  .lede{color:var(--ink-soft);max-width:620px;font-size:1rem;}
+  section.subject{margin-top:48px;}
+  .subject-head{
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:10px;
+    margin-bottom:20px;
+  }
+  .subject-head h2{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:800;
+    font-size:1.5rem;
+    text-transform:uppercase;
+    letter-spacing:0.02em;
+  }
+  .subject-head .count{
+    font-size:0.8rem;
+    color:var(--ink-soft);
+    font-weight:600;
+  }
+  .subject.chem .subject-head{border-bottom-color:var(--blue);}
+  .subject.bio .subject-head{border-bottom-color:var(--red);}
+  .unit-group{margin-bottom:28px;}
+  .unit-group:last-child{margin-bottom:0;}
+  .unit-label{
+    font-size:0.78rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+  }
+  .card-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;}
+  @media (max-width:640px){.card-grid{grid-template-columns:1fr;gap:20px;}}
+
+  /* ---- Card shell ---- */
+  a.card, div.card{
+    --accent:var(--blue); --accent-soft:var(--blue-soft);
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    background:var(--panel);
+    border:1px solid var(--line-soft);
+    border-radius:14px;
+    overflow:hidden;
+    text-decoration:none;
+    color:var(--ink);
+    box-shadow:0 1px 2px rgba(20,20,20,0.04), 0 4px 14px rgba(20,20,20,0.05);
+    transition:transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+  .subject.bio a.card, .subject.bio div.card{--accent:var(--red); --accent-soft:var(--red-soft);}
+  a.card:hover, div.card:hover{
+    transform:translateY(-3px);
+    border-color:var(--accent);
+    box-shadow:0 2px 4px rgba(20,20,20,0.05), 0 14px 30px rgba(20,20,20,0.10);
+  }
+  a.card:focus-visible, .card-inner:focus-visible, .card-lang:focus-visible{outline:3px solid var(--amber);outline-offset:3px;}
+
+  /* ---- Framed preview: screenshot sits on a soft tinted mat ---- */
+  .card-mat{
+    display:block;
+    background:var(--accent-soft);
+    padding:16px 16px 0;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .card-thumb{
+    display:block;
+    width:100%;
+    height:auto;
+    aspect-ratio:8/3;
+    object-fit:cover;
+    object-position:top center;
+    border-radius:8px 8px 0 0;
+    background:var(--panel);
+    box-shadow:0 0 0 1px rgba(0,0,0,0.06), 0 -1px 8px rgba(0,0,0,0.06);
+  }
+
+  /* ---- Body ---- */
+  .card-inner{display:flex;flex-direction:column;flex:1;text-decoration:none;color:inherit;}
+  .card-tag{
+    align-self:flex-start;
+    display:inline-block;
+    font-size:0.68rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.07em;
+    padding:3px 10px;
+    border-radius:20px;
+    margin:20px 22px 10px;
+    background:var(--accent-soft);
+    color:var(--accent);
+  }
+  .card-title{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:700;
+    font-size:1.3rem;
+    line-height:1.15;
+    letter-spacing:0.005em;
+    margin:0 22px 8px;
+  }
+  .card-desc{font-size:0.92rem;line-height:1.6;color:var(--ink-soft);margin:0 22px;flex:1;}
+  .card-cta{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin:18px 22px 0;
+    padding:14px 0 18px;
+    border-top:1px solid var(--line-soft);
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:700;
+    font-size:0.95rem;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    color:var(--accent);
+  }
+  .card-cta .arrow{transition:transform 0.18s ease;}
+  a.card:hover .card-cta .arrow, .card-inner:hover .card-cta .arrow{transform:translateX(4px);}
+
+  /* ---- Spanish link: sits in the CTA row ---- */
+  .card-lang{
+    position:absolute; right:22px; bottom:16px; z-index:1;
+    font-size:0.72rem; font-weight:700; letter-spacing:0.03em;
+    color:var(--ink-soft); text-decoration:none;
+    border:1px solid var(--line); border-radius:20px;
+    padding:3px 10px; background:var(--panel);
+    transition:color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .card-lang:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);}
+
+  /* ---- A section with just one simulator: full-width, side-by-side ---- */
+  @media (min-width:700px){
+    .card-grid > .card:only-child{grid-column:1 / -1;display:grid;grid-template-columns:1.15fr 1fr;align-items:stretch;}
+    .card-grid > .card:only-child .card-mat{padding:20px;border-bottom:none;border-right:1px solid var(--line-soft);display:flex;align-items:center;}
+    .card-grid > .card:only-child .card-thumb{border-radius:8px;}
+    .card-grid > .card:only-child .card-tag{margin-top:24px;}
+  }
+  footer{
+    margin-top:60px;
+    padding-top:20px;
+    border-top:1px solid var(--line);
+    font-size:0.8rem;
+    color:var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <a href="/" class="back-link">Quarkyard</a>
+    <div class="kicker">Not indexed — direct link only</div>
+    <h1>Investigation Simulators</h1>
+    <p class="lede">All the interactive investigation simulators in one place, organized by subject. Bookmark this page — it's the one link you need for any of these.</p>
+  </header>
+
+  <section class="subject chem">
+    <div class="subject-head">
+      <h2>Science Skills</h2>
+      <span class="count">1 simulator</span>
+    </div>
+
+    <div class="unit-group">
+      <div class="card-grid">
+        <div class="card">
+          <a class="card-lang" href="/experiment-design-simulator/#es" lang="es">Español</a>
+          <a class="card-thumb-link card-mat" href="/experiment-design-simulator/" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/experiment-design.jpg" alt="" width="880" height="330" loading="lazy"></a>
+            <a class="card-inner" href="/experiment-design-simulator/">
+            <span class="card-tag">Experimental design</span>
+            <div class="card-title">Experiment Design Simulator</div>
+            <div class="card-desc">Find the independent and dependent variables, choose what to control, predict, run the experiment, and spot the error in someone else&rsquo;s data. 24 experiments across 6 topics. English &amp; Español.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="subject chem">
+    <div class="subject-head">
+      <h2>Chemistry</h2>
+      <span class="count">9 simulators</span>
+    </div>
+
+    <div class="unit-group">
+      <div class="card-grid">
+        <a class="card" href="/co2-simulator/">
+          <span class="card-mat"><img class="card-thumb" src="thumbs/co2.jpg" alt="CO2 simulator: three bottles with heat lamps" width="880" height="330" loading="lazy"></span>
+          <span class="card-tag">Climate &amp; CO2</span>
+          <div class="card-title">CO2 Investigation Simulator</div>
+          <div class="card-desc">How CO2, distance from a heat source, and water volume affect temperature change.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+        </a>
+        <div class="card">
+          <a class="card-lang" href="/rising-seas-simulator/#es" lang="es">Español</a>
+          <a class="card-thumb-link card-mat" href="/rising-seas-simulator/" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/risingseas.jpg" alt="" width="880" height="330" loading="lazy"></a>
+            <a class="card-inner" href="/rising-seas-simulator/">
+            <span class="card-tag">Climate &amp; sea level</span>
+            <div class="card-title">Rising Seas: Who Has to Move?</div>
+            <div class="card-desc">Follow the chain from CO2 to warming, melting land ice, and rising seas. Flood maps of four coastal places and calculate how many people would have to move. Starts with a Units Lab on dimensional analysis. English &amp; Español.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+          </a>
+        </div>
+        <a class="card" href="/energy-transfer-simulator/">
+          <span class="card-mat"><img class="card-thumb" src="thumbs/energy.jpg" alt="Energy transfer simulator: warm and cool cups mixing" width="880" height="330" loading="lazy"></span>
+          <span class="card-tag">Energy transfer</span>
+          <div class="card-title">Energy Transfer Investigation Simulator</div>
+          <div class="card-desc">Mixing warm and cool water — conservation of energy and Q = cmΔT.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+        </a>
+        <a class="card" href="/water-ice-simulator/">
+          <span class="card-mat"><img class="card-thumb" src="thumbs/waterice.jpg" alt="Water-ice simulator: water cooling toward 0 °C on the temperature graph" width="880" height="330" loading="lazy"></span>
+          <span class="card-tag">Latent heat</span>
+          <div class="card-title">Water-Ice Investigation Simulator</div>
+          <div class="card-desc">Melting ice with warm water to find the latent heat of fusion from real data.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+        </a>
+        <a class="card" href="/ice-vs-cold-water/">
+          <span class="card-mat"><img class="card-thumb" src="thumbs/icecold.jpg" alt="Ice vs cold water lab: two cups with temperature probes" width="880" height="330" loading="lazy"></span>
+          <span class="card-tag">Latent heat</span>
+          <div class="card-title">Ice vs. Cold Water Lab</div>
+          <div class="card-desc">Add ice or the same mass of 0 °C cold water to warm water — which cools it more, and where does the energy go?</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+        </a>
+        <div class="card">
+          <a class="card-lang" href="/heating-curve-simulator/index-es.html" lang="es">Español</a>
+          <a class="card-thumb-link card-mat" href="/heating-curve-simulator/" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/heating.jpg" alt="" width="880" height="330" loading="lazy"></a>
+            <a class="card-inner" href="/heating-curve-simulator/">
+            <span class="card-tag">Heating curve</span>
+            <div class="card-title">Ice to Boiling Simulator</div>
+            <div class="card-desc">Heat a block of ice until it melts and boils, and watch the temperature graph draw itself — flat while it melts, flat while it boils.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+          </a>
+        </div>
+        <div class="card">
+          <a class="card-lang" href="/boiling-point-simulator/index-es.html" lang="es">Español</a>
+          <a class="card-thumb-link card-mat" href="/boiling-point-simulator/" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/boiling.jpg" alt="" width="880" height="330" loading="lazy"></a>
+            <a class="card-inner" href="/boiling-point-simulator/">
+            <span class="card-tag">Pressure &amp; boiling</span>
+            <div class="card-title">Boiling Point Investigation Simulator</div>
+            <div class="card-desc">Change the air pressure and boil water to find how pressure controls boiling temperature — the idea behind a heat pump.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+          </a>
+        </div>
+        <a class="card" href="/heat-pump-simulator/">
+          <span class="card-mat"><img class="card-thumb" src="thumbs/heatpump.jpg" alt="Heat pump simulator: refrigerant loop between inside and outside" width="880" height="330" loading="lazy"></span>
+          <span class="card-tag">Heat pumps</span>
+          <div class="card-title">Heat Pump Simulator</div>
+          <div class="card-desc">Follow refrigerant particles as they boil, get compressed, condense, and expand. See how pressure lets a heat pump pull energy out of cold air. Simple and full versions, heating and cooling. English &amp; Español.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+        </a>
+        <a class="card" href="/phase-change-simulator/">
+          <span class="card-mat"><img class="card-thumb" src="thumbs/phase.jpg" alt="Phase change simulator: ice melting with energy flow controls" width="880" height="330" loading="lazy"></span>
+          <span class="card-tag">Phase changes</span>
+          <div class="card-title">Phase Change Simulator</div>
+          <div class="card-desc">Heat and cool water through all six phase changes — melting to deposition — with particles, temperature probes, and energy arrows. English &amp; Español.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="subject bio">
+    <div class="subject-head">
+      <h2>Biology</h2>
+      <span class="count">6 simulators</span>
+    </div>
+
+    <div class="unit-group">
+      <div class="card-grid">
+        <div class="card">
+          <a class="card-lang" href="/cellgame-es.html" lang="es">Español</a>
+          <a class="card-thumb-link card-mat" href="/cellgame.html" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/cellgame.jpg" alt="" width="880" height="330" loading="lazy"></a>
+            <a class="card-inner" href="/cellgame.html">
+            <span class="card-tag">Cell cycle</span>
+            <div class="card-title">Cell Cycle Simulator</div>
+            <div class="card-desc">Two-player board game — move through the cell cycle and hit p53 checkpoints.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+          </a>
+        </div>
+        <a class="card" href="/p53-simulator/">
+          <span class="card-mat"><img class="card-thumb" src="thumbs/p53.jpg" alt="p53 protein synthesis simulator: nucleus and cytoplasm steps" width="880" height="330" loading="lazy"></span>
+          <span class="card-tag">Protein synthesis</span>
+          <div class="card-title">p53 Protein Synthesis Simulator</div>
+          <div class="card-desc">Transcribe and translate a DNA strand yourself — the simulator checks your work.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+        </a>
+        <a class="card" href="/meiosis-simulator/">
+          <span class="card-mat"><img class="card-thumb" src="thumbs/meiosis.jpg" alt="Meiosis simulator: replicated chromosomes" width="880" height="330" loading="lazy"></span>
+          <span class="card-tag">Meiosis</span>
+          <div class="card-title">Meiosis &amp; Crossing Over Simulator</div>
+          <div class="card-desc">Replicate, cross over, and divide Dad's chromosome 17 to see how new p53/BRCA1 combinations arise.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+        </a>
+        <a class="card" href="/pedigree-simulator/">
+          <span class="card-mat"><img class="card-thumb" src="thumbs/pedigree.jpg" alt="Pedigree simulator: family tree with genotypes" width="880" height="330" loading="lazy"></span>
+          <span class="card-tag">Genetics</span>
+          <div class="card-title">Pedigree &amp; Allele-Tracing Simulator</div>
+          <div class="card-desc">Punnett square basics, a mutation twist, then the real p53 pedigree in Jasmine's family.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+        </a>
+        <a class="card" href="/uv-latitude-simulator/">
+          <span class="card-mat"><img class="card-thumb" src="thumbs/uv.jpg" alt="UV and latitude simulator: UV bands by latitude" width="880" height="330" loading="lazy"></span>
+          <span class="card-tag">UV &amp; cancer</span>
+          <div class="card-title">UV &amp; Latitude Investigation Simulator</div>
+          <div class="card-desc">Real CDC and NOAA data — predict, explore, and test whether latitude and UV actually explain who gets skin cancer.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+        </a>
+        <div class="card">
+          <a class="card-lang" href="/yeast-uv-simulator/index-es.html" lang="es">Español</a>
+          <a class="card-thumb-link card-mat" href="/yeast-uv-simulator/" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/yeast.jpg" alt="" width="880" height="330" loading="lazy"></a>
+            <a class="card-inner" href="/yeast-uv-simulator/">
+            <span class="card-tag">UV &amp; cancer</span>
+            <div class="card-title">Yeast &amp; UV Investigation Simulator</div>
+            <div class="card-desc">Plate UV-sensitive and wild-type yeast, test sunscreen, fabric, foil, or time in the sun, then count the colonies that grew.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+          </a>
+        </div>
+        <div class="card">
+          <a class="card-lang" href="/tumor-growth-simulator/index-es.html" lang="es">Español</a>
+          <a class="card-thumb-link card-mat" href="/tumor-growth-simulator/" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/tumor.jpg" alt="" width="880" height="330" loading="lazy"></a>
+            <a class="card-inner" href="/tumor-growth-simulator/">
+            <span class="card-tag">Tumors</span>
+            <div class="card-title">Tumor Growth Simulation: Benign vs. Malignant</div>
+            <div class="card-desc">Grow a benign and a malignant tumor in the same patch of lung tissue, then see what each one does to the tissue and to the whole lung.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+          </a>
+        </div>
+        <div class="card">
+          <a class="card-lang" href="/lung-balloon-simulator/index-es.html" lang="es">Español</a>
+          <a class="card-thumb-link card-mat" href="/lung-balloon-simulator/" tabindex="-1" aria-hidden="true"><img class="card-thumb" src="thumbs/lung.jpg" alt="" width="880" height="330" loading="lazy"></a>
+            <a class="card-inner" href="/lung-balloon-simulator/">
+            <span class="card-tag">Tumors &amp; breathing</span>
+            <div class="card-title">Balloon Lung Model: Healthy vs. Tumor</div>
+            <div class="card-desc">Pull the diaphragm on two bottle-and-balloon chests at once and compare how much air healthy lungs and lungs with a tumor take in.</div>
+          <span class="card-cta">Open simulator <span class="arrow" aria-hidden="true">&rarr;</span></span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Prototype simulators for classroom use. Not indexed for search.
+  </footer>
+
+</div>
+</body>
+</html>

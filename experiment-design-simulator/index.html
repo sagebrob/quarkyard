@@ -1,0 +1,1545 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Practice experimental design: identify the independent and dependent variables, choose constants, write a hypothesis, run a simulated experiment, decide whether the data supports it, and find errors in someone else's data. English and Spanish.">
+<title>Experiment Design Simulation</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+*,*::before,*::after{{box-sizing:border-box}}
+body{{margin:0}}
+[hidden]{{display:none!important}}
+/* Layout: question band on top; left = guided steps, right = lab record (flight track, graph, data table) */
+:root{
+  --paper:#F3F6F9; --surface:#FFFFFF; --tint:#F6F8FC; --ctrl:#7C8798; --ink:#18212F; --muted:#566275; --es:#6F7888;
+  --line:#DCE3EC; --grid:#E7EDF5; --sky:#2563D9; --sky-soft:#E4EDFC; --marker:#C2541A;
+  --ok:#1C7F52; --ok-soft:#E3F4EA; --bad:#B93A33; --bad-soft:#FBE7E5;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-data:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --banner:#E3F5F1; --banner-line:#13877A; --banner-ink:#0B5F56;
+  color-scheme:light;
+}
+
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45}
+.wrap{max-width:1140px;margin:0 auto;padding-block:20px 48px;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.es{display:block;font-style:italic;color:var(--es);font-size:.9em;font-weight:400}
+.en{display:block}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
+.eyebrow{font-family:var(--f-data);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* question band */
+.qband{display:grid;gap:8px;padding:20px 22px;border:2px solid var(--banner-line);border-radius:12px;background:var(--banner)}
+.qband .eyebrow{color:var(--banner-ink)}
+.qband .pill{background:var(--surface);color:var(--banner-ink)}
+.qband h1{font-size:clamp(22px,3.2vw,32px);font-weight:800;line-height:1.15}
+.qband h1 .es{font-family:var(--f-body);font-size:.62em;margin-top:4px}
+.qtag{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pill{font-family:var(--f-data);font-size:12px;padding:3px 9px;border-radius:99px;background:var(--sky-soft);color:var(--sky)}
+
+/* progress */
+.progress{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin:18px 0 14px}
+.progress li{list-style:none;font-size:12px;color:var(--muted);display:grid;gap:5px;min-width:0}
+.progress li::before{content:"";height:5px;border-radius:3px;background:var(--line)}
+.progress li.done::before{background:var(--ok)}
+.progress li.now::before{background:var(--sky)}
+.progress li.now{color:var(--ink);font-weight:700}
+.progress .es{font-size:11px}
+.progress{padding:0}
+
+.cols{display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){.cols{grid-template-columns:minmax(0,1fr) minmax(0,1.08fr)}}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 2px rgba(24,33,47,.05),0 6px 18px rgba(24,33,47,.05);padding:18px;display:grid;gap:14px;align-content:start;min-width:0}
+.card h2{font-size:21px;font-weight:600}
+.card h2 .es{font-family:var(--f-body);font-size:.7em}
+.prompt{font-size:17px;font-weight:700}
+.stem{border-left:3px solid var(--sky);padding:6px 0 6px 12px;color:var(--muted);font-size:15px}
+.stem b{color:var(--ink)}
+
+.chips{display:grid;gap:8px}
+.chip{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;align-items:start;
+  padding:10px 12px;border:1.5px solid var(--ctrl);border-radius:8px;background:var(--surface);font-size:15px}
+.chip:hover{border-color:var(--sky)}
+.chip:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+.chip .box{width:18px;height:18px;margin-top:2px;border:2px solid var(--muted);border-radius:50%}
+.chip.multi .box{border-radius:4px}
+.chip[aria-pressed="true"]{border-color:var(--sky);background:var(--sky-soft)}
+.chip[aria-pressed="true"] .box{border-color:var(--sky);background:var(--sky);box-shadow:inset 0 0 0 3px var(--surface)}
+.chip.ok{border-color:var(--ok);background:var(--ok-soft)}
+.chip.bad{border-color:var(--bad);background:var(--bad-soft)}
+.chip[disabled]{opacity:.5;cursor:not-allowed}
+.chip .tag{font-family:var(--f-data);font-size:11px;color:var(--muted);margin-left:6px}
+
+.predict{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.predict .chip{grid-template-columns:44px minmax(0,1fr);align-items:center}
+.predict svg{width:44px;height:32px}
+
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{all:unset;box-sizing:border-box;cursor:pointer;font-family:var(--f-display);font-weight:600;font-size:16px;
+  padding:9px 18px;border-radius:6px;background:var(--surface);color:var(--sky);border:2px solid var(--sky)}
+.btn:hover{background:var(--sky-soft)}
+.btn:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+.btn.ghost{color:var(--ink);border:2px solid var(--ctrl)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn small{display:block;font-family:var(--f-body);font-weight:400;font-style:italic;font-size:12px;opacity:.8}
+.count{font-family:var(--f-data);font-size:13px;color:var(--muted)}
+
+.fb{border-radius:6px;padding:12px 14px;font-size:15px;display:grid;gap:8px}
+.fb.ok{background:var(--ok-soft);border:1px solid var(--ok)}
+.fb.bad{background:var(--bad-soft);border:1px solid var(--bad)}
+.fb strong{font-family:var(--f-display)}
+.fb ul{margin:0;padding-left:18px;display:grid;gap:6px}
+
+.claim{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:17px;font-weight:700}
+select{font:inherit;font-size:15px;font-weight:400;padding:7px 8px;border:1.5px solid var(--ctrl);border-radius:6px;background:var(--surface);color:var(--ink);max-width:100%}
+select:focus-visible{outline:3px solid var(--sky)}
+
+/* record */
+.record h3{font-size:17px;font-weight:600}
+.track{position:relative;height:74px;border-radius:6px;background:var(--tint);border:1px solid var(--line);overflow:hidden}
+.track .floor{position:absolute;left:28px;right:16px;bottom:22px;border-top:2px solid var(--muted)}
+.track .tick{white-space:nowrap;position:absolute;bottom:4px;font-family:var(--f-data);font-size:10px;color:var(--muted);transform:translateX(-50%)}
+.track .tick::before{content:"";position:absolute;left:50%;top:-8px;height:6px;border-left:1px solid var(--muted)}
+.plane{position:absolute;left:28px;bottom:26px;width:34px;height:20px;margin-left:-17px;color:var(--sky)}
+.marks{position:absolute;inset:0}
+.mark{position:absolute;bottom:19px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:var(--marker);opacity:.7}
+.launcher{position:absolute;left:8px;bottom:22px;width:20px;height:18px;border-left:3px solid var(--muted);border-bottom:3px solid var(--muted)}
+.trackmsg{position:absolute;right:12px;top:8px;font-family:var(--f-data);font-size:12px;color:var(--muted)}
+
+.graph svg{width:100%;height:auto;display:block}
+.graph text{font-family:var(--f-body)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}
+th{font-size:12px;font-weight:700;background:var(--tint)}
+th .es{font-size:11px}
+td{font-family:var(--f-data);font-size:13px}
+td.avg{font-weight:700;color:var(--sky)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--marker);opacity:.7;display:inline-block}
+.sq{width:14px;height:3px;background:var(--sky);display:inline-block}
+
+.summary{display:grid;gap:6px;font-size:14px}
+.summary div{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.summary dt{font-family:var(--f-data);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:2px}
+.summary dd{margin:0}
+.score{font-family:var(--f-display);font-size:28px;font-weight:800}
+/* language: one at a time */
+.lang-en .es{display:none!important}
+.lang-es .en{display:none!important}
+.lang-es .es{font-style:normal!important;color:inherit!important;font-size:inherit!important;font-family:inherit!important;margin-top:0!important}
+.lang-es .btn small{font-family:var(--f-display);font-weight:600;font-size:16px;opacity:1}
+.langtog{display:inline-flex;border:1.5px solid var(--ctrl);border-radius:99px;overflow:hidden;background:var(--surface)}
+.langtog button{all:unset;cursor:pointer;font-size:14px;padding:6px 14px;color:var(--ink)}
+.langtog button[aria-pressed="true"]{background:var(--sky-soft);color:var(--sky);font-weight:700}
+.langtog button:focus-visible{outline:3px solid var(--sky);outline-offset:-3px}
+.qband.look{animation:look 1.4s ease 1}
+@keyframes look{0%,100%{box-shadow:0 0 0 0 transparent}25%,60%{box-shadow:0 0 0 5px var(--marker)}}
+.goq{all:unset;cursor:pointer;color:var(--sky);text-decoration:underline;font-weight:700}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+.modes{display:flex;flex-wrap:wrap;border-bottom:2px solid var(--line);margin:0 0 14px}
+.modes button{all:unset;cursor:pointer;padding:10px 16px;font-family:var(--f-display);font-weight:600;font-size:17px;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px}
+.modes button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--sky)}
+.modes button:focus-visible{outline:3px solid var(--sky);outline-offset:-3px}
+.hit{cursor:pointer}
+.hit:focus{outline:none}
+.hit:focus-visible{stroke:var(--sky);stroke-width:2;stroke-opacity:1}
+td.flag{background:var(--bad-soft)}
+td.fixed{background:var(--ok-soft)}
+td s{color:var(--muted);font-size:11px;display:block}
+.tnum{font-family:var(--f-data);font-size:13px;color:var(--muted);display:block;margin-bottom:2px}
+.graphhint{font-size:14px;color:var(--sky);font-weight:700}
+.ring{width:11px;height:11px;border-radius:50%;border:2.5px solid var(--ink);display:inline-block}
+.hollow{width:10px;height:10px;border-radius:50%;border:1.5px dashed var(--muted);display:inline-block}
+.subq{display:grid;gap:8px}
+/* top bar + toolbar */
+.backlink{display:inline-flex;gap:6px;align-items:center;margin:0 0 10px;padding:6px 12px;border:1.5px solid var(--ctrl);border-radius:99px;background:var(--surface);color:var(--sky);font-weight:700;font-size:14px;text-decoration:none}
+.backlink:hover{border-color:var(--sky);background:var(--sky-soft)}
+.backlink:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+.lang-es .backlink .es{font-size:14px!important}
+.topbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:0 0 14px}
+.brand{display:flex;gap:12px;align-items:center}
+.brand .logo{width:42px;height:42px;border-radius:10px;background:var(--banner-line);display:grid;place-items:center;flex:none}
+.brand .logo svg{width:26px;height:26px}
+.apptitle{font-family:var(--f-display);font-weight:800;font-size:22px;line-height:1.1}
+.appsub{color:var(--muted);font-size:14px}
+.toolbar{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:flex-end;padding:14px 18px;margin:0 0 18px;background:var(--surface);
+  border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 2px rgba(24,33,47,.05),0 6px 18px rgba(24,33,47,.05)}
+.tgroup{display:grid;gap:6px;min-width:0}
+.tlabel{font-size:14px;font-weight:700;color:var(--muted)}
+.seg{display:inline-flex;flex-wrap:wrap;border:1.5px solid var(--ctrl);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{all:unset;cursor:pointer;padding:8px 16px;font-size:15px;color:var(--ink);border-right:1px solid var(--ctrl)}
+.seg button:last-child{border-right:0}
+.seg button:hover{background:var(--tint)}
+.seg button[aria-pressed="true"]{background:var(--sky-soft);color:var(--sky);font-weight:700;box-shadow:inset 0 -3px 0 var(--sky)}
+.seg button:focus-visible{outline:3px solid var(--sky);outline-offset:-3px}
+select.pick{font-size:16px;font-weight:700;padding:9px 38px 9px 12px;min-width:200px;border:1.5px solid var(--ctrl);border-radius:10px;color:var(--ink);background:var(--surface);
+  -webkit-appearance:none;appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%232563D9' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center}
+select.pick:hover{border-color:var(--sky)}
+#expSel{min-width:170px}
+.toolbar .rand{margin-left:auto;display:inline-flex;gap:8px;align-items:center}
+.toolbar .rand svg{width:18px;height:18px}
+.modes{margin-top:0;flex-wrap:nowrap}
+.modes button{flex:0 1 auto;text-align:center}
+@media (max-width:520px){.modes button{flex:1 1 0;font-size:15px;padding:10px 8px}}
+/* bar visual */
+.barlab{position:absolute;left:28px;top:6px;font-size:13px;font-weight:700;color:var(--muted)}
+.bartrack{position:absolute;left:28px;right:16px;bottom:24px;height:14px;border-radius:7px;background:var(--surface);border:1px solid var(--ctrl)}
+.barfill{position:absolute;left:28px;bottom:24px;height:14px;width:0;border-radius:7px;background:var(--banner-line);opacity:.85}
+.mark.bm{bottom:27px;width:8px;height:8px;margin-left:-4px;opacity:.9;border:1.5px solid var(--surface)}
+.track .tick{bottom:2px}
+/* plant growth visual */
+.track.grow{height:150px}
+.gline{position:absolute;left:44px;right:12px;border-top:1px dashed var(--line)}
+.glab{position:absolute;left:6px;font-family:var(--f-data);font-size:11px;color:var(--muted);transform:translateY(50%)}
+.gpot{position:absolute;bottom:8px;left:50%;width:46px;height:30px;margin-left:-23px;background:var(--marker);opacity:.85;clip-path:polygon(0 0,100% 0,84% 100%,16% 100%)}
+.gstem{position:absolute;bottom:38px;left:50%;width:4px;margin-left:-2px;height:0;background:var(--ok);border-radius:2px}
+.gstem::before,.gstem::after{content:"";position:absolute;top:-2px;width:16px;height:9px;border-radius:50%;background:var(--ok)}
+.gstem::before{right:3px;transform:rotate(25deg)}
+.gstem::after{left:3px;transform:rotate(-25deg)}
+.gmark{position:absolute;left:calc(50% + 18px);width:14px;height:0;border-top:3px solid var(--marker);opacity:.75}
+@media (max-width:520px){.progress li .lbl{display:none}.predict{grid-template-columns:minmax(0,1fr)}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <a class="backlink" href="/"><span aria-hidden="true">&larr;</span> <span class="en">All simulators</span><span class="es">Todos los simuladores</span></a>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"><svg viewBox="0 0 26 26" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v19h19"/><path d="M8 17l4-5 4 2 5-7"/></svg></span>
+      <div><div class="apptitle"><span class="en">Experiment Design</span><span class="es">Diseño de experimentos</span></div>
+        <div class="appsub"><span class="en">Simulation</span><span class="es">Simulación</span></div></div>
+    </div>
+    <span class="langtog" role="group" aria-label="Language / Idioma"><button data-lang="en" aria-pressed="true">English</button><button data-lang="es" aria-pressed="false">Español</button></span>
+  </header>
+
+  <div class="toolbar picker">
+    <div class="tgroup"><label class="tlabel" for="famSel"><span class="en">Topic</span><span class="es">Tema</span></label>
+      <select id="famSel" class="pick"></select></div>
+    <div class="tgroup"><label class="tlabel" for="expSel"><span class="en">Experiment</span><span class="es">Experimento</span></label>
+      <select id="expSel" class="pick"></select></div>
+    <button class="btn rand" data-pick="random"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5h3.5c2 0 3 1 4.5 5s2.5 5 4.5 5H18"/><path d="M2 15h3.5c1.2 0 2-.4 2.8-1.4M18 5h-3.5c-1.2 0-2 .4-2.8 1.4"/><path d="M15.5 2.5 18 5l-2.5 2.5M15.5 12.5 18 15l-2.5 2.5"/></svg><span><span class="en">Random</span><span class="es">Al azar</span></span></button>
+  </div>
+
+  <nav class="modes" role="tablist" aria-label="Mode">
+    <button role="tab" data-mode="design" aria-selected="true"><span class="en">Design the experiment</span><span class="es">Diseña el experimento</span></button>
+    <button role="tab" data-mode="error" aria-selected="false"><span class="en">Find the error</span><span class="es">Encuentra el error</span></button>
+  </nav>
+
+  <header class="qband">
+    <div class="qtag"><span class="eyebrow" id="qeyebrow"></span><span class="pill" id="fampill"></span></div>
+    <h1 id="question"></h1>
+  </header>
+
+  <ol class="progress" id="progress"></ol>
+
+  <div class="cols">
+    <section class="card" id="panel" aria-live="polite"></section>
+    <section class="card record" aria-label="Lab record">
+      <h3><span class="en">Lab record</span><span class="es">Registro del laboratorio</span></h3>
+      <div class="track" id="track" aria-hidden="true"></div>
+      <div class="graph" id="graph"></div>
+      <div class="legend" id="legend"></div>
+      <div class="tbl" id="table"></div>
+      <dl class="summary" id="summary"></dl>
+    </section>
+  </div>
+</div>
+
+<script>
+const T = (en, es) => `<span class="en">${en}</span><span class="es">${es}</span>`;
+const TT = a => T(a[0], a[1]);
+let LANG = "en", MODE = "design";
+const L = (en, es) => LANG==="es" ? es : en;
+const GOQ = T(`<button class="goq" data-act="goq">Go back to the question.</button> `, `<button class="goq" data-act="goq">Regresa a la pregunta.</button> `);
+const fill = (s, o) => s.replace(/\{(\w+)\}/g, (_, k) => o[k]);
+
+/* =====================================================================
+   CONTENT: two families, four experiments each.
+   Each experiment: question, setup, variables (IV, DV + 3 not in the question),
+   3 correct constants, data model, and one "find the error" scenario.
+   ===================================================================== */
+const FAM = {
+  plane: {
+    name:["Paper airplanes","Aviones de papel"], visual:"flight", trials:3,
+    item:["flight","flights","vuelo","vuelos"], itemsEs:"los vuelos", trialWord:["Trial","Trials","Prueba","Pruebas"],
+    run:["Launch 15 flights","Lanzar 15 vuelos"], rerun:["Rerun 3 flights","Repetir 3 vuelos"],
+    dvThe:["how far the plane flies","qué tan lejos vuela el avión"],
+    junk:[ // constants that do not matter
+      {en:"Same paper color", es:"Mismo color de papel"},
+      {en:"Same shirt on the person launching", es:"La misma camisa en la persona que lanza"},
+      {en:"Same time of day", es:"Misma hora del día"} ],
+    fillers:[
+      {trial:1,  en:"Set up the launcher on the lab table. Marked the floor every meter.", es:"Puse el lanzador en la mesa. Marqué el piso cada metro.",
+        why:["This describes the setup at the start. The first results fit the pattern.","Esto describe cómo empezó. Los primeros resultados siguen el patrón."]},
+      {trial:3,  en:"Measured each landing from the front of the launcher.", es:"Medí cada aterrizaje desde el frente del lanzador.",
+        why:["Measuring from the same spot every time is the right way to do it.","Medir siempre desde el mismo lugar es lo correcto."]},
+      {trial:15, en:"Took a short water break.", es:"Tomé un descanso corto para tomar agua.",
+        why:["A water break does not change the plane or the launcher.","Un descanso no cambia el avión ni el lanzador."]} ],
+    uvJunk:{en:"The water break", es:"El descanso para tomar agua", why:["A break does not change the plane or the launcher.","Un descanso no cambia el avión ni el lanzador."]},
+    exps:[
+      { // 1 increases, levels off
+        question:["How does the distance the launcher is pulled back (cm) affect how far the paper airplane flies (m)?",
+                  "¿Cómo afecta qué tanto se estira el lanzador (cm) a qué tan lejos vuela el avión de papel (m)?"],
+        setup:["A rubber-band launcher shoots the same paper airplane. The launcher is pulled back 5, 10, 15, 20, or 25 cm. Each setting gets 3 flights.",
+               "Un lanzador de liga dispara el mismo avión de papel. La liga se estira 5, 10, 15, 20 o 25 cm. Cada nivel tiene 3 vuelos."],
+        iv:{en:"How far the launcher is pulled back (cm)", es:"Qué tanto se estira el lanzador (cm)", short:["launcher stretch","el estiramiento del lanzador"]},
+        dv:{en:"How far the plane flies (m)", es:"Qué tan lejos vuela el avión (m)", short:["flight distance","la distancia de vuelo"]},
+        others:[["Color of the paper","Color del papel"],["Height of the launcher","Altura del lanzador"],["Time of day","Hora del día"]],
+        ivConst:["Same launcher stretch","Mismo estiramiento del lanzador"], dvConst:["Same flight distance","Misma distancia de vuelo"],
+        consts:[["Same airplane (same paper and same folds)","Mismo avión (mismo papel y mismos dobleces)"],["Same launcher height","Misma altura del lanzador"],["Same launch angle","Mismo ángulo de lanzamiento"]],
+        levels:[5,10,15,20,25], unit:"cm", model:x=>11*(1-Math.exp(-x/16)), noise:.45,
+        x:[0,30,5], y:[12,2], xLabel:["Launcher stretch (cm)","Estiramiento (cm)"], yLabel:["Flight distance (m)","Distancia (m)"],
+        answer:"inc",
+        note:["Look closely: each extra 5 cm adds a little less distance. The line starts to level off.","Observa: cada 5 cm extra agrega un poco menos de distancia. La línea empieza a nivelarse."],
+        err:{at:[1,2,3], dir:-1, shift:4.5,
+          cause:["Someone stepped on the plane. Folded a new one from cardstock (thick paper).","Alguien pisó el avión. Doblé uno nuevo con cartulina (papel grueso)."],
+          normal:["Found more printer paper. Folded a new plane the original way.","Encontré más papel de impresora. Doblé un avión nuevo como el original."],
+          changed:["they used a heavier cardstock plane","usaron un avión de cartulina más pesado"],
+          uv:["The airplane (paper and design)","El avión (papel y diseño)"],
+          fix:["Throw out trials {a}–{b} and redo them with a printer-paper plane folded the original way.","Descarta las pruebas {a}–{b} y repítelas con un avión de papel de impresora doblado como el original."]}
+      },
+      { // 2 decreases
+        question:["How does the number of paper clips on the nose (clips) affect how far the paper airplane flies (m)?",
+                  "¿Cómo afecta el número de clips en la punta (clips) a qué tan lejos vuela el avión de papel (m)?"],
+        setup:["The same paper airplane is shot from a rubber-band launcher. It carries 0, 1, 2, 3, or 4 paper clips on its nose. Each setting gets 3 flights.",
+               "El mismo avión de papel se dispara con un lanzador de liga. Lleva 0, 1, 2, 3 o 4 clips en la punta. Cada nivel tiene 3 vuelos."],
+        iv:{en:"Number of paper clips on the nose", es:"Número de clips en la punta", short:["the number of clips","el número de clips"]},
+        dv:{en:"How far the plane flies (m)", es:"Qué tan lejos vuela el avión (m)", short:["flight distance","la distancia de vuelo"]},
+        others:[["Color of the paper clips","Color de los clips"],["Height of the launcher","Altura del lanzador"],["Time of day","Hora del día"]],
+        ivConst:["Same number of paper clips","Mismo número de clips"], dvConst:["Same flight distance","Misma distancia de vuelo"],
+        consts:[["Same airplane (same paper and same folds)","Mismo avión (mismo papel y mismos dobleces)"],["Same rubber band, pulled back the same distance","Misma liga, estirada la misma distancia"],["Same launch angle","Mismo ángulo de lanzamiento"]],
+        levels:[0,1,2,3,4], unit:"clips", unitEs:"clips", model:x=>10*Math.exp(-x/3.5)+.5, noise:.45,
+        x:[0,5,1], y:[14,2], xLabel:["Paper clips on the nose","Clips en la punta"], yLabel:["Flight distance (m)","Distancia (m)"],
+        answer:"dec",
+        note:["Each clip makes the plane heavier. The same launch cannot push a heavier plane as far.","Cada clip hace el avión más pesado. El mismo lanzamiento no puede empujar tan lejos un avión más pesado."],
+        err:{at:[1,2,3], dir:1, shift:4.5,
+          cause:["The rubber band snapped. Put on a new, thicker rubber band.","La liga se rompió. Puse una liga nueva y más gruesa."],
+          normal:["Found the original kind of rubber band and put it back on.","Encontré el tipo de liga original y la volví a poner."],
+          changed:["the launcher had a stronger rubber band","el lanzador tenía una liga más fuerte"],
+          uv:["The launcher's rubber band","La liga del lanzador"],
+          fix:["Throw out trials {a}–{b} and redo them with the original rubber band.","Descarta las pruebas {a}–{b} y repítelas con la liga original."]}
+      },
+      { // 3 rises then falls
+        question:["How does the launch angle (degrees) affect how far the paper airplane flies (m)?",
+                  "¿Cómo afecta el ángulo de lanzamiento (grados) a qué tan lejos vuela el avión de papel (m)?"],
+        setup:["The same paper airplane is shot from a rubber-band launcher tilted at 0°, 20°, 40°, 60°, or 80°. Each angle gets 3 flights.",
+               "El mismo avión de papel se dispara con un lanzador de liga inclinado a 0°, 20°, 40°, 60° u 80°. Cada ángulo tiene 3 vuelos."],
+        iv:{en:"Launch angle (degrees)", es:"Ángulo de lanzamiento (grados)", short:["the launch angle","el ángulo de lanzamiento"]},
+        dv:{en:"How far the plane flies (m)", es:"Qué tan lejos vuela el avión (m)", short:["flight distance","la distancia de vuelo"]},
+        others:[["Color of the paper","Color del papel"],["Height of the launcher","Altura del lanzador"],["Time of day","Hora del día"]],
+        ivConst:["Same launch angle","Mismo ángulo de lanzamiento"], dvConst:["Same flight distance","Misma distancia de vuelo"],
+        consts:[["Same airplane (same paper and same folds)","Mismo avión (mismo papel y mismos dobleces)"],["Same launcher stretch","Mismo estiramiento del lanzador"],["Same launcher height","Misma altura del lanzador"]],
+        levels:[0,20,40,60,80], unit:"°", model:x=>2+8*Math.exp(-(((x-35)/25)**2)), noise:.45,
+        x:[0,90,10], y:[12,2], xLabel:["Launch angle (degrees)","Ángulo (grados)"], yLabel:["Flight distance (m)","Distancia (m)"],
+        answer:"hump",
+        note:["The best angle is in the middle. Too low and the plane hits the floor fast. Too high and it climbs, slows down, and drops.","El mejor ángulo está en el medio. Muy bajo y el avión choca rápido con el piso. Muy alto y sube, pierde velocidad y cae."],
+        err:{at:[2], dir:-1, shift:7,
+          cause:["The plane hit a ceiling light. The nose got bent, but I kept using it.","El avión chocó con una lámpara del techo. La punta se dobló, pero lo seguí usando."],
+          normal:["Folded a brand-new plane exactly like the first one.","Doblé un avión nuevo exactamente igual al primero."],
+          changed:["the plane had a bent nose","el avión tenía la punta doblada"],
+          uv:["The airplane (its shape)","El avión (su forma)"],
+          fix:["Throw out trials {a}–{b} and redo them with a new plane folded like the first one.","Descarta las pruebas {a}–{b} y repítelas con un avión nuevo doblado como el primero."]}
+      },
+      { // 4 increases, straight line
+        question:["How does the height of the launcher (cm) affect how far the paper airplane flies (m)?",
+                  "¿Cómo afecta la altura del lanzador (cm) a qué tan lejos vuela el avión de papel (m)?"],
+        setup:["The same paper airplane is shot from a rubber-band launcher set 50, 75, 100, 125, or 150 cm above the floor. Each height gets 3 flights.",
+               "El mismo avión de papel se dispara con un lanzador de liga a 50, 75, 100, 125 o 150 cm del piso. Cada altura tiene 3 vuelos."],
+        iv:{en:"Height of the launcher above the floor (cm)", es:"Altura del lanzador sobre el piso (cm)", short:["launcher height","la altura del lanzador"]},
+        dv:{en:"How far the plane flies (m)", es:"Qué tan lejos vuela el avión (m)", short:["flight distance","la distancia de vuelo"]},
+        others:[["Color of the launcher","Color del lanzador"],["Color of the paper","Color del papel"],["Time of day","Hora del día"]],
+        ivConst:["Same launcher height","Misma altura del lanzador"], dvConst:["Same flight distance","Misma distancia de vuelo"],
+        consts:[["Same airplane (same paper and same folds)","Mismo avión (mismo papel y mismos dobleces)"],["Same launcher stretch","Mismo estiramiento del lanzador"],["Same launch angle","Mismo ángulo de lanzamiento"]],
+        levels:[50,75,100,125,150], unit:"cm", model:x=>2+.055*x, noise:.45,
+        x:[0,175,25], y:[12,2], xLabel:["Launcher height (cm)","Altura del lanzador (cm)"], yLabel:["Flight distance (m)","Distancia (m)"],
+        answer:"inc",
+        note:["The points almost make a straight line. Each extra 25 cm of height adds about the same distance.","Los puntos casi forman una línea recta. Cada 25 cm más de altura agregan casi la misma distancia."],
+        err:{at:[1,2,3], dir:-1, shift:4.5,
+          cause:["A new person took over launching. They tilted the launcher down a little.","Otra persona empezó a lanzar. Inclinó el lanzador un poco hacia abajo."],
+          normal:["The first person came back and launched at the original angle.","La primera persona regresó y lanzó con el ángulo original."],
+          changed:["the launcher was tilted down","el lanzador estaba inclinado hacia abajo"],
+          uv:["The launch angle","El ángulo de lanzamiento"],
+          fix:["Throw out trials {a}–{b} and redo them with the launcher at the original angle.","Descarta las pruebas {a}–{b} y repítelas con el lanzador en el ángulo original."]}
+      }
+    ]
+  },
+
+  plant: {
+    name:["Plant growth","Crecimiento de plantas"], visual:"growth", trials:3,
+    item:["plant","plants","planta","plantas"], itemsEs:"las plantas", trialWord:["Plant","Plants","Planta","Plantas"],
+    run:["Grow 15 plants for 3 weeks","Cultivar 15 plantas por 3 semanas"], rerun:["Regrow 3 plants","Volver a cultivar 3 plantas"],
+    dvThe:["how tall the plant grows","qué tan alta crece la planta"],
+    junk:[
+      {en:"Same pot color", es:"Mismo color de maceta"},
+      {en:"Same marker color on the labels", es:"Mismo color de marcador en las etiquetas"},
+      {en:"Same shirt on the gardener", es:"La misma camisa en la persona que cuida las plantas"} ],
+    fillers:[
+      {trial:1,  en:"Planted all 15 bean seeds on the same day.", es:"Sembré las 15 semillas de frijol el mismo día.",
+        why:["Planting on the same day is good. All plants had the same amount of time to grow.","Sembrar el mismo día está bien. Todas las plantas tuvieron el mismo tiempo para crecer."]},
+      {trial:3,  en:"Measured each plant from the soil to the top leaf.", es:"Medí cada planta desde la tierra hasta la hoja más alta.",
+        why:["Measuring the same way every time is the right way to do it.","Medir siempre de la misma forma es lo correcto."]},
+      {trial:15, en:"Took photos of every plant on Friday.", es:"Tomé fotos de todas las plantas el viernes.",
+        why:["Taking a photo does not change how a plant grows.","Tomar una foto no cambia cómo crece una planta."]} ],
+    uvJunk:{en:"Taking photos", es:"Tomar fotos", why:["A photo does not change how a plant grows.","Una foto no cambia cómo crece una planta."]},
+    exps:[
+      { // 1 increases, levels off
+        question:["How does the hours of light per day (h) affect how tall a bean plant grows (cm)?",
+                  "¿Cómo afectan las horas de luz al día (h) a qué tan alta crece una planta de frijol (cm)?"],
+        setup:["15 bean plants grow for 3 weeks. Groups of 3 plants get 4, 6, 8, 10, or 12 hours of light per day.",
+               "15 plantas de frijol crecen por 3 semanas. Grupos de 3 plantas reciben 4, 6, 8, 10 o 12 horas de luz al día."],
+        iv:{en:"Hours of light per day (h)", es:"Horas de luz al día (h)", short:["hours of light","las horas de luz"]},
+        dv:{en:"Height of the plant after 3 weeks (cm)", es:"Altura de la planta después de 3 semanas (cm)", short:["plant height","la altura de la planta"]},
+        others:[["Color of the pot","Color de la maceta"],["Day of the week","Día de la semana"],["Brand of marker on the labels","Marca del marcador de las etiquetas"]],
+        ivConst:["Same hours of light","Mismas horas de luz"], dvConst:["Same plant height","Misma altura de la planta"],
+        consts:[["Same type of seed","Mismo tipo de semilla"],["Same amount of water","Misma cantidad de agua"],["Same soil","Misma tierra"]],
+        levels:[4,6,8,10,12], unit:"h", model:x=>30*(1-Math.exp(-x/6)), noise:1.2,
+        x:[0,14,2], y:[35,5], xLabel:["Hours of light per day","Horas de luz al día"], yLabel:["Plant height (cm)","Altura de la planta (cm)"],
+        answer:"inc",
+        note:["Look closely: each extra 2 hours adds a little less height. The line starts to level off.","Observa: cada 2 horas extra agregan un poco menos de altura. La línea empieza a nivelarse."],
+        err:{at:[1,2,3], dir:-1, shift:10,
+          cause:["Ran out of potting soil. Planted these in sandy soil from outside.","Se acabó la tierra para macetas. Sembré estas en tierra arenosa de afuera."],
+          normal:["Bought more potting soil. Back to the original soil.","Compré más tierra para macetas. Regresé a la tierra original."],
+          changed:["they were planted in sandy soil","se sembraron en tierra arenosa"],
+          uv:["The soil","La tierra"],
+          fix:["Throw out plants {a}–{b} and regrow them in the same potting soil as the others.","Descarta las plantas {a}–{b} y vuelve a cultivarlas en la misma tierra que las demás."]}
+      },
+      { // 2 rises then falls
+        question:["How does the amount of fertilizer added each week (mL) affect how tall a bean plant grows (cm)?",
+                  "¿Cómo afecta la cantidad de fertilizante cada semana (mL) a qué tan alta crece una planta de frijol (cm)?"],
+        setup:["15 bean plants grow for 3 weeks. Groups of 3 plants get 0, 5, 10, 15, or 20 mL of fertilizer each week.",
+               "15 plantas de frijol crecen por 3 semanas. Grupos de 3 plantas reciben 0, 5, 10, 15 o 20 mL de fertilizante cada semana."],
+        iv:{en:"Fertilizer added each week (mL)", es:"Fertilizante cada semana (mL)", short:["the fertilizer","el fertilizante"]},
+        dv:{en:"Height of the plant after 3 weeks (cm)", es:"Altura de la planta después de 3 semanas (cm)", short:["plant height","la altura de la planta"]},
+        others:[["Color of the pot","Color de la maceta"],["Brand of marker on the labels","Marca del marcador de las etiquetas"],["Day of the week","Día de la semana"]],
+        ivConst:["Same amount of fertilizer","Misma cantidad de fertilizante"], dvConst:["Same plant height","Misma altura de la planta"],
+        consts:[["Same type of seed","Mismo tipo de semilla"],["Same amount of water","Misma cantidad de agua"],["Same hours of light","Mismas horas de luz"]],
+        levels:[0,5,10,15,20], unit:"mL", model:x=>12+14*Math.exp(-(((x-9)/7)**2)), noise:1.2,
+        x:[0,25,5], y:[35,5], xLabel:["Fertilizer per week (mL)","Fertilizante por semana (mL)"], yLabel:["Plant height (cm)","Altura de la planta (cm)"],
+        answer:"hump",
+        note:["A little fertilizer helps, but too much hurts the roots. The plants grew tallest in the middle.","Un poco de fertilizante ayuda, pero demasiado daña las raíces. Las plantas crecieron más en el medio."],
+        err:{at:[2], dir:-1, shift:15,
+          cause:["The watering can for these plants had a leak. They got about half as much water.","La regadera de estas plantas tenía una fuga. Recibieron como la mitad del agua."],
+          normal:["Got a new watering can that does not leak.","Conseguí una regadera nueva que no tiene fuga."],
+          changed:["they got less water","recibieron menos agua"],
+          uv:["The amount of water","La cantidad de agua"],
+          fix:["Throw out plants {a}–{b} and regrow them with the same amount of water as the others.","Descarta las plantas {a}–{b} y vuelve a cultivarlas con la misma cantidad de agua que las demás."]}
+      },
+      { // 3 decreases
+        question:["How does the amount of salt in the water (g per liter) affect how tall a bean plant grows (cm)?",
+                  "¿Cómo afecta la cantidad de sal en el agua (g por litro) a qué tan alta crece una planta de frijol (cm)?"],
+        setup:["15 bean plants grow for 3 weeks. Groups of 3 plants are watered with water that has 0, 2, 4, 6, or 8 grams of salt per liter.",
+               "15 plantas de frijol crecen por 3 semanas. Grupos de 3 plantas se riegan con agua que tiene 0, 2, 4, 6 u 8 gramos de sal por litro."],
+        iv:{en:"Salt in the water (g per liter)", es:"Sal en el agua (g por litro)", short:["the salt","la sal"]},
+        dv:{en:"Height of the plant after 3 weeks (cm)", es:"Altura de la planta después de 3 semanas (cm)", short:["plant height","la altura de la planta"]},
+        others:[["Color of the pot","Color de la maceta"],["Day of the week","Día de la semana"],["Brand of the salt","Marca de la sal"]],
+        ivConst:["Same amount of salt","Misma cantidad de sal"], dvConst:["Same plant height","Misma altura de la planta"],
+        consts:[["Same type of seed","Mismo tipo de semilla"],["Same pot size and amount of soil","Mismo tamaño de maceta y cantidad de tierra"],["Same hours of light","Mismas horas de luz"]],
+        levels:[0,2,4,6,8], unit:"g/L", model:x=>26*Math.exp(-x/4.5)+2, noise:1.2,
+        x:[0,10,2], y:[35,5], xLabel:["Salt in the water (g/L)","Sal en el agua (g/L)"], yLabel:["Plant height (cm)","Altura de la planta (cm)"],
+        answer:"dec",
+        note:["Salt makes it hard for roots to take in water. More salt means shorter plants.","La sal hace difícil que las raíces absorban agua. Más sal significa plantas más bajas."],
+        err:{at:[2,3], dir:1, shift:10,
+          cause:["Ran out of small pots. Planted these in big pots with extra soil.","Se acabaron las macetas chicas. Sembré estas en macetas grandes con más tierra."],
+          normal:["Got more small pots. Back to the original pot size.","Conseguí más macetas chicas. Regresé al tamaño original."],
+          changed:["they were in bigger pots with more soil","estaban en macetas más grandes con más tierra"],
+          uv:["The pot size","El tamaño de la maceta"],
+          fix:["Throw out plants {a}–{b} and regrow them in small pots like the others.","Descarta las plantas {a}–{b} y vuelve a cultivarlas en macetas chicas como las demás."]}
+      },
+      { // 4 no effect
+        question:["How does the volume of music played to the plants (dB) affect how tall a bean plant grows (cm)?",
+                  "¿Cómo afecta el volumen de la música para las plantas (dB) a qué tan alta crece una planta de frijol (cm)?"],
+        setup:["15 bean plants grow for 3 weeks. Groups of 3 plants hear music at 40, 50, 60, 70, or 80 decibels (dB) all day.",
+               "15 plantas de frijol crecen por 3 semanas. Grupos de 3 plantas escuchan música a 40, 50, 60, 70 u 80 decibeles (dB) todo el día."],
+        iv:{en:"Volume of the music (dB)", es:"Volumen de la música (dB)", short:["music volume","el volumen de la música"]},
+        dv:{en:"Height of the plant after 3 weeks (cm)", es:"Altura de la planta después de 3 semanas (cm)", short:["plant height","la altura de la planta"]},
+        others:[["Name of the song","Nombre de la canción"],["Color of the pot","Color de la maceta"],["Day of the week","Día de la semana"]],
+        ivConst:["Same music volume","Mismo volumen de música"], dvConst:["Same plant height","Misma altura de la planta"],
+        consts:[["Same type of seed","Mismo tipo de semilla"],["Same amount of water","Misma cantidad de agua"],["Same temperature","Misma temperatura"]],
+        levels:[40,50,60,70,80], unit:"dB", model:()=>22, noise:1.2,
+        x:[30,90,10], y:[35,5], xLabel:["Music volume (dB)","Volumen de la música (dB)"], yLabel:["Plant height (cm)","Altura de la planta (cm)"],
+        answer:"same",
+        note:["The average line is flat. Music volume did not change plant height. “No effect” is still a real result.","La línea del promedio es plana. El volumen de la música no cambió la altura. “Sin efecto” también es un resultado real."],
+        err:{at:[1,2,3], dir:-1, shift:10,
+          cause:["Moved these pots next to the door. It gets cold there at night.","Moví estas macetas junto a la puerta. Ahí hace frío en la noche."],
+          normal:["These pots stayed on the warm shelf like the first ones.","Estas macetas se quedaron en el estante cálido como las primeras."],
+          changed:["they were kept somewhere colder","estuvieron en un lugar más frío"],
+          uv:["The temperature","La temperatura"],
+          fix:["Throw out plants {a}–{b} and regrow them on the warm shelf with the others.","Descarta las plantas {a}–{b} y vuelve a cultivarlas en el estante cálido con las demás."]}
+      }
+    ]
+  },
+
+  ice: {
+    name:["Melting ice","Hielo que se derrite"], visual:"bar", trials:3,
+    item:["ice cube","ice cubes","cubo de hielo","cubos de hielo"], itemsEs:"los cubos de hielo", trialWord:["Cube","Cubes","Cubo","Cubos"],
+    run:["Melt 15 ice cubes","Derretir 15 cubos de hielo"], rerun:["Melt 3 new ice cubes","Derretir 3 cubos nuevos"],
+    dvThe:["how long the ice takes to melt","cuánto tarda en derretirse el hielo"],
+    junk:[
+      {en:"Same label on each cup", es:"Misma etiqueta en cada vaso"},
+      {en:"Same shirt on the person timing", es:"La misma camisa en la persona que toma el tiempo"},
+      {en:"Same pen for writing the times", es:"La misma pluma para anotar los tiempos"} ],
+    fillers:[
+      {trial:1,  en:"Made all the ice cubes in the same freezer overnight.", es:"Hice todos los cubos de hielo en el mismo congelador durante la noche.",
+        why:["Using the same freezer is good. All the ice started at the same temperature.","Usar el mismo congelador está bien. Todo el hielo empezó a la misma temperatura."]},
+      {trial:3,  en:"Started the timer as soon as each cube was set out.", es:"Empecé el cronómetro en cuanto puse cada cubo.",
+        why:["Timing the same way every time is the right way to do it.","Medir el tiempo siempre de la misma forma es lo correcto."]},
+      {trial:15, en:"Wrote the times in a notebook.", es:"Anoté los tiempos en una libreta.",
+        why:["Writing in a notebook does not change how fast ice melts.","Escribir en una libreta no cambia qué tan rápido se derrite el hielo."]} ],
+    uvJunk:{en:"The notebook", es:"La libreta", why:["A notebook does not change how fast ice melts.","Una libreta no cambia qué tan rápido se derrite el hielo."]},
+    exps:[
+      { // increases, straight line
+        question:["How does the number of cloth layers wrapped around the cup (layers) affect how long an ice cube takes to melt (min)?",
+                  "¿Cómo afecta el número de capas de tela alrededor del vaso (capas) a cuánto tarda en derretirse un cubo de hielo (min)?"],
+        setup:["An ice cube sits in a cup. The cup is wrapped in 0, 1, 2, 3, or 4 layers of cloth. Each setting is tested with 3 ice cubes.",
+               "Un cubo de hielo está en un vaso. El vaso se envuelve con 0, 1, 2, 3 o 4 capas de tela. Cada nivel se prueba con 3 cubos de hielo."],
+        iv:{en:"Number of cloth layers around the cup", es:"Número de capas de tela alrededor del vaso", short:["the number of cloth layers","el número de capas de tela"]},
+        dv:{en:"Time for the ice to melt (min)", es:"Tiempo para que se derrita el hielo (min)", short:["melting time","el tiempo para derretirse"]},
+        others:[["Color of the cloth","Color de la tela"],["Day of the week","Día de la semana"],["Name of the person timing","Nombre de la persona que toma el tiempo"]],
+        ivConst:["Same number of cloth layers","Mismo número de capas de tela"], dvConst:["Same melting time","Mismo tiempo para derretirse"],
+        consts:[["Same size of ice cube","Mismo tamaño de cubo de hielo"],["Same room temperature","Misma temperatura del cuarto"],["Same type of cup","Mismo tipo de vaso"]],
+        levels:[0,1,2,3,4], unit:"layers", unitEs:"capas", model:x=>30+12*x, noise:2,
+        x:[0,5,1], y:[100,20], xLabel:["Cloth layers","Capas de tela"], yLabel:["Melting time (min)","Tiempo para derretirse (min)"],
+        answer:"inc",
+        note:["Cloth slows down energy moving from the warm air into the ice. Each layer adds about the same amount of time.","La tela hace más lenta la energía que pasa del aire caliente al hielo. Cada capa agrega casi el mismo tiempo."],
+        err:{at:[1,2,3], dir:-1, shift:25,
+          cause:["Moved these cups next to a sunny window.","Puse estos vasos junto a una ventana con sol."],
+          normal:["Moved the cups back to the shady table.","Regresé los vasos a la mesa con sombra."],
+          changed:["the cups sat in the sun","los vasos estaban en el sol"],
+          uv:["The temperature around the cups","La temperatura alrededor de los vasos"],
+          fix:["Throw out cubes {a}–{b} and redo them on the shady table.","Descarta los cubos {a}–{b} y repítelos en la mesa con sombra."]}
+      },
+      { // increases, straight line
+        question:["How does the mass of an ice cube (g) affect how long it takes to melt (min)?",
+                  "¿Cómo afecta la masa de un cubo de hielo (g) a cuánto tarda en derretirse (min)?"],
+        setup:["Ice cubes with a mass of 10, 20, 30, 40, or 50 grams melt in plastic cups. Each mass is tested with 3 ice cubes.",
+               "Cubos de hielo con una masa de 10, 20, 30, 40 o 50 gramos se derriten en vasos de plástico. Cada masa se prueba con 3 cubos de hielo."],
+        iv:{en:"Mass of the ice cube (g)", es:"Masa del cubo de hielo (g)", short:["the mass of the ice","la masa del hielo"]},
+        dv:{en:"Time for the ice to melt (min)", es:"Tiempo para que se derrita el hielo (min)", short:["melting time","el tiempo para derretirse"]},
+        others:[["Color of the cup","Color del vaso"],["Shape of the freezer tray","Forma de la charola del congelador"],["Day of the week","Día de la semana"]],
+        ivConst:["Same mass of ice","Misma masa de hielo"], dvConst:["Same melting time","Mismo tiempo para derretirse"],
+        consts:[["Same type of cup","Mismo tipo de vaso"],["Same room temperature","Misma temperatura del cuarto"],["Same starting temperature of the ice","Misma temperatura inicial del hielo"]],
+        levels:[10,20,30,40,50], unit:"g", model:x=>3+.9*x, noise:1.5,
+        x:[0,60,10], y:[60,10], xLabel:["Mass of ice (g)","Masa del hielo (g)"], yLabel:["Melting time (min)","Tiempo para derretirse (min)"],
+        answer:"inc",
+        note:["Twice as much ice takes about twice as long to melt. The points make a straight line.","El doble de hielo tarda casi el doble en derretirse. Los puntos forman una línea recta."],
+        err:{at:[1,2,3], dir:1, shift:15,
+          cause:["Ran out of plastic cups. Used thick foam cups for these.","Se acabaron los vasos de plástico. Usé vasos gruesos de unicel para estos."],
+          normal:["Got more plastic cups. Back to the original cups.","Conseguí más vasos de plástico. Regresé a los vasos originales."],
+          changed:["they were in foam cups that keep the cold in","estaban en vasos de unicel que guardan el frío"],
+          uv:["The type of cup","El tipo de vaso"],
+          fix:["Throw out cubes {a}–{b} and redo them in plastic cups like the others.","Descarta los cubos {a}–{b} y repítelos en vasos de plástico como los demás."]}
+      },
+      { // decreases, curve
+        question:["How does the temperature of the water (°C) affect how long an ice cube takes to melt in it (min)?",
+                  "¿Cómo afecta la temperatura del agua (°C) a cuánto tarda en derretirse un cubo de hielo dentro de ella (min)?"],
+        setup:["An ice cube is dropped into a cup of water at 10, 25, 40, 55, or 70 °C. Each temperature is tested with 3 ice cubes.",
+               "Un cubo de hielo se pone en un vaso con agua a 10, 25, 40, 55 o 70 °C. Cada temperatura se prueba con 3 cubos de hielo."],
+        iv:{en:"Temperature of the water (°C)", es:"Temperatura del agua (°C)", short:["the water temperature","la temperatura del agua"]},
+        dv:{en:"Time for the ice to melt (min)", es:"Tiempo para que se derrita el hielo (min)", short:["melting time","el tiempo para derretirse"]},
+        others:[["Color of the cup","Color del vaso"],["Brand of the thermometer","Marca del termómetro"],["Day of the week","Día de la semana"]],
+        ivConst:["Same water temperature","Misma temperatura del agua"], dvConst:["Same melting time","Mismo tiempo para derretirse"],
+        consts:[["Same size of ice cube","Mismo tamaño de cubo de hielo"],["Same amount of water","Misma cantidad de agua"],["Same type of cup","Mismo tipo de vaso"]],
+        levels:[10,25,40,55,70], unit:"°C", model:x=>400/(x+5), noise:.8,
+        x:[0,80,10], y:[30,5], xLabel:["Water temperature (°C)","Temperatura del agua (°C)"], yLabel:["Melting time (min)","Tiempo para derretirse (min)"],
+        answer:"dec",
+        note:["Warmer water transfers energy into the ice faster, so it melts sooner. The curve flattens out at high temperatures.","El agua más caliente pasa energía al hielo más rápido, así que se derrite antes. La curva se aplana a temperaturas altas."],
+        err:{at:[2,3], dir:1, shift:9,
+          cause:["Used ice from the other freezer for these. Those cubes were twice as big.","Usé hielo del otro congelador para estos. Esos cubos eran el doble de grandes."],
+          normal:["Went back to ice from the first freezer.","Regresé al hielo del primer congelador."],
+          changed:["the ice cubes were bigger","los cubos de hielo eran más grandes"],
+          uv:["The size of the ice cube","El tamaño del cubo de hielo"],
+          fix:["Throw out cubes {a}–{b} and redo them with ice cubes the same size as the others.","Descarta los cubos {a}–{b} y repítelos con cubos del mismo tamaño que los demás."]}
+      },
+      { // decreases, levels off
+        question:["How does the amount of salt sprinkled on an ice cube (g) affect how long it takes to melt (min)?",
+                  "¿Cómo afecta la cantidad de sal sobre un cubo de hielo (g) a cuánto tarda en derretirse (min)?"],
+        setup:["Ice cubes sit on plates. Each cube gets 0, 1, 2, 3, or 4 grams of salt sprinkled on top. Each amount is tested with 3 ice cubes.",
+               "Cubos de hielo están en platos. A cada cubo se le ponen 0, 1, 2, 3 o 4 gramos de sal encima. Cada cantidad se prueba con 3 cubos de hielo."],
+        iv:{en:"Salt sprinkled on the ice (g)", es:"Sal sobre el hielo (g)", short:["the salt","la sal"]},
+        dv:{en:"Time for the ice to melt (min)", es:"Tiempo para que se derrita el hielo (min)", short:["melting time","el tiempo para derretirse"]},
+        others:[["Color of the plate","Color del plato"],["Brand of the salt","Marca de la sal"],["Day of the week","Día de la semana"]],
+        ivConst:["Same amount of salt","Misma cantidad de sal"], dvConst:["Same melting time","Mismo tiempo para derretirse"],
+        consts:[["Same size of ice cube","Mismo tamaño de cubo de hielo"],["Same room temperature","Misma temperatura del cuarto"],["No fan blowing on the ice","Sin ventilador soplando sobre el hielo"]],
+        levels:[0,1,2,3,4], unit:"g", model:x=>40*Math.exp(-x/2.5)+8, noise:1.5,
+        x:[0,5,1], y:[60,10], xLabel:["Salt on the ice (g)","Sal sobre el hielo (g)"], yLabel:["Melting time (min)","Tiempo para derretirse (min)"],
+        answer:"dec",
+        note:["Salt lowers the temperature water freezes at, so the ice melts faster. Each extra gram helps a little less.","La sal baja la temperatura a la que el agua se congela, así que el hielo se derrite más rápido. Cada gramo extra ayuda un poco menos."],
+        err:{at:[1,2,3], dir:-1, shift:14,
+          cause:["Someone turned on a fan next to these plates.","Alguien prendió un ventilador junto a estos platos."],
+          normal:["Turned the fan off.","Apagué el ventilador."],
+          changed:["a fan was blowing air on them","un ventilador les soplaba aire"],
+          uv:["Moving air (the fan)","El aire en movimiento (el ventilador)"],
+          fix:["Throw out cubes {a}–{b} and redo them with the fan off.","Descarta los cubos {a}–{b} y repítelos con el ventilador apagado."]}
+      }
+    ]
+  },
+
+  dissolve: {
+    name:["Dissolving","Disolver"], visual:"bar", trials:3,
+    item:["trial","trials","prueba","pruebas"], itemsEs:"las pruebas", trialWord:["Trial","Trials","Prueba","Pruebas"],
+    run:["Run 15 trials","Hacer 15 pruebas"], rerun:["Rerun 3 trials","Repetir 3 pruebas"],
+    dvThe:["how long the tablet takes to dissolve","cuánto tarda en disolverse la tableta"],
+    junk:[
+      {en:"Same cup color", es:"Mismo color de vaso"},
+      {en:"Same shirt on the person timing", es:"La misma camisa en la persona que toma el tiempo"},
+      {en:"Same label on each cup", es:"Misma etiqueta en cada vaso"} ],
+    fillers:[
+      {trial:1,  en:"Lined up all the cups on the same table.", es:"Puse todos los vasos en la misma mesa.",
+        why:["This describes the setup at the start. The first results fit the pattern.","Esto describe cómo empezó. Los primeros resultados siguen el patrón."]},
+      {trial:3,  en:"Started the timer the moment each tablet touched the water.", es:"Empecé el cronómetro en cuanto cada tableta tocó el agua.",
+        why:["Timing the same way every time is the right way to do it.","Medir el tiempo siempre de la misma forma es lo correcto."]},
+      {trial:15, en:"Cleaned up the table.", es:"Limpié la mesa.",
+        why:["Cleaning the table happened after the trials. It does not change the results.","Limpiar la mesa pasó después de las pruebas. No cambia los resultados."]} ],
+    uvJunk:{en:"Cleaning the table", es:"Limpiar la mesa", why:["Cleaning the table does not change how things dissolve.","Limpiar la mesa no cambia cómo se disuelven las cosas."]},
+    exps:[
+      { // decreases, curve
+        question:["How does the temperature of the water (°C) affect how long a fizzy tablet takes to dissolve (s)?",
+                  "¿Cómo afecta la temperatura del agua (°C) a cuánto tarda en disolverse una tableta efervescente (s)?"],
+        setup:["A fizzy tablet is dropped into water at 10, 25, 40, 55, or 70 °C. Each temperature gets 3 trials.",
+               "Una tableta efervescente se pone en agua a 10, 25, 40, 55 o 70 °C. Cada temperatura tiene 3 pruebas."],
+        iv:{en:"Temperature of the water (°C)", es:"Temperatura del agua (°C)", short:["the water temperature","la temperatura del agua"]},
+        dv:{en:"Time for the tablet to dissolve (s)", es:"Tiempo para que se disuelva la tableta (s)", short:["dissolving time","el tiempo para disolverse"]},
+        others:[["Color of the cup","Color del vaso"],["Brand of the thermometer","Marca del termómetro"],["Time of day","Hora del día"]],
+        ivConst:["Same water temperature","Misma temperatura del agua"], dvConst:["Same dissolving time","Mismo tiempo para disolverse"],
+        consts:[["Same type of tablet","Mismo tipo de tableta"],["Same amount of water","Misma cantidad de agua"],["No stirring","Sin mezclar"]],
+        levels:[10,25,40,55,70], unit:"°C", model:x=>110*Math.exp(-x/35)+12, noise:3,
+        x:[0,80,10], y:[120,20], xLabel:["Water temperature (°C)","Temperatura del agua (°C)"], yLabel:["Dissolving time (s)","Tiempo para disolverse (s)"],
+        answer:"dec",
+        note:["Particles move faster in hot water, so the tablet breaks apart and dissolves faster.","Las partículas se mueven más rápido en agua caliente, así que la tableta se deshace y se disuelve más rápido."],
+        err:{at:[1,2,3], dir:1, shift:35,
+          cause:["Ran out of new tablets. Used old tablets from a pack that was left open.","Se acabaron las tabletas nuevas. Usé tabletas viejas de un paquete que estaba abierto."],
+          normal:["Opened a new pack of tablets.","Abrí un paquete nuevo de tabletas."],
+          changed:["the tablets were old","las tabletas eran viejas"],
+          uv:["The tablets","Las tabletas"],
+          fix:["Throw out trials {a}–{b} and redo them with new tablets.","Descarta las pruebas {a}–{b} y repítelas con tabletas nuevas."]}
+      },
+      { // decreases, curve
+        question:["How does the number of pieces a tablet is broken into (pieces) affect how long it takes to dissolve (s)?",
+                  "¿Cómo afecta el número de pedazos en que se rompe una tableta (pedazos) a cuánto tarda en disolverse (s)?"],
+        setup:["A fizzy tablet is broken into 1, 2, 4, 6, or 8 pieces before it goes into cold water. Each setting gets 3 trials.",
+               "Una tableta efervescente se rompe en 1, 2, 4, 6 u 8 pedazos antes de ponerla en agua fría. Cada nivel tiene 3 pruebas."],
+        iv:{en:"Number of pieces the tablet is broken into", es:"Número de pedazos de la tableta", short:["the number of pieces","el número de pedazos"]},
+        dv:{en:"Time for the tablet to dissolve (s)", es:"Tiempo para que se disuelva la tableta (s)", short:["dissolving time","el tiempo para disolverse"]},
+        others:[["Color of the cup","Color del vaso"],["Shape of the pieces","Forma de los pedazos"],["Time of day","Hora del día"]],
+        ivConst:["Same number of pieces","Mismo número de pedazos"], dvConst:["Same dissolving time","Mismo tiempo para disolverse"],
+        consts:[["Same type of tablet","Mismo tipo de tableta"],["Same water temperature","Misma temperatura del agua"],["Same amount of water","Misma cantidad de agua"]],
+        levels:[1,2,4,6,8], unit:"pieces", unitEs:"pedazos", model:x=>70/Math.sqrt(x)+10, noise:3,
+        x:[0,10,2], y:[100,20], xLabel:["Pieces of tablet","Pedazos de tableta"], yLabel:["Dissolving time (s)","Tiempo para disolverse (s)"],
+        answer:"dec",
+        note:["More pieces means more surface touching the water, so the tablet dissolves faster.","Más pedazos significa más superficie tocando el agua, así que la tableta se disuelve más rápido."],
+        err:{at:[1,2,3], dir:-1, shift:28,
+          cause:["Used warm water from the sink for these. The other trials used cold water.","Usé agua tibia de la llave para estas. Las otras pruebas usaron agua fría."],
+          normal:["Went back to cold water.","Regresé al agua fría."],
+          changed:["the water was warmer","el agua estaba más caliente"],
+          uv:["The water temperature","La temperatura del agua"],
+          fix:["Throw out trials {a}–{b} and redo them with cold water.","Descarta las pruebas {a}–{b} y repítelas con agua fría."]}
+      },
+      { // increases, curves upward
+        question:["How does the temperature of the water (°C) affect how much sugar dissolves in 100 mL (g)?",
+                  "¿Cómo afecta la temperatura del agua (°C) a cuánta azúcar se disuelve en 100 mL (g)?"],
+        setup:["Sugar is stirred into 100 mL of water at 20, 40, 60, 80, or 100 °C until no more will dissolve. Each temperature gets 3 trials.",
+               "Se mezcla azúcar en 100 mL de agua a 20, 40, 60, 80 o 100 °C hasta que ya no se disuelve más. Cada temperatura tiene 3 pruebas."],
+        iv:{en:"Temperature of the water (°C)", es:"Temperatura del agua (°C)", short:["the water temperature","la temperatura del agua"]},
+        dv:{en:"Sugar that dissolves in 100 mL of water (g)", es:"Azúcar que se disuelve en 100 mL de agua (g)", short:["the sugar that dissolves","el azúcar que se disuelve"]},
+        dvThe:["how much sugar dissolves","cuánta azúcar se disuelve"],
+        others:[["Color of the spoon","Color de la cuchara"],["Brand of the thermometer","Marca del termómetro"],["Time of day","Hora del día"]],
+        ivConst:["Same water temperature","Misma temperatura del agua"], dvConst:["Same amount of sugar dissolved","Misma cantidad de azúcar disuelta"],
+        consts:[["Same type of sugar","Mismo tipo de azúcar"],["Same amount of water","Misma cantidad de agua"],["Same amount of stirring","La misma cantidad de mezcla"]],
+        levels:[20,40,60,80,100], unit:"°C", model:x=>180+.0285*x*x, noise:8,
+        x:[0,100,20], y:[500,100], xLabel:["Water temperature (°C)","Temperatura del agua (°C)"], yLabel:["Sugar dissolved (g)","Azúcar disuelta (g)"],
+        answer:"inc",
+        note:["Hot water dissolves much more sugar. The line curves upward: each 20 °C adds more sugar than the last.","El agua caliente disuelve mucha más azúcar. La línea se curva hacia arriba: cada 20 °C agrega más azúcar que el anterior."],
+        err:{at:[1,2,3], dir:-1, shift:90,
+          cause:["Measured only 50 mL of water for these by mistake.","Por error medí solo 50 mL de agua para estas."],
+          normal:["Went back to measuring 100 mL of water.","Regresé a medir 100 mL de agua."],
+          changed:["they only had half as much water","solo tenían la mitad del agua"],
+          uv:["The amount of water","La cantidad de agua"],
+          fix:["Throw out trials {a}–{b} and redo them with 100 mL of water.","Descarta las pruebas {a}–{b} y repítelas con 100 mL de agua."]}
+      },
+      { // no effect
+        question:["How does the amount of water in the cup (mL) affect how long a fizzy tablet takes to dissolve (s)?",
+                  "¿Cómo afecta la cantidad de agua en el vaso (mL) a cuánto tarda en disolverse una tableta efervescente (s)?"],
+        setup:["A fizzy tablet is dropped into 100, 150, 200, 250, or 300 mL of cold water. Each amount gets 3 trials.",
+               "Una tableta efervescente se pone en 100, 150, 200, 250 o 300 mL de agua fría. Cada cantidad tiene 3 pruebas."],
+        iv:{en:"Amount of water in the cup (mL)", es:"Cantidad de agua en el vaso (mL)", short:["the amount of water","la cantidad de agua"]},
+        dv:{en:"Time for the tablet to dissolve (s)", es:"Tiempo para que se disuelva la tableta (s)", short:["dissolving time","el tiempo para disolverse"]},
+        others:[["Color of the cup","Color del vaso"],["Brand of the measuring cup","Marca de la taza medidora"],["Time of day","Hora del día"]],
+        ivConst:["Same amount of water","Misma cantidad de agua"], dvConst:["Same dissolving time","Mismo tiempo para disolverse"],
+        consts:[["Same type of tablet","Mismo tipo de tableta"],["Same water temperature","Misma temperatura del agua"],["No stirring","Sin mezclar"]],
+        levels:[100,150,200,250,300], unit:"mL", model:()=>45, noise:2.5,
+        x:[50,350,50], y:[80,20], xLabel:["Amount of water (mL)","Cantidad de agua (mL)"], yLabel:["Dissolving time (s)","Tiempo para disolverse (s)"],
+        answer:"same",
+        note:["The average line is flat. In this range, the amount of water did not change the dissolving time. “No effect” is still a real result.","La línea del promedio es plana. En este rango, la cantidad de agua no cambió el tiempo. “Sin efecto” también es un resultado real."],
+        err:{at:[1,2,3], dir:-1, shift:22,
+          cause:["Stirred these cups with a spoon while they fizzed.","Mezclé estos vasos con una cuchara mientras burbujeaban."],
+          normal:["Stopped stirring, like the first trials.","Dejé de mezclar, como en las primeras pruebas."],
+          changed:["they were stirred","se mezclaron"],
+          uv:["Stirring","Mezclar"],
+          fix:["Throw out trials {a}–{b} and redo them without stirring.","Descarta las pruebas {a}–{b} y repítelas sin mezclar."]}
+      }
+    ]
+  },
+
+  pendulum: {
+    name:["Pendulums","Péndulos"], visual:"bar", trials:3,
+    item:["trial","trials","prueba","pruebas"], itemsEs:"las pruebas", trialWord:["Trial","Trials","Prueba","Pruebas"],
+    run:["Run 15 trials","Hacer 15 pruebas"], rerun:["Rerun 3 trials","Repetir 3 pruebas"],
+    dvThe:["how long 10 swings take","cuánto tardan 10 oscilaciones"],
+    junk:[
+      {en:"Same color of string", es:"Mismo color de cuerda"},
+      {en:"Same shirt on the person timing", es:"La misma camisa en la persona que toma el tiempo"},
+      {en:"Same time of day", es:"Misma hora del día"} ],
+    fillers:[
+      {trial:1,  en:"Tied the string to a clamp on the lab stand.", es:"Amarré la cuerda a una pinza en el soporte.",
+        why:["This describes the setup at the start. The first results fit the pattern.","Esto describe cómo empezó. Los primeros resultados siguen el patrón."]},
+      {trial:3,  en:"Started timing the moment the weight was let go.", es:"Empecé a medir el tiempo en cuanto solté la pesa.",
+        why:["Timing the same way every time is the right way to do it.","Medir el tiempo siempre de la misma forma es lo correcto."]},
+      {trial:15, en:"Took a short water break.", es:"Tomé un descanso corto para tomar agua.",
+        why:["A water break does not change how a pendulum swings.","Un descanso no cambia cómo oscila un péndulo."]} ],
+    uvJunk:{en:"The water break", es:"El descanso para tomar agua", why:["A break does not change how a pendulum swings.","Un descanso no cambia cómo oscila un péndulo."]},
+    exps:[
+      { // increases, curve
+        question:["How does the length of the string (cm) affect how long a pendulum takes to make 10 swings (s)?",
+                  "¿Cómo afecta el largo de la cuerda (cm) a cuánto tarda un péndulo en hacer 10 oscilaciones (s)?"],
+        setup:["A weight hangs from a string that is 20, 40, 60, 80, or 100 cm long. It is pulled back and let go, and 10 swings are timed. Each length gets 3 trials.",
+               "Una pesa cuelga de una cuerda de 20, 40, 60, 80 o 100 cm. Se jala y se suelta, y se mide el tiempo de 10 oscilaciones. Cada largo tiene 3 pruebas."],
+        iv:{en:"Length of the string (cm)", es:"Largo de la cuerda (cm)", short:["the string length","el largo de la cuerda"]},
+        dv:{en:"Time for 10 swings (s)", es:"Tiempo de 10 oscilaciones (s)", short:["the swing time","el tiempo de oscilación"]},
+        others:[["Color of the string","Color de la cuerda"],["Color of the weight","Color de la pesa"],["Time of day","Hora del día"]],
+        ivConst:["Same string length","Mismo largo de cuerda"], dvConst:["Same swing time","Mismo tiempo de oscilación"],
+        consts:[["Same weight on the string","Misma pesa en la cuerda"],["Same release angle","Mismo ángulo al soltar"],["Same way of timing (count 10 swings)","La misma forma de medir (contar 10 oscilaciones)"]],
+        levels:[20,40,60,80,100], unit:"cm", model:x=>20.06*Math.sqrt(x/100), noise:.25,
+        x:[0,120,20], y:[25,5], xLabel:["String length (cm)","Largo de la cuerda (cm)"], yLabel:["Time for 10 swings (s)","Tiempo de 10 oscilaciones (s)"],
+        answer:"inc",
+        note:["Longer strings swing slower. Doubling the length does not double the time, so the line bends.","Las cuerdas más largas oscilan más lento. Si duplicas el largo, el tiempo no se duplica, por eso la línea se curva."],
+        err:{at:[1,2,3], dir:-1, shift:4,
+          cause:["A new person took over timing. They counted only 7 swings instead of 10.","Otra persona empezó a medir. Contó solo 7 oscilaciones en lugar de 10."],
+          normal:["The first person came back and counted 10 swings.","La primera persona regresó y contó 10 oscilaciones."],
+          changed:["only 7 swings were timed","solo se midieron 7 oscilaciones"],
+          uv:["How the swings were counted","Cómo se contaron las oscilaciones"],
+          fix:["Throw out trials {a}–{b} and redo them, counting 10 swings.","Descarta las pruebas {a}–{b} y repítelas contando 10 oscilaciones."]}
+      },
+      { // no effect
+        question:["How does the mass of the weight (g) affect how long a pendulum takes to make 10 swings (s)?",
+                  "¿Cómo afecta la masa de la pesa (g) a cuánto tarda un péndulo en hacer 10 oscilaciones (s)?"],
+        setup:["A 50 cm pendulum holds a weight of 50, 100, 150, 200, or 250 grams. It is pulled back and let go, and 10 swings are timed. Each mass gets 3 trials.",
+               "Un péndulo de 50 cm tiene una pesa de 50, 100, 150, 200 o 250 gramos. Se jala y se suelta, y se mide el tiempo de 10 oscilaciones. Cada masa tiene 3 pruebas."],
+        iv:{en:"Mass of the weight (g)", es:"Masa de la pesa (g)", short:["the mass","la masa"]},
+        dv:{en:"Time for 10 swings (s)", es:"Tiempo de 10 oscilaciones (s)", short:["the swing time","el tiempo de oscilación"]},
+        others:[["Color of the weight","Color de la pesa"],["Color of the string","Color de la cuerda"],["Time of day","Hora del día"]],
+        ivConst:["Same mass","Misma masa"], dvConst:["Same swing time","Mismo tiempo de oscilación"],
+        consts:[["Same string length","Mismo largo de cuerda"],["Same release angle","Mismo ángulo al soltar"],["Same way of timing (count 10 swings)","La misma forma de medir (contar 10 oscilaciones)"]],
+        levels:[50,100,150,200,250], unit:"g", model:()=>14.2, noise:.25,
+        x:[0,300,50], y:[25,5], xLabel:["Mass of the weight (g)","Masa de la pesa (g)"], yLabel:["Time for 10 swings (s)","Tiempo de 10 oscilaciones (s)"],
+        answer:"same",
+        note:["The line is flat. A heavier weight does not swing faster or slower. Many people expect it to, but the data says no.","La línea es plana. Una pesa más pesada no oscila más rápido ni más lento. Mucha gente lo espera, pero los datos dicen que no."],
+        err:{at:[1,2,3], dir:1, shift:3,
+          cause:["The string slipped in the clamp and got longer.","La cuerda se resbaló en la pinza y quedó más larga."],
+          normal:["Retied the string at 50 cm.","Volví a amarrar la cuerda a 50 cm."],
+          changed:["the string was longer","la cuerda era más larga"],
+          uv:["The string length","El largo de la cuerda"],
+          fix:["Throw out trials {a}–{b} and redo them with the string at 50 cm.","Descarta las pruebas {a}–{b} y repítelas con la cuerda a 50 cm."]}
+      },
+      { // decreases
+        question:["How does the size of a cardboard sail on the weight (cm²) affect how many swings the pendulum makes before it stops (swings)?",
+                  "¿Cómo afecta el tamaño de una vela de cartón en la pesa (cm²) a cuántas oscilaciones hace el péndulo antes de detenerse (oscilaciones)?"],
+        setup:["A cardboard sail of 0, 25, 50, 75, or 100 cm² is taped to the weight. The pendulum is let go and the swings are counted until it stops. Each size gets 3 trials.",
+               "Una vela de cartón de 0, 25, 50, 75 o 100 cm² se pega a la pesa. Se suelta el péndulo y se cuentan las oscilaciones hasta que se detiene. Cada tamaño tiene 3 pruebas."],
+        iv:{en:"Size of the cardboard sail (cm²)", es:"Tamaño de la vela de cartón (cm²)", short:["the sail size","el tamaño de la vela"]},
+        dv:{en:"Number of swings before it stops", es:"Número de oscilaciones antes de detenerse", short:["the number of swings","el número de oscilaciones"]},
+        dvThe:["how many swings it makes before it stops","cuántas veces oscila antes de detenerse"],
+        others:[["Color of the cardboard","Color del cartón"],["Color of the string","Color de la cuerda"],["Time of day","Hora del día"]],
+        ivConst:["Same sail size","Mismo tamaño de vela"], dvConst:["Same number of swings","Mismo número de oscilaciones"],
+        consts:[["Same string length","Mismo largo de cuerda"],["Same weight","Misma pesa"],["Same release angle","Mismo ángulo al soltar"]],
+        levels:[0,25,50,75,100], unit:"cm²", model:x=>60*Math.exp(-x/40)+8, noise:1.5,
+        x:[0,120,20], y:[80,20], xLabel:["Sail size (cm²)","Tamaño de la vela (cm²)"], yLabel:["Swings before stopping","Oscilaciones antes de detenerse"],
+        answer:"dec",
+        note:["A bigger sail pushes against more air, so the pendulum loses energy faster and stops sooner.","Una vela más grande empuja más aire, así que el péndulo pierde energía más rápido y se detiene antes."],
+        err:{at:[2], dir:-1, shift:15,
+          cause:["Someone opened the window. A breeze was blowing on the pendulum.","Alguien abrió la ventana. Una brisa soplaba sobre el péndulo."],
+          normal:["Closed the window.","Cerré la ventana."],
+          changed:["a breeze was blowing","soplaba una brisa"],
+          uv:["Moving air (the breeze)","El aire en movimiento (la brisa)"],
+          fix:["Throw out trials {a}–{b} and redo them with the window closed.","Descarta las pruebas {a}–{b} y repítelas con la ventana cerrada."]}
+      },
+      { // no effect
+        question:["How does the release angle (degrees) affect how long a pendulum takes to make 10 swings (s)?",
+                  "¿Cómo afecta el ángulo al soltar (grados) a cuánto tarda un péndulo en hacer 10 oscilaciones (s)?"],
+        setup:["A 50 cm pendulum is pulled back to 10°, 20°, 30°, 40°, or 50° and let go. 10 swings are timed. Each angle gets 3 trials.",
+               "Un péndulo de 50 cm se jala a 10°, 20°, 30°, 40° o 50° y se suelta. Se mide el tiempo de 10 oscilaciones. Cada ángulo tiene 3 pruebas."],
+        iv:{en:"Release angle (degrees)", es:"Ángulo al soltar (grados)", short:["the release angle","el ángulo al soltar"]},
+        dv:{en:"Time for 10 swings (s)", es:"Tiempo de 10 oscilaciones (s)", short:["the swing time","el tiempo de oscilación"]},
+        others:[["Color of the weight","Color de la pesa"],["Color of the string","Color de la cuerda"],["Time of day","Hora del día"]],
+        ivConst:["Same release angle","Mismo ángulo al soltar"], dvConst:["Same swing time","Mismo tiempo de oscilación"],
+        consts:[["Same string length","Mismo largo de cuerda"],["Same weight on the string","Misma pesa en la cuerda"],["Same way of timing (count 10 swings)","La misma forma de medir (contar 10 oscilaciones)"]],
+        levels:[10,20,30,40,50], unit:"°", model:x=>14.2*(1+((x*Math.PI/180)**2)/16), noise:.25,
+        x:[0,60,10], y:[25,5], xLabel:["Release angle (degrees)","Ángulo al soltar (grados)"], yLabel:["Time for 10 swings (s)","Tiempo de 10 oscilaciones (s)"],
+        answer:"same",
+        note:["The line is almost flat. A bigger swing travels farther but also moves faster, so the time stays about the same.","La línea es casi plana. Una oscilación más grande recorre más distancia pero también va más rápido, así que el tiempo casi no cambia."],
+        err:{at:[1,2,3], dir:1, shift:3,
+          cause:["A new person took over timing. They counted 12 swings instead of 10.","Otra persona empezó a medir. Contó 12 oscilaciones en lugar de 10."],
+          normal:["The first person came back and counted 10 swings.","La primera persona regresó y contó 10 oscilaciones."],
+          changed:["12 swings were timed instead of 10","se midieron 12 oscilaciones en lugar de 10"],
+          uv:["How the swings were counted","Cómo se contaron las oscilaciones"],
+          fix:["Throw out trials {a}–{b} and redo them, counting 10 swings.","Descarta las pruebas {a}–{b} y repítelas contando 10 oscilaciones."]}
+      }
+    ]
+  },
+
+  body: {
+    name:["Human body","El cuerpo humano"], visual:"bar", trials:3,
+    item:["test","tests","prueba","pruebas"], itemsEs:"las pruebas", trialWord:["Test","Tests","Prueba","Pruebas"],
+    run:["Run 15 tests","Hacer 15 pruebas"], rerun:["Rerun 3 tests","Repetir 3 pruebas"],
+    dvThe:["the reaction time","el tiempo de reacción"],
+    junk:[
+      {en:"Same shirt color", es:"Mismo color de camisa"},
+      {en:"Same color of socks", es:"Mismo color de calcetines"},
+      {en:"Same hairstyle", es:"Mismo peinado"} ],
+    fillers:[
+      {trial:1,  en:"Explained the test the same way to every student.", es:"Expliqué la prueba de la misma forma a cada estudiante.",
+        why:["Giving the same directions is good. It is part of a fair test.","Dar las mismas instrucciones está bien. Es parte de una prueba justa."]},
+      {trial:3,  en:"Used the same computer for every test.", es:"Usé la misma computadora en cada prueba.",
+        why:["Using the same computer is the right way to do it.","Usar la misma computadora es lo correcto."]},
+      {trial:15, en:"Wrote the results on the board.", es:"Escribí los resultados en el pizarrón.",
+        why:["Writing results on the board happened after the tests. It does not change them.","Escribir en el pizarrón pasó después de las pruebas. No cambia los resultados."]} ],
+    uvJunk:{en:"Writing on the board", es:"Escribir en el pizarrón", why:["Writing on the board does not change the results.","Escribir en el pizarrón no cambia los resultados."]},
+    exps:[
+      { // increases, levels off
+        question:["How does the number of jumping jacks affect heart rate (beats per minute)?",
+                  "¿Cómo afecta el número de saltos de tijera al ritmo cardiaco (latidos por minuto)?"],
+        setup:["A student does 0, 20, 40, 60, or 80 jumping jacks, then measures their heart rate. Each number gets 3 tests, with rest in between.",
+               "Un estudiante hace 0, 20, 40, 60 u 80 saltos de tijera y luego mide su ritmo cardiaco. Cada número tiene 3 pruebas, con descanso entre ellas."],
+        iv:{en:"Number of jumping jacks", es:"Número de saltos de tijera", short:["the number of jumping jacks","el número de saltos"]},
+        dv:{en:"Heart rate (beats per minute)", es:"Ritmo cardiaco (latidos por minuto)", short:["heart rate","el ritmo cardiaco"]},
+        dvThe:["the heart rate","el ritmo cardiaco"],
+        others:[["Color of the shirt","Color de la camisa"],["Brand of the shoes","Marca de los zapatos"],["Day of the week","Día de la semana"]],
+        ivConst:["Same number of jumping jacks","Mismo número de saltos"], dvConst:["Same heart rate","Mismo ritmo cardiaco"],
+        consts:[["Same student","El mismo estudiante"],["Same rest time before starting","El mismo tiempo de descanso antes de empezar"],["Same way of measuring heart rate","La misma forma de medir el ritmo cardiaco"]],
+        levels:[0,20,40,60,80], unit:"jumping jacks", unitEs:"saltos", model:x=>75+70*(1-Math.exp(-x/45)), noise:3,
+        x:[0,100,20], y:[160,20], xLabel:["Jumping jacks","Saltos de tijera"], yLabel:["Heart rate (beats/min)","Ritmo cardiaco (latidos/min)"],
+        answer:"inc",
+        note:["Exercise makes the heart beat faster to bring more oxygen to the muscles. The increase slows down at high numbers.","El ejercicio hace que el corazón lata más rápido para llevar más oxígeno a los músculos. El aumento es más lento con números altos."],
+        err:{at:[1,2], dir:1, shift:30,
+          cause:["The student ran up the stairs right before these tests.","El estudiante subió corriendo las escaleras justo antes de estas pruebas."],
+          normal:["The student rested for 5 minutes before the next tests.","El estudiante descansó 5 minutos antes de las siguientes pruebas."],
+          changed:["the student had just run up the stairs","el estudiante acababa de subir corriendo las escaleras"],
+          uv:["Rest before starting","El descanso antes de empezar"],
+          fix:["Throw out tests {a}–{b} and redo them after 5 minutes of rest.","Descarta las pruebas {a}–{b} y repítelas después de 5 minutos de descanso."]}
+      },
+      { // decreases, levels off
+        question:["How does the number of practice rounds (rounds) affect reaction time on a computer test (ms)?",
+                  "¿Cómo afecta el número de rondas de práctica (rondas) al tiempo de reacción en una prueba de computadora (ms)?"],
+        setup:["A student practices a click-when-it-turns-green test for 0, 5, 10, 15, or 20 rounds, then takes the real test. Each number gets 3 tests.",
+               "Un estudiante practica una prueba de “haz clic cuando se ponga verde” por 0, 5, 10, 15 o 20 rondas y luego hace la prueba real. Cada número tiene 3 pruebas."],
+        iv:{en:"Number of practice rounds", es:"Número de rondas de práctica", short:["the number of practice rounds","el número de rondas de práctica"]},
+        dv:{en:"Reaction time (ms)", es:"Tiempo de reacción (ms)", short:["reaction time","el tiempo de reacción"]},
+        others:[["Color of the mouse","Color del mouse"],["Brand of the chair","Marca de la silla"],["Day of the week","Día de la semana"]],
+        ivConst:["Same number of practice rounds","Mismo número de rondas de práctica"], dvConst:["Same reaction time","Mismo tiempo de reacción"],
+        consts:[["Same student","El mismo estudiante"],["Same computer test","La misma prueba de computadora"],["Quiet room (no noise)","Cuarto en silencio (sin ruido)"]],
+        levels:[0,5,10,15,20], unit:"rounds", unitEs:"rondas", model:x=>230+120*Math.exp(-x/6), noise:7,
+        x:[0,25,5], y:[400,50], xLabel:["Practice rounds","Rondas de práctica"], yLabel:["Reaction time (ms)","Tiempo de reacción (ms)"],
+        answer:"dec",
+        note:["Practice makes reactions faster (a smaller time). The improvement slows down after many rounds.","La práctica hace las reacciones más rápidas (un tiempo menor). La mejora es más lenta después de muchas rondas."],
+        err:{at:[1,2,3], dir:1, shift:80,
+          cause:["Loud music was playing in the room during these tests.","Había música fuerte en el cuarto durante estas pruebas."],
+          normal:["Turned the music off.","Apagué la música."],
+          changed:["loud music was distracting the student","la música fuerte distraía al estudiante"],
+          uv:["Noise in the room","El ruido en el cuarto"],
+          fix:["Throw out tests {a}–{b} and redo them in a quiet room.","Descarta las pruebas {a}–{b} y repítelas en un cuarto en silencio."]}
+      },
+      { // decreases, curve
+        question:["How does the hours of sleep the night before (h) affect reaction time on a computer test (ms)?",
+                  "¿Cómo afectan las horas de sueño de la noche anterior (h) al tiempo de reacción en una prueba de computadora (ms)?"],
+        setup:["A student records how many hours they slept: 4, 5, 6, 7, or 8 hours. The next morning they take a reaction time test. Each amount of sleep gets 3 tests.",
+               "Un estudiante anota cuántas horas durmió: 4, 5, 6, 7 u 8 horas. A la mañana siguiente hace una prueba de tiempo de reacción. Cada cantidad de sueño tiene 3 pruebas."],
+        iv:{en:"Hours of sleep the night before (h)", es:"Horas de sueño la noche anterior (h)", short:["hours of sleep","las horas de sueño"]},
+        dv:{en:"Reaction time (ms)", es:"Tiempo de reacción (ms)", short:["reaction time","el tiempo de reacción"]},
+        others:[["Color of the pillow","Color de la almohada"],["Color of the mouse","Color del mouse"],["Day of the week","Día de la semana"]],
+        ivConst:["Same hours of sleep","Mismas horas de sueño"], dvConst:["Same reaction time","Mismo tiempo de reacción"],
+        consts:[["Same student","El mismo estudiante"],["Same computer test","La misma prueba de computadora"],["Test at the same time of day","Hacer la prueba a la misma hora del día"]],
+        levels:[4,5,6,7,8], unit:"h", model:x=>220+3.5*Math.pow(9-x,2.4), noise:8,
+        x:[3,9,1], y:[450,50], xLabel:["Hours of sleep","Horas de sueño"], yLabel:["Reaction time (ms)","Tiempo de reacción (ms)"],
+        answer:"dec",
+        note:["More sleep means faster reactions (a smaller time). The difference is biggest when sleep is very short.","Más sueño significa reacciones más rápidas (un tiempo menor). La diferencia es mayor cuando se duerme muy poco."],
+        err:{at:[2,3], dir:-1, shift:75,
+          cause:["Used the new computer for these tests. Its screen reacts faster.","Usé la computadora nueva para estas pruebas. Su pantalla reacciona más rápido."],
+          normal:["Went back to the original computer.","Regresé a la computadora original."],
+          changed:["they used a faster computer","usaron una computadora más rápida"],
+          uv:["The computer test","La prueba de computadora"],
+          fix:["Throw out tests {a}–{b} and redo them on the original computer.","Descarta las pruebas {a}–{b} y repítelas en la computadora original."]}
+      },
+      { // no effect
+        question:["How does shoe size (US size) affect reaction time on a computer test (ms)?",
+                  "¿Cómo afecta la talla de zapato (talla de EE. UU.) al tiempo de reacción en una prueba de computadora (ms)?"],
+        setup:["Students with shoe sizes 6, 7, 8, 9, and 10 take the same reaction time test. Each size gets 3 tests.",
+               "Estudiantes con talla de zapato 6, 7, 8, 9 y 10 hacen la misma prueba de tiempo de reacción. Cada talla tiene 3 pruebas."],
+        iv:{en:"Shoe size (US size)", es:"Talla de zapato (talla de EE. UU.)", short:["shoe size","la talla de zapato"]},
+        dv:{en:"Reaction time (ms)", es:"Tiempo de reacción (ms)", short:["reaction time","el tiempo de reacción"]},
+        others:[["Color of the shoes","Color de los zapatos"],["Brand of the shoes","Marca de los zapatos"],["Day of the week","Día de la semana"]],
+        ivConst:["Same shoe size","Misma talla de zapato"], dvConst:["Same reaction time","Mismo tiempo de reacción"],
+        consts:[["Same computer test","La misma prueba de computadora"],["Same hand used to click","La misma mano para hacer clic"],["Same number of practice rounds","Mismo número de rondas de práctica"]],
+        levels:[6,7,8,9,10], unit:"size", unitEs:"talla", unitPre:true, model:()=>250, noise:8,
+        x:[5,11,1], y:[400,50], xLabel:["Shoe size (US)","Talla de zapato (EE. UU.)"], yLabel:["Reaction time (ms)","Tiempo de reacción (ms)"],
+        answer:"same",
+        note:["The line is flat. Shoe size does not change reaction time. Two things can both vary without one causing the other.","La línea es plana. La talla de zapato no cambia el tiempo de reacción. Dos cosas pueden variar sin que una cause la otra."],
+        err:{at:[1,2,3], dir:-1, shift:75,
+          cause:["These students had already practiced the test 20 times.","Estos estudiantes ya habían practicado la prueba 20 veces."],
+          normal:["These students had no extra practice, like the first ones.","Estos estudiantes no tuvieron práctica extra, como los primeros."],
+          changed:["those students had extra practice","esos estudiantes tuvieron práctica extra"],
+          uv:["The number of practice rounds","El número de rondas de práctica"],
+          fix:["Throw out tests {a}–{b} and redo them with students who had the same practice as the others.","Descarta las pruebas {a}–{b} y repítelas con estudiantes que tuvieron la misma práctica que los demás."]}
+      }
+    ]
+  }
+
+};
+
+/* Experiment order is shuffled within each topic (Ian, 2026-11-11) so the experiment NUMBER does not predict
+   the pattern. Each list gives the source index (as written above) for Experiment 1, 2, 3, 4.
+   Fixed on purpose: ice-1, plant-3, plane-3, pendulum-2 (the four class experiments on the paper tracker). */
+const ORDER = { plane:[1,0,2,3], plant:[3,0,2,1], ice:[0,2,1,3], dissolve:[0,1,3,2], pendulum:[3,1,0,2], body:[0,3,1,2] };
+for (const [k, ord] of Object.entries(ORDER)) { const src = FAM[k].exps; FAM[k].exps = ord.map(i => src[i]); }
+
+const PRED = [
+  {id:"inc",  path:"M4 28 L40 4",         t:["Increases","Aumenta"], word:["increases","aumenta"], hyp:["increase","aumentará"]},
+  {id:"dec",  path:"M4 4 L40 28",         t:["Decreases","Disminuye"], word:["decreases","disminuye"], hyp:["decrease","disminuirá"]},
+  {id:"same", path:"M4 16 L40 16",        t:["No change","No cambia"], word:["stays the same","se mantiene igual"], hyp:["stay the same","se mantendrá igual"]},
+  {id:"hump", path:"M4 28 Q22 -10 40 28", t:["Rises, then falls","Sube y luego baja"], word:["rises, then falls","sube y luego baja"], hyp:["rise, then fall","subirá y luego bajará"]}
+];
+const STEPS = {
+  design:[["Independent variable","Variable independiente"],["Dependent variable","Variable dependiente"],["Constants","Constantes"],["Hypothesis","Hipótesis"],["Run","Experimento"],["Claim","Conclusión"],["Evaluate","Evaluar"]],
+  error:[["Flag the data","Marca los datos"],["Read the notebook","Lee la bitácora"],["Name the problem","Nombra el problema"],["Fix and rerun","Corrige y repite"]]
+};
+
+/* ================= current experiment ================= */
+let FK="plane", EI=0, F, X, S, E, runToken=0;
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const li = () => LANG==="es"?1:0;
+const NT = () => F.trials;
+function fmtX(x){ const u = X.unitEs && LANG==="es" ? X.unitEs : X.unit; return X.unitPre ? `${u} ${x}` : (u==="°" ? `${x}°` : `${x} ${u}`); }
+
+function loadExp(fk, ei){
+  runToken++;
+  FK=fk; EI=ei; F=FAM[fk]; X=F.exps[ei];
+  X.vars = X.vars || [
+    {id:"iv", en:X.iv.en, es:X.iv.es, short:X.iv.short},
+    {id:"dv", en:X.dv.en, es:X.dv.es, short:X.dv.short},
+    ...X.others.map((o,i)=>({id:"o"+i, en:o[0], es:o[1], short:[o[0].toLowerCase(), o[1].toLowerCase()]}))
+  ];
+  X.varOrder = shuffle(X.vars.map(v=>v.id));
+  X.constList = shuffle([
+    ...X.consts.map((c,i)=>({id:"c"+i, ok:true, en:c[0], es:c[1]})),
+    {id:"civ", ok:false, en:X.ivConst[0], es:X.ivConst[1], why:["The question says this is what you change. It cannot stay the same.","La pregunta dice que esto es lo que cambias. No puede quedarse igual."], goq:true},
+    {id:"cdv", ok:false, en:X.dvConst[0], es:X.dvConst[1], why:["The question says this is what you measure. You cannot keep it the same.","La pregunta dice que esto es lo que mides. No puedes mantenerlo igual."], goq:true},
+    ...F.junk.map((j,i)=>({id:"j"+i, ok:false, en:j.en, es:j.es, why:[`This does not change ${DVT()[0]}.`,`Esto no cambia ${DVT()[1]}.`]}))
+  ]);
+  freshDesign(); freshError();
+  document.getElementById("question").innerHTML = TT(X.question);
+  document.getElementById("fampill").innerHTML = TT(F.name);
+  buildTrack();
+  syncHash();
+  render();
+}
+const vById = id => X.vars.find(v=>v.id===id);
+const DVT = () => X.dvThe || F.dvThe;
+
+/* ================= data ================= */
+function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+const r1 = v => Math.min(X.y[0]*.97, Math.max(0.2, Math.round(v*10)/10));
+const avg = t => Math.round(t.reduce((a,b)=>a+b,0)/t.length*10)/10;
+function makeData(){
+  return X.levels.map(x=>{ const t=[]; for(let i=0;i<NT();i++) t.push(r1(X.model(x)+gauss()*X.noise)); return {x,t,avg:avg(t)}; });
+}
+function makeFlawed(lv){
+  const d=makeData(), x=X.levels[lv], e=X.err;
+  d[lv].t = d[lv].t.map(()=>r1(X.model(x) + e.dir*e.shift + gauss()*X.noise*.7));
+  d[lv].avg = avg(d[lv].t);
+  return d;
+}
+const pointsOf = data => data.flatMap((r,ri)=>r.t.map((d,ti)=>({x:r.x,d,i:ri*NT()+ti})));
+
+function freshDesign(){
+  S = {step:0, iv:null, dv:null, ivOk:false, dvOk:false, consts:new Set(), constChecked:false, constOk:false,
+       predict:null, data:null, shown:0, running:false, done:false,
+       claim:{a:"",b:"",c:""}, claimOk:false, ev:null, evOk:false, fb:null, tries:{iv:0,dv:0,c:0,claim:0,ev:0}};
+}
+function freshError(){
+  const at = X.err.at, lv = at[Math.floor(Math.random()*at.length)], a = lv*NT()+1;
+  const notes = [
+    ...F.fillers.map(f=>({trial:f.trial, en:f.en, es:f.es, why:f.why, ok:false})),
+    {trial:a, en:X.err.cause[0], es:X.err.cause[1], ok:true},
+    {trial:a+NT(), en:X.err.normal[0], es:X.err.normal[1], ok:false,
+      why:[`Close. This is when things went back to normal, so the ${fmtX(X.levels[lv+1])} results fit again. Look for when the problem started.`,
+           `Casi. Aquí todo regresó a la normalidad, por eso los resultados de ${fmtX(X.levels[lv+1])} siguen el patrón. Busca cuándo empezó el problema.`]}
+  ].sort((p,q)=>p.trial-q.trial);
+  const uv = shuffle([
+    {id:"uv", ok:true, en:X.err.uv[0], es:X.err.uv[1]},
+    {id:"iv", ok:false, en:X.iv.en, es:X.iv.es, why:["The question says this is what you change on purpose. It is supposed to change.","La pregunta dice que esto es lo que cambias a propósito. Debe cambiar."], goq:true},
+    {id:"dv", ok:false, en:X.dv.en, es:X.dv.es, why:["The question says this is what you measure. It is the result, not the cause.","La pregunta dice que esto es lo que mides. Es el resultado, no la causa."], goq:true},
+    {id:"junk", ok:false, en:F.uvJunk.en, es:F.uvJunk.es, why:F.uvJunk.why}
+  ]);
+  const effect = [
+    {id:"lower", ok:X.err.dir<0, en:"The flagged results were lower than the pattern", es:"Los resultados marcados quedaron más bajos que el patrón"},
+    {id:"higher", ok:X.err.dir>0, en:"The flagged results were higher than the pattern", es:"Los resultados marcados quedaron más altos que el patrón"},
+    {id:"spread", ok:false, en:"All the results were more spread out", es:"Todos los resultados quedaron más dispersos"},
+    {id:"none", ok:false, en:"It did not change the results", es:"No cambió los resultados"}
+  ];
+  E = {step:0, lv, a, data:makeFlawed(lv), notes, uvOpts:uv, effOpts:effect,
+       flags:new Set(), flagChecked:false, flagOk:false, log:null, logOk:false, uv:null, eff:null, uvOk:false,
+       bad:new Set([0,1,2].map(t=>lv*NT()+t)), newT:null, shown:0, running:false, done:false,
+       fb:null, tries:{flag:0,log:0,uv:0}};
+}
+const cur = () => MODE==="design" ? S : E;
+
+/* ================= shared rendering ================= */
+function renderPicker(){
+  document.getElementById("famSel").innerHTML = Object.keys(FAM).map(k=>
+    `<option value="${k}" ${k===FK?"selected":""}>${FAM[k].name[li()]}</option>`).join("");
+  document.getElementById("expSel").innerHTML = F.exps.map((_,i)=>
+    `<option value="${i}" ${i===EI?"selected":""}>${L("Experiment","Experimento")} ${i+1}</option>`).join("");
+}
+function renderProgress(){
+  const steps=STEPS[MODE], st=cur().step, el=document.getElementById("progress");
+  el.style.gridTemplateColumns=`repeat(${steps.length},minmax(0,1fr))`;
+  el.innerHTML = steps.map((s,i)=>`<li class="${i<st?'done':i===st?'now':''}"><span class="lbl">${T(s[0],s[1])}</span></li>`).join("");
+}
+function chip(id, label, opts={}){
+  const cls = ["chip", opts.multi?"multi":"", opts.state||""].join(" ");
+  return `<button class="${cls}" data-act="${opts.act}" data-id="${id}" aria-pressed="${!!opts.on}" ${opts.disabled?"disabled":""}>
+    <span class="box"></span><span>${label}</span></button>`;
+}
+function btn(act,en,es,disabled=false,ghost=false){
+  return `<button class="btn ${ghost?'ghost':''}" data-act="${act}" ${disabled?"disabled":""}>${T(en,es)}</button>`;
+}
+const fbBox = st => st.fb ? `<div class="fb ${st.fb.ok?'ok':'bad'}">${st.fb.html}</div>` : "";
+const head = n => `<span class="eyebrow">${T(`Step ${n+1} of ${STEPS[MODE].length}`,`Paso ${n+1} de ${STEPS[MODE].length}`)}</span><h2>${T(STEPS[MODE][n][0],STEPS[MODE][n][1])}</h2>`;
+
+function renderGraph(pts, avgRows, opts={}){
+  const W=540,H=360,ML=58,MR=18,MT=16,MB=46, pw=W-ML-MR, ph=H-MT-MB;
+  const [x0,x1,xs]=X.x, [yMax,ys]=X.y;
+  const sx=x=>ML+(x-x0)/(x1-x0)*pw, sy=y=>MT+ph-y/yMax*ph;
+  let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${L("Graph of the results","Gráfica de los resultados")}">`;
+  for(let x=x0;x<=x1+1e-9;x+=xs){
+    g+=`<line x1="${sx(x)}" x2="${sx(x)}" y1="${MT}" y2="${MT+ph}" stroke="var(--grid)"/>`;
+    g+=`<text x="${sx(x)}" y="${MT+ph+18}" text-anchor="middle" font-size="12" fill="var(--muted)">${x}</text>`;
+  }
+  for(let y=0;y<=yMax;y+=ys){
+    g+=`<line x1="${ML}" x2="${ML+pw}" y1="${sy(y)}" y2="${sy(y)}" stroke="var(--grid)"/>`;
+    g+=`<text x="${ML-8}" y="${sy(y)+4}" text-anchor="end" font-size="12" fill="var(--muted)">${y}</text>`;
+  }
+  g+=`<path d="M${ML} ${MT} V${MT+ph} H${ML+pw}" fill="none" stroke="var(--ink)" stroke-width="1.5"/>`;
+  const xl = (opts.xKnown ? X.xLabel : ["Independent variable ?","Variable independiente ?"])[li()];
+  const yl = (opts.yKnown ? X.yLabel : ["Dependent variable ?","Variable dependiente ?"])[li()];
+  g+=`<text x="${ML+pw/2}" y="${H-6}" text-anchor="middle" font-size="15" font-weight="700" fill="${opts.xKnown?'var(--ink)':'var(--muted)'}">${xl}</text>`;
+  g+=`<text transform="translate(20 ${MT+ph/2}) rotate(-90)" text-anchor="middle" font-size="15" font-weight="700" fill="${opts.yKnown?'var(--ink)':'var(--muted)'}">${yl}</text>`;
+  if(avgRows){
+    const path = avgRows.map((r,i)=>`${i?"L":"M"}${sx(r.x)} ${sy(r.avg)}`).join(" ");
+    g+=`<path d="${path}" fill="none" stroke="var(--sky)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`;
+    avgRows.forEach(r=>g+=`<circle cx="${sx(r.x)}" cy="${sy(r.avg)}" r="5.5" fill="var(--surface)" stroke="var(--sky)" stroke-width="2.5"/>`);
+  }
+  for(const p of pts){
+    const cx=sx(p.x)+((p.i%NT())-1)*5, cy=sy(p.d);
+    if(p.style==="old"){
+      g+=`<circle cx="${cx}" cy="${cy}" r="5" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="2 2"/>`;
+    } else {
+      g+=`<circle cx="${cx}" cy="${cy}" r="${p.style==="normal"||p.style==="new"?4.5:5}" fill="var(--marker)" fill-opacity="${p.style==="new"?1:.7}"/>`;
+      const ring = {flagged:"var(--ink)", flagOk:"var(--ok)", flagBad:"var(--bad)", new:"var(--sky)"}[p.style];
+      if(ring) g+=`<circle cx="${cx}" cy="${cy}" r="${p.style==="new"?6.5:8.5}" fill="none" stroke="${ring}" stroke-width="2.5"/>`;
+    }
+    if(opts.tappable){
+      g+=`<circle class="hit" data-pt="${p.i}" cx="${cx}" cy="${cy}" r="12" fill="#000" fill-opacity="0" stroke="none" tabindex="0" role="button" aria-pressed="${p.style!=="normal"}"
+        aria-label="${L(`Result at ${fmtX(p.x)}: ${p.d}`,`Resultado a ${fmtX(p.x)}: ${p.d}`)}"/>`;
+    }
+  }
+  document.getElementById("graph").innerHTML = g+`</svg>`;
+}
+function renderTable(data, shownCount, showAvg, cellClass, cellHtml){
+  const tw=F.trialWord;
+  let h=`<table><thead><tr><th>${TT(X.xLabel)}</th>${[1,2,3].map(n=>`<th>${T(`${tw[0]} ${n}`,`${tw[2]} ${n}`)}</th>`).join("")}<th>${T("Average","Promedio")}</th></tr></thead><tbody>`;
+  X.levels.forEach((x,ri)=>{
+    h+=`<tr><td>${x}</td>`;
+    for(let t=0;t<NT();t++){
+      const idx=ri*NT()+t, has = data && idx<shownCount;
+      h+=`<td class="${has&&cellClass?cellClass(idx):""}">${has ? (cellHtml?cellHtml(ri,t,idx):data[ri].t[t].toFixed(1)) : ""}</td>`;
+    }
+    h+=`<td class="avg">${showAvg&&data?data[ri].avg.toFixed(1):""}</td></tr>`;
+  });
+  document.getElementById("table").innerHTML = h+`</tbody></table>`;
+}
+
+/* ---- track: flight or growth ---- */
+const GROW_H = 100; // px of usable stem height
+function buildTrack(){
+  const tr=document.getElementById("track");
+  tr.className = "track" + (F.visual==="growth"?" grow":"");
+  if(F.visual==="flight"){
+    let ticks=""; for(let m=0;m<=X.y[0];m+=2) ticks+=`<span class="tick" style="left:calc(28px + (100% - 44px) * ${m/X.y[0]})">${m} m</span>`;
+    tr.innerHTML = `<div class="launcher"></div><div class="floor"></div><div class="marks" id="marks"></div>
+      <svg class="plane" id="mover" viewBox="0 0 34 20"><path d="M1 10 L33 2 L14 11 L33 2 L18 19 L14 11 Z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" fill-opacity=".25"/></svg>
+      <div class="trackmsg" id="trackmsg"></div>${ticks}`;
+  } else if(F.visual==="bar"){
+    let ticks=""; for(let v=0;v<=X.y[0];v+=X.y[1]) ticks+=`<span class="tick" style="left:calc(28px + (100% - 44px) * ${v/X.y[0]})">${v}</span>`;
+    tr.innerHTML = `<div class="barlab">${TT(X.yLabel)}</div><div class="bartrack"></div><div class="barfill" id="mover"></div><div class="marks" id="marks"></div><div class="trackmsg" id="trackmsg"></div>${ticks}`;
+  } else {
+    let lines=""; for(let c=0;c<=X.y[0];c+=10){ const b=38+c/X.y[0]*GROW_H; lines+=`<div class="gline" style="bottom:${b}px"></div><span class="glab" style="bottom:${b}px">${c} cm</span>`; }
+    tr.innerHTML = `${lines}<div class="marks" id="marks"></div><div class="gpot"></div><div class="gstem" id="mover"></div><div class="trackmsg" id="trackmsg"></div>`;
+  }
+}
+function renderMarks(pts){
+  const m=document.getElementById("marks"); if(!m) return;
+  m.innerHTML = F.visual!=="growth"
+    ? pts.map(p=>`<i class="mark${F.visual==="bar"?" bm":""}" style="left:calc(28px + (100% - 44px) * ${p.d/X.y[0]})"></i>`).join("")
+    : pts.map(p=>`<i class="gmark" style="bottom:${38+p.d/X.y[0]*GROW_H}px"></i>`).join("");
+}
+function renderLegend(){
+  const items=[`<span><i class="dot"></i>${T(`Each ${F.item[0]}`,`Cada ${F.item[2]}`)}</span>`, `<span><i class="sq"></i>${T("Average","Promedio")}</span>`];
+  if(MODE==="error"){
+    items.push(`<span><i class="ring"></i>${T("Flagged","Marcado")}</span>`);
+    if(E.done) items.push(`<span><i class="hollow"></i>${T("Thrown out","Descartado")}</span>`);
+  }
+  document.getElementById("legend").innerHTML = items.join("");
+}
+function renderSummary(rows){
+  document.getElementById("summary").innerHTML = rows.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join("");
+}
+
+/* ================= DESIGN mode ================= */
+const flatS = () => S.data ? pointsOf(S.data) : [];
+function designPanel(){
+  const iv=X.iv.short, dv=X.dv.short;
+  let h="";
+  if(S.step===0){
+    h = head(0) + `<p class="stem">${TT(X.setup)}</p>
+      <div class="prompt">${T("Which variable does the experimenter change on purpose?","¿Qué variable cambia el experimentador a propósito?")}</div>
+      <div class="chips">${X.varOrder.map(id=>{const v=vById(id);return chip(id,T(v.en,v.es),{act:"iv",on:S.iv===id,state:S.ivOk&&S.iv===id?"ok":""});}).join("")}</div>
+      <p class="stem">${T("The <b>independent variable</b> is ____ because the experimenter changes it.","La <b>variable independiente</b> es ____ porque el experimentador la cambia.")}</p>
+      ${fbBox(S)}
+      <div class="row">${S.ivOk ? btn("next","Next","Siguiente") : btn("checkIV","Check","Revisar",!S.iv)}</div>`;
+  }
+  if(S.step===1){
+    h = head(1) + `<div class="prompt">${T("Which variable do you measure to see the effect?","¿Qué variable mides para ver el efecto?")}</div>
+      <div class="chips">${X.varOrder.map(id=>{
+        const v=vById(id), isIV=id==="iv";
+        return chip(id, T(v.en+(isIV?'<span class="tag">IV</span>':''), v.es+(isIV?'<span class="tag">VI</span>':'')), {act:"dv",on:S.dv===id,disabled:isIV,state:S.dvOk&&S.dv===id?"ok":""});
+      }).join("")}</div>
+      <p class="stem">${T("The <b>dependent variable</b> is ____ because it is what we measure.","La <b>variable dependiente</b> es ____ porque es lo que medimos.")}</p>
+      ${fbBox(S)}
+      <div class="row">${S.dvOk ? btn("next","Next","Siguiente") : btn("checkDV","Check","Revisar",!S.dv)}</div>`;
+  }
+  if(S.step===2){
+    h = head(2) + `<div class="prompt">${T(`For a fair test, what must stay the same for every ${F.item[0]}? Choose 3.`,`Para una prueba justa, ¿qué debe ser igual en cada ${F.item[2]}? Elige 3.`)}</div>
+      <div class="chips">${X.constList.map(c=>{
+        const on=S.consts.has(c.id), st=S.constChecked&&on?(c.ok?"ok":"bad"):"";
+        return chip(c.id,T(c.en,c.es),{act:"const",multi:true,on,state:st,disabled:S.constOk});
+      }).join("")}</div>
+      <span class="count">${T(`${S.consts.size} of 3 selected`,`${S.consts.size} de 3 seleccionadas`)}</span>
+      <p class="stem">${T(`We keep ____ the same so that only ${iv[0]} can change ${dv[0]}.`,`Mantenemos ____ igual para que solo ${iv[1]} pueda cambiar ${dv[1]}.`)}</p>
+      ${fbBox(S)}
+      <div class="row">${S.constOk ? btn("next","Next","Siguiente") : btn("checkC","Check","Revisar",S.consts.size===0)}</div>`;
+  }
+  if(S.step===3){
+    h = head(3) + `<p class="stem">${T("A <b>hypothesis</b> is a testable prediction. Scientists write it <b>before</b> they collect data, using <b>If… then… because…</b>",
+        "Una <b>hipótesis</b> es una predicción que se puede probar. Los científicos la escriben <b>antes</b> de reunir datos, usando <b>Si… entonces… porque…</b>")}</p>
+      <div class="prompt">${T(`Choose your hypothesis: If ${iv[0]} increases, then ${dv[0]} will…`,`Elige tu hipótesis: Si ${iv[1]} aumenta, entonces ${dv[1]}…`)}</div>
+      <div class="predict">${PRED.map(p=>`<button class="chip" data-act="pred" data-id="${p.id}" aria-pressed="${S.predict===p.id}">
+        <svg viewBox="0 0 44 32" aria-hidden="true"><path d="M3 2 V30 H42" fill="none" stroke="var(--muted)" stroke-width="1.5"/><path d="${p.path}" fill="none" stroke="var(--sky)" stroke-width="3" stroke-linecap="round"/></svg>
+        <span>${TT(p.t)}</span></button>`).join("")}</div>
+      <p class="stem">${T(`<b>Hypothesis:</b> If ${iv[0]} increases, then ${dv[0]} will ____ because ____.`,`<b>Hipótesis:</b> Si ${iv[1]} aumenta, entonces ${dv[1]} ____ porque ____.`)}</p>
+      <div class="row">${btn("lockPred","Lock in my hypothesis","Guardar mi hipótesis",!S.predict)}</div>`;
+  }
+  if(S.step===4){
+    const total = X.levels.length*NT();
+    h = head(4) + `<p class="stem">${TT(X.setup)}</p>
+      <div class="prompt">${T("Run the simulation and watch the graph fill in.","Corre la simulación y mira cómo se llena la gráfica.")}</div>
+      <span class="count">${S.shown} / ${total} ${L(F.item[1],F.item[3])}</span>
+      <div class="row">${S.done ? btn("next","Next: make a claim","Siguiente: escribe tu conclusión")
+          : S.running ? btn("skip","Skip animation","Saltar animación") : btn("run",F.run[0],F.run[1])}</div>`;
+  }
+  if(S.step===5){
+    const ch = `<option value="">${L("— choose —","— elige —")}</option>`;
+    const varOpts = sel => ch + X.varOrder.map(id=>{const v=vById(id);return `<option value="${id}" ${sel===id?"selected":""}>${v.short[li()]}</option>`;}).join("");
+    const dirOpts = sel => ch + PRED.map(p=>`<option value="${p.id}" ${sel===p.id?"selected":""}>${p.word[li()]}</option>`).join("");
+    const sa=`<select id="ca" aria-label="${L("Variable that increases","Variable que aumenta")}">${varOpts(S.claim.a)}</select>`;
+    const sc=`<select id="cc" aria-label="${L("Measured variable","Variable medida")}">${varOpts(S.claim.c)}</select>`;
+    const sb=`<select id="cb" aria-label="${L("Direction","Dirección")}">${dirOpts(S.claim.b)}</select>`;
+    h = head(5) + `<div class="prompt">${T("Use the graph to complete the claim.","Usa la gráfica para completar la conclusión.")}</div>
+      <div class="claim">${L(`As ${sa} increases, ${sc} ${sb}.`, `Si ${sa} aumenta, ${sc} ${sb}.`)}</div>
+      ${fbBox(S)}
+      <div class="row">${S.claimOk
+        ? btn("next","Next: Does the data support your hypothesis?","Siguiente: ¿Los datos apoyan tu hipótesis?")
+        : btn("checkClaim","Check claim","Revisar conclusión",!(S.claim.a&&S.claim.b&&S.claim.c))}</div>`;
+  }
+  if(S.step===6){
+    const hp=PRED.find(p=>p.id===S.predict), an=PRED.find(p=>p.id===X.answer);
+    const opts=[["yes","Yes, it supports my hypothesis","Sí, apoya mi hipótesis"],["partly","Partly: it supports part of it","En parte: apoya una parte"],["no","No, it does not support my hypothesis","No, no apoya mi hipótesis"]];
+    h = head(6) + `<div class="stem">${T(`<b>My hypothesis:</b> If ${iv[0]} increases, then ${dv[0]} will ${hp.hyp[0]}.`,`<b>Mi hipótesis:</b> Si ${iv[1]} aumenta, entonces ${dv[1]} ${hp.hyp[1]}.`)}</div>
+      <div class="stem">${T(`<b>My claim from the data:</b> As ${iv[0]} increases, ${dv[0]} ${an.word[0]}.`,`<b>Mi conclusión de los datos:</b> Si ${iv[1]} aumenta, ${dv[1]} ${an.word[1]}.`)}</div>
+      <div class="prompt">${T("Does the data support your hypothesis?","¿Los datos apoyan tu hipótesis?")}</div>
+      <div class="chips">${opts.map(o=>chip(o[0],T(o[1],o[2]),{act:"ev",on:S.ev===o[0],state:S.evOk&&S.ev===o[0]?"ok":"",disabled:S.evOk})).join("")}</div>
+      <p class="stem">${T("The data ____ my hypothesis because the graph shows ____.","Los datos ____ mi hipótesis porque la gráfica muestra ____.")}</p>
+      ${fbBox(S)}
+      <div class="row">${S.evOk
+        ? btn("mode-error","Next: Find the error in this experiment","Siguiente: Encuentra el error en este experimento") + btn("again","New data","Nuevos datos",false,true) + btn("nextExp","Next experiment","Siguiente experimento",false,true)
+        : btn("checkEv","Check","Revisar",!S.ev)}</div>`;
+  }
+  return h;
+}
+function designRecord(){
+  const pts = flatS().slice(0,S.shown).map(p=>({...p,style:"normal"}));
+  renderGraph(pts, S.done?S.data:null, {xKnown:S.ivOk, yKnown:S.dvOk});
+  renderTable(S.data, S.shown, S.done);
+  renderMarks(pts);
+  renderSummary([
+    [L("IV","VI"), S.ivOk? T(X.iv.en, X.iv.es) : "—"],
+    [L("DV","VD"), S.dvOk? T(X.dv.en, X.dv.es) : "—"],
+    [L("Constants","Constantes"), S.constOk? X.constList.filter(c=>S.consts.has(c.id)).map(c=>T(c.en,c.es)).join("") : "—"],
+    [L("Hypothesis","Hipótesis"), S.step>3&&S.predict ? TT(PRED.find(p=>p.id===S.predict).t) : "—"]
+  ]);
+}
+/* does the data support the hypothesis? */
+function supportAnswer(h, a){
+  if(h===a) return "yes";
+  if((a==="hump" && (h==="inc"||h==="dec")) || (h==="hump" && (a==="inc"||a==="dec"))) return "partly";
+  return "no";
+}
+const designFirsts = () => [S.tries.iv,S.tries.dv,S.tries.c,S.tries.claim,S.tries.ev].filter(n=>n===1).length;
+function designClick(a,id){
+  const dvT=DVT();
+  if(a==="iv" && !S.ivOk){ S.iv=id; S.fb=null; }
+  if(a==="dv" && !S.dvOk){ S.dv=id; S.fb=null; }
+  if(a==="const"){ S.consts.has(id)?S.consts.delete(id):S.consts.add(id); S.constChecked=false; S.fb=null; }
+  if(a==="pred"){ S.predict=id; }
+  if(a==="checkIV"){ S.tries.iv++;
+    if(S.iv==="iv"){ S.ivOk=true; S.fb={ok:true,html:T(`Yes. <b>${X.iv.en}</b> is what the experimenter changes. The independent variable goes on the <b>x-axis</b>.`,
+      `Sí. <b>${X.iv.es}</b> es lo que cambia el experimentador. La variable independiente va en el <b>eje x</b>.`)}; }
+    else if(S.iv==="dv") S.fb={ok:false,html:GOQ+T(`The question says “How does <b>____</b> affect…”. The thing you change comes first. ${X.dv.short[0][0].toUpperCase()+X.dv.short[0].slice(1)} comes at the end, so it is the result.`,
+      `La pregunta dice “¿Cómo afecta <b>____</b> a…”. Lo que cambias va primero. ${X.dv.short[1][0].toUpperCase()+X.dv.short[1].slice(1)} va al final, así que es el resultado.`)};
+    else S.fb={ok:false,html:GOQ+T("This variable is not in the question. Find the words right after “How does…”. That is what you change.",
+      "Esta variable no está en la pregunta. Busca las palabras justo después de “¿Cómo afecta…”. Eso es lo que cambias.")}; }
+  if(a==="checkDV"){ S.tries.dv++;
+    if(S.dv==="dv"){ S.dvOk=true; S.fb={ok:true,html:T(`Yes. <b>${X.dv.en}</b> is what you measure. The dependent variable goes on the <b>y-axis</b>.`,
+      `Sí. <b>${X.dv.es}</b> es lo que mides. La variable dependiente va en el <b>eje y</b>.`)}; }
+    else S.fb={ok:false,html:GOQ+T("The question ends with “…affect <b>____</b>?”. The last part of the question is what you measure.",
+      "La pregunta termina con “…a <b>____</b>?”. La última parte de la pregunta es lo que mides.")}; }
+  if(a==="checkC"){ S.tries.c++; S.constChecked=true;
+    const picked=X.constList.filter(c=>S.consts.has(c.id)), bad=picked.filter(c=>!c.ok), n=3-picked.length;
+    if(bad.length) S.fb={ok:false,html:`<strong>${T("Some choices do not belong:","Algunas opciones no van:")}</strong><ul>${bad.map(c=>`<li><b>${T(c.en,c.es)}</b>${TT(c.why)}</li>`).join("")}</ul><div>${GOQ}${T(`Ask: could this change ${dvT[0]}?`,`Pregúntate: ¿esto podría cambiar ${dvT[1]}?`)}</div>`};
+    else if(picked.length!==3) S.fb={ok:false,html:T(`You found ${picked.length} of 3. Find ${n} more ${n===1?"thing":"things"} that could change ${dvT[0]}.`,
+      `Encontraste ${picked.length} de 3. Encuentra ${n} más que podría cambiar ${dvT[1]}.`)};
+    else { S.constOk=true; S.fb={ok:true,html:T(`Good choices. Keeping these the same means only ${X.iv.short[0]} can change ${X.dv.short[0]}. That makes it a fair test.`,
+      `Buenas opciones. Si esto se mantiene igual, solo ${X.iv.short[1]} puede cambiar ${X.dv.short[1]}. Así la prueba es justa.`)}; } }
+  if(a==="lockPred"){ S.step=4; S.data=makeData(); S.shown=0; S.done=false; }
+  if(a==="run"){ runSim(); return false; }
+  if(a==="skip"){ finishRun(); return false; }
+  if(a==="next"){ S.step++; S.fb=null; }
+  if(a==="checkClaim"){ S.tries.claim++;
+    const {a:ca,b:cb,c:cc}=S.claim;
+    if(ca==="iv" && cc==="dv" && cb===X.answer){
+      S.claimOk=true;
+      S.fb={ok:true,html:`<strong>${T("Correct claim.","Conclusión correcta.")}</strong><div>${TT(X.note)}</div>`};
+    } else if(ca==="dv" && cc==="iv"){
+      S.fb={ok:false,html:GOQ+T("The variables are switched. The one you change comes first in the question and goes on the x-axis.","Las variables están al revés. La que cambias va primero en la pregunta y en el eje x.")};
+    } else if(ca!=="iv" || cc!=="dv"){
+      S.fb={ok:false,html:GOQ+T("Use the same two variables the question names.","Usa las mismas dos variables que nombra la pregunta.")};
+    } else {
+      S.fb={ok:false,html:T("Follow the blue average line from left to right. Does it go up, go down, stay flat, or go up and then down?","Sigue la línea azul del promedio de izquierda a derecha. ¿Sube, baja, se queda plana, o sube y luego baja?")};
+    }
+  }
+  if(a==="ev" && !S.evOk){ S.ev=id; S.fb=null; }
+  if(a==="checkEv"){ S.tries.ev++;
+    const right=supportAnswer(S.predict, X.answer), hp=PRED.find(p=>p.id===S.predict), an=PRED.find(p=>p.id===X.answer);
+    const dv=X.dv.short;
+    if(S.ev===right){
+      S.evOk=true;
+      const why = right==="yes"
+        ? T(`Yes. You said ${dv[0]} would ${hp.hyp[0]}, and the data shows it ${an.word[0]}. The evidence supports your hypothesis.`,
+            `Sí. Dijiste que ${dv[1]} ${hp.hyp[1]}, y los datos muestran que ${an.word[1]}. La evidencia apoya tu hipótesis.`)
+        : right==="partly"
+        ? T(`Partly. You said ${dv[0]} would ${hp.hyp[0]}. The data shows it ${an.word[0]}, so your hypothesis fits only part of the graph.`,
+            `En parte. Dijiste que ${dv[1]} ${hp.hyp[1]}. Los datos muestran que ${an.word[1]}, así que tu hipótesis solo coincide con una parte de la gráfica.`)
+        : T(`No. You said ${dv[0]} would ${hp.hyp[0]}, but the data shows it ${an.word[0]}. The evidence does not support your hypothesis. That is OK: scientists revise a hypothesis when the data disagrees.`,
+            `No. Dijiste que ${dv[1]} ${hp.hyp[1]}, pero los datos muestran que ${an.word[1]}. La evidencia no apoya tu hipótesis. Está bien: los científicos cambian su hipótesis cuando los datos no coinciden.`);
+      const firsts=designFirsts();
+      S.fb={ok:true,html:`<strong>${T("Correct.","Correcto.")}</strong><div>${why}</div>
+        <div><span class="score">${firsts}/5</span> ${T("right on the first try so far. “Find the error” adds 3 more points.","correctos al primer intento hasta ahora. “Encuentra el error” agrega 3 puntos más.")}</div>`};
+    } else {
+      S.fb={ok:false,html:T("Compare your hypothesis to the blue average line. Do they match all the way, only part of the way, or not at all?",
+        "Compara tu hipótesis con la línea azul del promedio. ¿Coinciden todo el tiempo, solo una parte, o nada?")};
+    }
+  }
+  if(a==="again"){ runToken++; S.step=4; S.data=makeData(); S.shown=0; S.done=false; S.running=false; S.claim={a:"",b:"",c:""}; S.claimOk=false; S.ev=null; S.evOk=false; S.fb=null; S.tries.claim=0; S.tries.ev=0; }
+}
+
+/* ================= FIND THE ERROR mode ================= */
+function errPoints(){
+  const pts = pointsOf(E.data).map(p=>{
+    let style="normal";
+    if(E.done && E.bad.has(p.i)) style="old";
+    else if(E.flags.has(p.i)) style = E.flagChecked ? (E.bad.has(p.i)?"flagOk":"flagBad") : "flagged";
+    return {...p,style};
+  });
+  if(E.newT){ const x=X.levels[E.lv]; E.newT.slice(0,E.shown).forEach((d,t)=>pts.push({x,d,i:E.lv*NT()+t,style:"new"})); }
+  return pts;
+}
+const fixedData = () => E.data.map((r,ri)=> ri===E.lv ? {x:r.x,t:E.newT,avg:avg(E.newT)} : r);
+function errorPanel(){
+  let h="";
+  const lx = fmtX(X.levels[E.lv]), a=E.a, b=E.a+2, tw=F.trialWord;
+  if(E.step===0){
+    h = head(0) + `<p class="stem">${T("A student ran this experiment to answer the question. Something went wrong.","Un estudiante hizo este experimento para responder la pregunta. Algo salió mal.")} ${TT(X.setup)}</p>
+      <div class="prompt">${T("Look at the graph. Tap the points that do not fit the pattern.","Mira la gráfica. Toca los puntos que no siguen el patrón.")}</div>
+      <span class="graphhint">${T("Tap points on the graph to flag them. Tap again to unflag.","Toca los puntos en la gráfica para marcarlos. Tócalos otra vez para quitar la marca.")}</span>
+      <span class="count">${T(`${E.flags.size} flagged`,`${E.flags.size} marcados`)}</span>
+      <p class="stem">${T("The points at ____ do not fit because they are much ____ than the pattern.","Los puntos de ____ no siguen el patrón porque son mucho más ____ que el patrón.")}</p>
+      ${fbBox(E)}
+      <div class="row">${E.flagOk ? btn("next","Next","Siguiente") : btn("checkFlag","Check","Revisar",E.flags.size===0)}</div>`;
+  }
+  if(E.step===1){
+    h = head(1) + `<div class="prompt">${T(`The flagged points are ${tw[1].toLowerCase()} ${a}–${b}. Which note in the notebook explains them?`,
+        `Los puntos marcados son ${tw[3].toLowerCase()} ${a}–${b}. ¿Qué nota de la bitácora los explica?`)}</div>
+      <div class="chips">${E.notes.map(n=>{
+        const lv = X.levels[Math.floor((n.trial-1)/NT())];
+        return chip(String(n.trial), `<span class="tnum">${T(`${tw[0]} ${n.trial} · ${fmtX(lv)}`,`${tw[2]} ${n.trial} · ${fmtX(lv)}`)}</span>${T(n.en,n.es)}`,
+          {act:"log",on:E.log===n.trial,state:E.logOk&&E.log===n.trial?"ok":"",disabled:E.logOk});
+      }).join("")}</div>
+      ${fbBox(E)}
+      <div class="row">${E.logOk ? btn("next","Next","Siguiente") : btn("checkLog","Check","Revisar",E.log===null)}</div>`;
+  }
+  if(E.step===2){
+    const st = (list,sel,act) => list.map(o=>chip(o.id,T(o.en,o.es),{act,on:sel===o.id,state:E.uvOk&&sel===o.id?"ok":"",disabled:E.uvOk})).join("");
+    h = head(2) + `<div class="subq"><div class="prompt">${T("Which variable was <b>not</b> controlled?","¿Qué variable <b>no</b> se controló?")}</div>
+      <div class="chips">${st(E.uvOpts,E.uv,"uv")}</div></div>
+      <div class="subq"><div class="prompt">${T(`How did it affect the ${lx} results?`,`¿Cómo afectó a los resultados de ${lx}?`)}</div>
+      <div class="chips">${st(E.effOpts,E.eff,"eff")}</div></div>
+      <p class="stem">${T(`____ was not controlled. This made the ${lx} results ____.`,`____ no se controló. Esto hizo que los resultados de ${lx} fueran ____.`)}</p>
+      ${fbBox(E)}
+      <div class="row">${E.uvOk ? btn("next","Next","Siguiente") : btn("checkUV","Check","Revisar",!(E.uv&&E.eff))}</div>`;
+  }
+  if(E.step===3){
+    h = head(3) + `<div class="prompt">${T(fill(X.err.fix[0],{a,b}), fill(X.err.fix[1],{a,b}))}</div>
+      <span class="count">${E.shown} / 3 ${L(F.item[1],F.item[3])}</span>
+      ${fbBox(E)}
+      <div class="row">${E.done
+        ? btn("errAgain","Try again with new data","Intentar con nuevos datos") + btn("nextExp","Next experiment","Siguiente experimento",false,true)
+        : E.running ? btn("skip","Skip animation","Saltar animación") : btn("rerun",F.rerun[0],F.rerun[1])}</div>`;
+  }
+  return h;
+}
+function errorRecord(){
+  const pts=errPoints(), all=X.levels.length*NT();
+  renderGraph(pts, E.done?fixedData():null, {xKnown:true,yKnown:true,tappable:E.step===0&&!E.flagOk});
+  renderTable(E.done?fixedData():E.data, all, E.done,
+    idx => E.done&&E.bad.has(idx) ? "fixed" : (E.flagOk&&E.bad.has(idx) ? "flag" : ""),
+    (ri,t,idx) => E.done&&E.bad.has(idx) ? `<s>${E.data[ri].t[t].toFixed(1)}</s>${E.newT[t].toFixed(1)}` : E.data[ri].t[t].toFixed(1));
+  renderMarks(pts.filter(p=>p.style!=="old"));
+  const tw=F.trialWord, rng=`${E.a}–${E.a+2}`;
+  renderSummary([
+    [L("Odd data","Datos raros"), E.flagOk ? T(`${tw[1]} ${rng} (${fmtX(X.levels[E.lv])})`,`${tw[3]} ${rng} (${fmtX(X.levels[E.lv])})`) : "—"],
+    [L("Cause","Causa"), E.logOk ? TT(X.err.cause) : "—"],
+    [L("Not controlled","No controlada"), E.uvOk ? TT(X.err.uv) : "—"],
+    [L("Fix","Corrección"), E.done ? T(`Redid ${tw[1].toLowerCase()} ${rng}`,`Se repitieron ${tw[3].toLowerCase()} ${rng}`) : "—"]
+  ]);
+}
+function errorClick(a,id){
+  const lx=fmtX(X.levels[E.lv]), tw=F.trialWord;
+  if(a==="log" && !E.logOk){ E.log=+id; E.fb=null; }
+  if(a==="uv" && !E.uvOk){ E.uv=id; E.fb=null; }
+  if(a==="eff" && !E.uvOk){ E.eff=id; E.fb=null; }
+  if(a==="checkFlag"){ E.tries.flag++; E.flagChecked=true;
+    const good=[...E.flags].filter(i=>E.bad.has(i)).length, wrong=E.flags.size-good;
+    if(wrong>0) E.fb={ok:false,html:T("The points with a red ring fit the pattern. Look for points that are far away from the points next to them.","Los puntos con anillo rojo sí siguen el patrón. Busca puntos que estén lejos de los puntos de al lado.")};
+    else if(good<3) E.fb={ok:false,html:T(`You found ${good} of 3. The other odd points are right next to the ones you found.`,`Encontraste ${good} de 3. Los otros puntos raros están junto a los que encontraste.`)};
+    else { E.flagOk=true; E.fb={ok:true,html:T(`Yes. All 3 results at ${lx} are much ${X.err.dir<0?"lower":"higher"} than the pattern. Something else must have changed. Read the notebook to find out what.`,
+      `Sí. Los 3 resultados de ${lx} son mucho más ${X.err.dir<0?"bajos":"altos"} que el patrón. Algo más cambió. Lee la bitácora para saber qué.`)}; } }
+  if(a==="checkLog"){ E.tries.log++;
+    const n=E.notes.find(n=>n.trial===E.log);
+    if(n.ok){ E.logOk=true; E.fb={ok:true,html:T(`Yes. ${tw[1]} ${E.a}, ${E.a+1}, and ${E.a+2} were the ${lx} ${F.item[1]}, and ${X.err.changed[0]}. Two things changed, not just ${X.iv.short[0]}.`,
+      `Sí. ${tw[3]} ${E.a}, ${E.a+1} y ${E.a+2} fueron ${F.itemsEs} de ${lx}, y ${X.err.changed[1]}. Cambiaron dos cosas, no solo ${X.iv.short[1]}.`)}; }
+    else E.fb={ok:false,html:TT(n.why)}; }
+  if(a==="checkUV"){ E.tries.uv++;
+    const u=E.uvOpts.find(o=>o.id===E.uv), f=E.effOpts.find(o=>o.id===E.eff);
+    if(u.ok && f.ok){ E.uvOk=true; E.fb={ok:true,html:T(`Right. <b>${X.err.uv[0]}</b> was not controlled. Those 3 results show the effect of two changes at once, so we cannot use them.`,
+      `Correcto. <b>${X.err.uv[1]}</b> no se controló. Esos 3 resultados muestran el efecto de dos cambios a la vez, así que no los podemos usar.`)}; }
+    else if(!u.ok) E.fb={ok:false,html:(u.goq?GOQ:"")+TT(u.why)};
+    else E.fb={ok:false,html:T("Look at the graph again. Are the flagged points above or below the pattern?","Mira la gráfica otra vez. ¿Los puntos marcados están arriba o abajo del patrón?")}; }
+  if(a==="next"){ E.step++; E.fb=null; }
+  if(a==="rerun"){ runRerun(); return false; }
+  if(a==="skip"){ finishRerun(); return false; }
+  if(a==="errAgain"){ runToken++; freshError(); }
+}
+function toggleFlag(i){
+  if(MODE!=="error"||E.step!==0||E.flagOk) return;
+  E.flags.has(i)?E.flags.delete(i):E.flags.add(i);
+  E.flagChecked=false; E.fb=null; render();
+  document.querySelector(`.hit[data-pt="${i}"]`)?.focus();
+}
+
+/* ================= animation ================= */
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+function animate(d, token){
+  const mv=document.getElementById("mover"), tr=document.getElementById("track"), dur=F.visual==="flight"?650:500, t0=performance.now();
+  return new Promise(res=>{
+    function step(now){
+      if(token!==runToken) return res();
+      const k=Math.min(1,(now-t0)/dur);
+      if(F.visual==="flight"){
+        const target = d/X.y[0]*(tr.clientWidth-44);
+        mv.style.transform=`translate(${target*k}px, ${-Math.sin(Math.PI*k)*26}px) rotate(${(k-.5)*24}deg)`;
+      } else if(F.visual==="bar"){
+        mv.style.width = `${(1-(1-k)**2)*d/X.y[0]*(tr.clientWidth-44)}px`;
+      } else {
+        mv.style.height = `${(1-(1-k)**2)*d/X.y[0]*GROW_H}px`;
+      }
+      k<1 ? requestAnimationFrame(step) : res();
+    }
+    requestAnimationFrame(step);
+  });
+}
+function resetMover(){ const m=document.getElementById("mover"); if(m){ m.style.transform=""; m.style.height=""; m.style.width=""; } const t=document.getElementById("trackmsg"); if(t) t.textContent=""; }
+async function runSim(){
+  const token=++runToken; S.running=true; render();
+  const all=flatS();
+  for(let i=S.shown;i<all.length;i++){
+    if(token!==runToken) return;
+    document.getElementById("trackmsg").textContent=fmtX(all[i].x);
+    if(!reduce) await animate(all[i].d, token);
+    if(token!==runToken) return;
+    S.shown=i+1; designRecord();
+    document.querySelector("#panel .count").textContent=`${S.shown} / ${all.length} ${L(F.item[1],F.item[3])}`;
+    await sleep(reduce?40:140);
+  }
+  finishRun();
+}
+function finishRun(){ runToken++; S.shown=flatS().length; S.running=false; S.done=true; resetMover(); render(); }
+async function runRerun(){
+  const x=X.levels[E.lv];
+  E.newT = E.newT || [0,1,2].map(()=>r1(X.model(x)+gauss()*X.noise));
+  const token=++runToken; E.running=true; render();
+  for(let i=E.shown;i<3;i++){
+    if(token!==runToken) return;
+    document.getElementById("trackmsg").textContent=fmtX(x);
+    if(!reduce) await animate(E.newT[i], token);
+    if(token!==runToken) return;
+    E.shown=i+1; errorRecord();
+    document.querySelector("#panel .count").textContent=`${E.shown} / 3 ${L(F.item[1],F.item[3])}`;
+    await sleep(reduce?40:160);
+  }
+  finishRerun();
+}
+function finishRerun(){
+  runToken++; E.shown=3; E.running=false; E.done=true; resetMover();
+  const firsts=[E.tries.flag,E.tries.log,E.tries.uv].filter(n=>n===1).length;
+  const total = S.evOk ? `<div><span class="score">${designFirsts()+firsts}/8</span> ${T("experiment total: design + find the error, right on the first try","total del experimento: diseño + encontrar el error, correctos al primer intento")}</div>` : "";
+  E.fb={ok:true,html:`<strong>${T("Fixed.","Corregido.")}</strong><div>${T(`The new results fit the pattern. Now only ${X.iv.short[0]} changed, so the test is fair. A fair test changes only one variable.`,
+    `Los nuevos resultados siguen el patrón. Ahora solo cambió ${X.iv.short[1]}, así que la prueba es justa. Una prueba justa cambia solo una variable.`)}</div>
+    <div><span class="score">${firsts}/3</span> ${T("steps right on the first try","pasos correctos al primer intento")}</div>${total}`};
+  render();
+}
+
+/* ================= wiring ================= */
+function render(){
+  renderPicker();
+  document.getElementById("qeyebrow").innerHTML = MODE==="design"
+    ? T(`Testable question · Experiment ${EI+1}`,`Pregunta investigable · Experimento ${EI+1}`)
+    : T(`Experiment ${EI+1} · someone else's data`,`Experimento ${EI+1} · datos de otra persona`);
+  document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-selected", b.dataset.mode===MODE));
+  renderProgress();
+  document.getElementById("panel").innerHTML = MODE==="design" ? designPanel() : errorPanel();
+  MODE==="design" ? designRecord() : errorRecord();
+  renderLegend();
+}
+function stopAnim(){ runToken++; resetMover(); if(S) S.running=false; if(E) E.running=false; }
+function setMode(m){
+  if(m===MODE) return;
+  stopAnim();
+  MODE=m; render(); try{ window.scrollTo({top:0,behavior:reduce?"auto":"smooth"}); }catch(e){}
+}
+document.querySelector(".modes").addEventListener("click", e=>{ const b=e.target.closest("[data-mode]"); if(b) setMode(b.dataset.mode); });
+/* random order through all experiments in both topics; refills when used up */
+let BAG=[];
+function nextRandom(){
+  if(!BAG.length){
+    BAG = shuffle(Object.keys(FAM).flatMap(k=>FAM[k].exps.map((_,i)=>[k,i])));
+    if(BAG.length>1 && BAG[BAG.length-1][0]===FK && BAG[BAG.length-1][1]===EI) BAG.unshift(BAG.pop());
+  }
+  return BAG.pop();
+}
+function goRandom(){ const [k,i]=nextRandom(); stopAnim(); MODE="design"; loadExp(k,i); try{ window.scrollTo({top:0,behavior:reduce?"auto":"smooth"}); }catch(e){} }
+document.querySelector(".picker").addEventListener("click", e=>{
+  if(e.target.closest('[data-pick="random"]')){ goRandom(); return; }
+});
+document.getElementById("famSel").addEventListener("change", e=>{ stopAnim(); MODE="design"; loadExp(e.target.value, 0); document.getElementById("famSel").focus(); });
+document.getElementById("expSel").addEventListener("change", e=>{ stopAnim(); MODE="design"; loadExp(FK, +e.target.value); document.getElementById("expSel").focus(); });
+
+const panel=document.getElementById("panel");
+panel.addEventListener("change", e=>{
+  if(!e.target.matches("select")) return;
+  S.claim = {a:document.getElementById("ca").value, b:document.getElementById("cb").value, c:document.getElementById("cc").value};
+  S.fb=null; const keep=e.target.id; render(); document.getElementById(keep)?.focus();
+});
+panel.addEventListener("click", e=>{
+  const b=e.target.closest("[data-act]"); if(!b||b.disabled) return;
+  const a=b.dataset.act, id=b.dataset.id;
+  if(a==="goq"){ const q=document.querySelector(".qband"); q.scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"}); q.classList.remove("look"); void q.offsetWidth; q.classList.add("look"); return; }
+  if(a==="mode-error"){ setMode("error"); return; }
+  if(a==="nextExp"){ goRandom(); return; }
+  const go = MODE==="design" ? designClick(a,id) : errorClick(a,id);
+  if(go!==false) render();
+});
+const graph=document.getElementById("graph");
+graph.addEventListener("click", e=>{ const p=e.target.closest(".hit"); if(p) toggleFlag(+p.dataset.pt); });
+graph.addEventListener("keydown", e=>{ const p=e.target.closest(".hit"); if(p&&(e.key==="Enter"||e.key===" ")){ e.preventDefault(); toggleFlag(+p.dataset.pt); } });
+
+/* language + link: #plane-2, #plant-1-es, #es */
+function setLang(l){
+  LANG = l==="es" ? "es" : "en";
+  const r=document.documentElement; r.classList.remove("lang-en","lang-es"); r.classList.add("lang-"+LANG); r.lang=LANG;
+  document.querySelectorAll(".langtog button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.lang===LANG));
+  try{ localStorage.setItem("edl-lang",LANG); }catch(e){}
+}
+let lastHash="", PINNED=true;
+function syncHash(){
+  const h = PINNED ? `${FK}-${EI+1}${LANG==="es"?"-es":""}` : (LANG==="es"?"es":"");
+  lastHash = "#"+h;
+  try{ if(location.hash!==lastHash) history.replaceState(null,"",lastHash); }catch(e){ location.hash=h; }
+}
+function parseHash(){
+  const m = location.hash.match(/^#(?:([a-z]+)-(\d))?-?(en|es)?$/);
+  if(m && m[1] && !FAM[m[1]]) return null;
+  if(!m) return null;
+  return {fam:m[1]||null, exp:m[2]?Math.min(+m[2]-1, (FAM[m[1]]?.exps.length||1)-1):0, lang:m[3]||null};
+}
+document.querySelector(".langtog").addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  setLang(b.dataset.lang); syncHash(); document.getElementById("question").innerHTML = TT(X.question); render();
+});
+window.addEventListener("hashchange", ()=>{
+  if(location.hash===lastHash) return;
+  const p=parseHash(); if(!p) return;
+  if(p.lang) setLang(p.lang);
+  if(p.fam) PINNED=true;
+  stopAnim(); MODE="design"; loadExp(p.fam||FK, p.fam?p.exp:EI);
+});
+
+let startLang="en";
+try{ startLang = localStorage.getItem("edl-lang") || "en"; }catch(e){}
+const p0 = parseHash();
+if(p0 && p0.lang) startLang = p0.lang;
+setLang(startLang);
+if(p0 && p0.fam) loadExp(p0.fam, p0.exp); else loadExp("plane", 0);
+</script>
+
+</body>
+</html>

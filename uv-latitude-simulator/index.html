@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case File: Who Gets Skin Cancer, and Why? — A Latitude & UV Investigation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F4F5F1;
+    --paper-raised: #FFFFFF;
+    --ink: #16181A;
+    --ink-soft: #4A4E4A;
+    --grid: #D6D9D2;
+    --grid-strong: #B7BBAF;
+    --uv-low: #2E8B2E;
+    --uv-mod: #D9B400;
+    --uv-high: #E8730B;
+    --uv-vhigh: #D8001D;
+    --uv-extreme: #7A3FC4;
+    --focus: #1A5FB4;
+    --radius: 3px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  /* ---------- Header ---------- */
+  .case-header {
+    border: 1px solid var(--grid-strong);
+    background: var(--paper-raised);
+    padding: 1.75rem 1.75rem 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+  .case-header::before {
+    content: "FIELD INVESTIGATION";
+    position: absolute; top: -0.65rem; left: 1.5rem;
+    background: var(--ink); color: var(--paper);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem; letter-spacing: 0.12em;
+    padding: 0.2rem 0.6rem;
+  }
+  .case-id {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem; color: var(--ink-soft);
+    letter-spacing: 0.04em; margin-bottom: 0.6rem;
+  }
+  h1 {
+    font-size: clamp(1.4rem, 3.2vw, 1.9rem);
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.01em;
+  }
+  .case-header p { margin: 0.35rem 0; color: var(--ink-soft); max-width: 62ch; }
+  .dq-box {
+    margin-top: 1rem; padding: 0.85rem 1rem;
+    background: var(--paper); border-left: 3px solid var(--ink);
+    font-size: 0.95rem;
+  }
+  .dq-box strong { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.08em; color: var(--ink-soft); margin-bottom: 0.3rem; }
+
+  /* ---------- Section shell ---------- */
+  section.panel {
+    border: 1px solid var(--grid-strong);
+    background: var(--paper-raised);
+    margin-bottom: 1.25rem;
+    padding: 1.5rem 1.5rem 1.6rem;
+  }
+  .panel-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.1em; color: var(--ink-soft);
+    text-transform: uppercase; margin-bottom: 0.75rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .panel-label::after { content: ""; flex: 1; height: 1px; background: var(--grid); }
+  h2 { font-size: 1.05rem; margin: 0 0 0.4rem; }
+  .helptext { color: var(--ink-soft); font-size: 0.88rem; margin: 0 0 1rem; max-width: 66ch; }
+
+  /* ---------- Prediction ---------- */
+  textarea, input[type=text] {
+    width: 100%; font-family: 'IBM Plex Sans', sans-serif; font-size: 0.92rem;
+    padding: 0.65rem 0.75rem; border: 1px solid var(--grid-strong);
+    background: var(--paper); color: var(--ink); border-radius: var(--radius);
+    resize: vertical;
+  }
+  textarea:focus, input:focus, select:focus, button:focus-visible {
+    outline: 2px solid var(--focus); outline-offset: 1px;
+  }
+
+  /* ---------- Investigation layout ---------- */
+  .investigation-grid { display: grid; grid-template-columns: 260px 1fr; gap: 1.25rem; }
+  @media (max-width: 760px) { .investigation-grid { grid-template-columns: 1fr; } }
+
+  .location-list { display: flex; flex-direction: column; gap: 0.4rem; max-height: 480px; overflow-y: auto; padding-right: 0.25rem; }
+  .loc-card {
+    display: flex; align-items: center; gap: 0.6rem;
+    border: 1px solid var(--grid); background: var(--paper);
+    padding: 0.5rem 0.65rem; cursor: pointer; text-align: left;
+    font-family: 'IBM Plex Sans', sans-serif; font-size: 0.85rem; color: var(--ink);
+    width: 100%; border-radius: var(--radius);
+  }
+  .loc-card:hover { border-color: var(--grid-strong); }
+  .loc-card.active { border-color: var(--ink); background: var(--paper-raised); box-shadow: inset 3px 0 0 var(--ink); }
+  .loc-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; border: 1px solid rgba(0,0,0,0.25); }
+  .loc-name { font-weight: 600; }
+  .loc-sub { color: var(--ink-soft); font-size: 0.78rem; }
+
+  .chart-area { display: flex; flex-direction: column; gap: 0.75rem; }
+  .axis-controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; }
+  .axis-controls label { display: flex; align-items: center; gap: 0.4rem; color: var(--ink-soft); }
+  select {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem;
+    padding: 0.3rem 0.4rem; border: 1px solid var(--grid-strong);
+    background: var(--paper-raised); color: var(--ink); border-radius: var(--radius);
+  }
+  svg#chart { width: 100%; height: auto; border: 1px solid var(--grid); background: var(--paper); }
+  .axis-tick { font-family: 'IBM Plex Mono', monospace; font-size: 9px; fill: var(--ink-soft); }
+  .axis-line { stroke: var(--grid-strong); stroke-width: 1; }
+  .grid-line { stroke: var(--grid); stroke-width: 1; }
+  .pt { stroke: var(--ink); stroke-width: 1; cursor: pointer; transition: r 0.12s ease; }
+  .pt:hover, .pt.active { stroke-width: 2; }
+  .pt-label { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; fill: var(--ink); pointer-events: none; }
+
+  .fieldcard {
+    border: 1px dashed var(--grid-strong); padding: 0.75rem 0.9rem;
+    font-size: 0.85rem; background: var(--paper); min-height: 3.4rem;
+    display: flex; flex-direction: column; justify-content: center; gap: 0.15rem;
+  }
+  .fieldcard .fc-title { font-weight: 600; font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; }
+  .fieldcard .fc-row { color: var(--ink-soft); }
+  .fieldcard .fc-row b { color: var(--ink); font-weight: 600; }
+
+  /* legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 0.9rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--ink-soft); margin-top: 0.25rem; }
+  .legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,0.25); }
+
+  /* ---------- Table ---------- */
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--grid); }
+  th { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; user-select: none; white-space: nowrap; }
+  th:hover { color: var(--ink); }
+  th.sorted::after { content: " ▾"; }
+  td.num { font-family: 'IBM Plex Mono', monospace; }
+  tr:hover td { background: var(--paper); }
+
+  /* ---------- Field notes ---------- */
+  .qgroup { margin-bottom: 1.1rem; }
+  .qgroup:last-child { margin-bottom: 0; }
+  .qnum { font-family: 'IBM Plex Mono', monospace; color: var(--ink-soft); font-size: 0.78rem; margin-right: 0.3rem; }
+  .qgroup textarea { min-height: 3.2rem; margin-top: 0.4rem; }
+
+  /* ---------- Reveal ---------- */
+  details { border: 1px solid var(--grid-strong); background: var(--paper); padding: 0; }
+  summary {
+    cursor: pointer; padding: 0.85rem 1rem; font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem; letter-spacing: 0.04em; list-style: none; display: flex;
+    align-items: center; gap: 0.5rem;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "▸"; transition: transform 0.15s ease; }
+  details[open] summary::before { transform: rotate(90deg); }
+  .reveal-body { padding: 0 1.1rem 1.1rem; font-size: 0.9rem; }
+  .reveal-body h3 { font-size: 0.9rem; margin: 1rem 0 0.35rem; }
+  .reveal-body ul { margin: 0.3rem 0; padding-left: 1.2rem; }
+  .reveal-body li { margin-bottom: 0.3rem; }
+
+  /* ---------- Sources / footer ---------- */
+  .sources { font-size: 0.78rem; color: var(--ink-soft); }
+  .sources a { color: var(--ink-soft); }
+  .btnrow { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.75rem; }
+  button.util {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem;
+    background: var(--ink); color: var(--paper); border: none;
+    padding: 0.5rem 0.9rem; cursor: pointer; border-radius: var(--radius);
+  }
+  button.util:hover { opacity: 0.85; }
+  button.util.secondary { background: transparent; color: var(--ink); border: 1px solid var(--grid-strong); }
+
+  /* ---------- Latitude / UV globe ---------- */
+  .globe-wrap { max-width: 640px; }
+  svg#uvGlobe { width: 100%; height: auto; display: block; border: 1px solid var(--grid); background: var(--paper); }
+  .g-lat { stroke: rgba(255,255,255,0.75); stroke-width: 1; }
+  .g-eq { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 5 3; }
+  .g-rim { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+  .g-lab { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; fill: var(--ink-soft); }
+  .g-city { font-family: 'IBM Plex Sans', sans-serif; font-size: 10.5px; fill: var(--ink); }
+  .g-deg { font-family: 'IBM Plex Mono', monospace; font-size: 9px; fill: var(--ink-soft); }
+  .g-leg { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; fill: var(--ink-soft); }
+  .g-eqlab { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; fill: #fff; }
+  .g-lead { fill: none; stroke: var(--ink); stroke-width: 0.6; }
+  .g-dot { fill: var(--paper-raised); stroke: var(--ink); stroke-width: 1.2; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="case-header">
+    <div class="case-id">CASE FILE NO. UV-01 — SKIN CANCER INVESTIGATION</div>
+    <h1>Who gets skin cancer, and why? A latitude &amp; UV investigation</h1>
+    <p>Skin cells mutate more when they absorb more UV radiation. If that's true, cities closer to the equator — where the sun is more direct — should have more melanoma (skin cancer). Real data from the CDC and NOAA can tell us whether that prediction actually holds up.</p>
+    <div class="dq-box">
+      <strong>Driving question this connects to</strong>
+      Who gets cancer, and why? Today you're testing one piece of that: does environment (UV exposure) predict who gets skin cancer, or is something more complicated going on?
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-label">Background — latitude and UV</div>
+    <h2>Where on Earth is UV strongest?</h2>
+    <p class="helptext">Latitude is how far a place is from the equator. Near the equator, sunlight hits the ground more directly, so more UV reaches the ground. Toward the poles, sunlight arrives at a slant and passes through more air, so less UV gets through.</p>
+    <div class="globe-wrap">
+      <svg id="uvGlobe" viewBox="0 0 620 340" role="img" aria-label="Diagram of Earth with latitude lines. Shading shows UV is strongest near the equator and weakest near the poles. The 11 locations in this investigation are marked at their latitudes.">
+      <defs><clipPath id="globeClip"><circle cx="190" cy="170" r="140"/></clipPath></defs>
+      <g clip-path="url(#globeClip)">
+      <rect x="50" y="30.0" width="280" height="19.3" fill="var(--uv-low)" fill-opacity="0.78"/>
+      <rect x="50" y="291.2" width="280" height="19.3" fill="var(--uv-low)" fill-opacity="0.78"/>
+      <rect x="50" y="48.8" width="280" height="22.7" fill="var(--uv-mod)" fill-opacity="0.78"/>
+      <rect x="50" y="269.0" width="280" height="22.7" fill="var(--uv-mod)" fill-opacity="0.78"/>
+      <rect x="50" y="71.0" width="280" height="29.5" fill="var(--uv-high)" fill-opacity="0.78"/>
+      <rect x="50" y="240.0" width="280" height="29.5" fill="var(--uv-high)" fill-opacity="0.78"/>
+      <rect x="50" y="100.0" width="280" height="34.3" fill="var(--uv-vhigh)" fill-opacity="0.78"/>
+      <rect x="50" y="206.2" width="280" height="34.3" fill="var(--uv-vhigh)" fill-opacity="0.78"/>
+      <rect x="50" y="133.8" width="280" height="36.7" fill="var(--uv-extreme)" fill-opacity="0.78"/>
+      <rect x="50" y="170.0" width="280" height="36.7" fill="var(--uv-extreme)" fill-opacity="0.78"/>
+      </g>
+      <text x="190" y="22.0" text-anchor="middle" class="g-lab">90°N North Pole</text>
+      <line x1="120.0" x2="260.0" y1="48.8" y2="48.8" class="g-lat"/>
+      <text x="114.0" y="51.8" text-anchor="end" class="g-lab">60°N</text>
+      <line x1="91.0" x2="289.0" y1="71.0" y2="71.0" class="g-lat"/>
+      <text x="85.0" y="74.0" text-anchor="end" class="g-lab">45°N</text>
+      <line x1="68.8" x2="311.2" y1="100.0" y2="100.0" class="g-lat"/>
+      <text x="62.8" y="103.0" text-anchor="end" class="g-lab">30°N</text>
+      <line x1="54.8" x2="325.2" y1="133.8" y2="133.8" class="g-lat"/>
+      <text x="48.8" y="136.8" text-anchor="end" class="g-lab">15°N</text>
+      <line x1="50.0" x2="330.0" y1="170.0" y2="170.0" class="g-lat g-eq"/>
+      <text x="44.0" y="173.0" text-anchor="end" class="g-lab">0°</text>
+      <line x1="54.8" x2="325.2" y1="206.2" y2="206.2" class="g-lat"/>
+      <line x1="68.8" x2="311.2" y1="240.0" y2="240.0" class="g-lat"/>
+      <text x="62.8" y="243.0" text-anchor="end" class="g-lab">30°S</text>
+      <line x1="91.0" x2="289.0" y1="269.0" y2="269.0" class="g-lat"/>
+      <line x1="120.0" x2="260.0" y1="291.2" y2="291.2" class="g-lat"/>
+      <text x="114.0" y="294.2" text-anchor="end" class="g-lab">60°S</text>
+      <circle cx="190" cy="170" r="140" class="g-rim"/>
+      <text x="64" y="165" class="g-eqlab">Equator</text>
+      <polyline points="231.8,47.3 372,34 392,34" class="g-lead"/>
+      <circle cx="231.8" cy="47.3" r="3" class="g-dot"/>
+      <text x="396" y="38" class="g-city">Anchorage, AK <tspan class="g-deg">61.2°N</tspan></text>
+      <polyline points="251.4,71.0 372,51 392,51" class="g-lead"/>
+      <circle cx="251.4" cy="71.0" r="3" class="g-dot"/>
+      <text x="396" y="55" class="g-city">Minneapolis, MN <tspan class="g-deg">45.0°N</tspan></text>
+      <polyline points="251.9,71.9 372,68 392,68" class="g-lead"/>
+      <circle cx="251.9" cy="71.9" r="3" class="g-dot"/>
+      <text x="396" y="72" class="g-city">Burlington, VT <tspan class="g-deg">44.5°N</tspan></text>
+      <polyline points="255.7,78.5 372,85 392,85" class="g-lead"/>
+      <circle cx="255.7" cy="78.5" r="3" class="g-dot"/>
+      <text x="396" y="89" class="g-city">Salt Lake City, UT <tspan class="g-deg">40.8°N</tspan></text>
+      <polyline points="257.6,82.1 372,102 392,102" class="g-lead"/>
+      <circle cx="257.6" cy="82.1" r="3" class="g-dot"/>
+      <text x="396" y="106" class="g-city">Washington, DC <tspan class="g-deg">38.9°N</tspan></text>
+      <polyline points="261.9,91.5 372,119 392,119" class="g-lead"/>
+      <circle cx="261.9" cy="91.5" r="3" class="g-dot"/>
+      <text x="396" y="123" class="g-city">Los Angeles, CA <tspan class="g-deg">34.1°N</tspan></text>
+      <polyline points="262.5,92.9 372,136 392,136" class="g-lead"/>
+      <circle cx="262.5" cy="92.9" r="3" class="g-dot"/>
+      <text x="396" y="140" class="g-city">Phoenix, AZ <tspan class="g-deg">33.4°N</tspan></text>
+      <polyline points="263.0,94.2 372,153 392,153" class="g-lead"/>
+      <circle cx="263.0" cy="94.2" r="3" class="g-dot"/>
+      <text x="396" y="157" class="g-city">Dallas, TX <tspan class="g-deg">32.8°N</tspan></text>
+      <polyline points="264.6,98.5 372,170 392,170" class="g-lead"/>
+      <circle cx="264.6" cy="98.5" r="3" class="g-dot"/>
+      <text x="396" y="174" class="g-city">Mobile, AL <tspan class="g-deg">30.7°N</tspan></text>
+      <polyline points="268.1,109.1 372,187 392,187" class="g-lead"/>
+      <circle cx="268.1" cy="109.1" r="3" class="g-dot"/>
+      <text x="396" y="191" class="g-city">Miami, FL <tspan class="g-deg">25.8°N</tspan></text>
+      <polyline points="272.4,125.8 372,204 392,204" class="g-lead"/>
+      <circle cx="272.4" cy="125.8" r="3" class="g-dot"/>
+      <text x="396" y="208" class="g-city">San Juan, PR <tspan class="g-deg">18.4°N</tspan></text>
+      <text x="396" y="250" class="g-lab">UV reaching the ground (simplified)</text>
+      <rect x="396" y="258" width="40" height="12" fill="var(--uv-extreme)" fill-opacity="0.78" stroke="rgba(0,0,0,0.25)"/>
+      <text x="416" y="283" text-anchor="middle" class="g-leg">Extreme</text>
+      <rect x="440" y="258" width="40" height="12" fill="var(--uv-vhigh)" fill-opacity="0.78" stroke="rgba(0,0,0,0.25)"/>
+      <text x="460" y="283" text-anchor="middle" class="g-leg">Very high</text>
+      <rect x="484" y="258" width="40" height="12" fill="var(--uv-high)" fill-opacity="0.78" stroke="rgba(0,0,0,0.25)"/>
+      <text x="504" y="283" text-anchor="middle" class="g-leg">High</text>
+      <rect x="528" y="258" width="40" height="12" fill="var(--uv-mod)" fill-opacity="0.78" stroke="rgba(0,0,0,0.25)"/>
+      <text x="548" y="283" text-anchor="middle" class="g-leg">Moderate</text>
+      <rect x="572" y="258" width="40" height="12" fill="var(--uv-low)" fill-opacity="0.78" stroke="rgba(0,0,0,0.25)"/>
+      <text x="592" y="283" text-anchor="middle" class="g-leg">Low</text>
+      <text x="396" y="302" class="g-leg">near the equator</text><text x="612" y="302" text-anchor="end" class="g-leg">near the poles</text>
+      </svg>
+    </div>
+    <p class="helptext" style="margin:0.75rem 0 0;">The shading is a simplified picture of average UV by latitude. Real UV also changes with elevation, season, clouds, and the ozone layer.</p>
+    <div class="dq-box" style="margin-top:0.9rem;">
+      <strong>What "melanoma rate" means</strong>
+      The melanoma rate (also called incidence) is the number of <b>new</b> melanoma cases in one year for every 100,000 people who live there. It is a rate, not a total count. That lets you fairly compare a place with many people to a place with few people.
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-label">Step 1</div>
+    <h2>Make your prediction before looking at any data</h2>
+    <p class="helptext">Based on what you know about UV radiation and latitude, predict: which U.S. locations will have the highest melanoma (skin cancer) rates, and which will have the lowest? Why?</p>
+  </section>
+
+  <section class="panel">
+    <div class="panel-label">Step 2 — Explore the data</div>
+    <h2>11 real U.S. locations, four real variables</h2>
+    <p class="helptext">Click a location to highlight it on the chart, or click a point on the chart to select a location. Use the dropdowns to compare any two variables against each other.</p>
+
+    <div class="investigation-grid">
+      <div class="location-list" id="locList"></div>
+
+      <div class="chart-area">
+        <div class="axis-controls">
+          <label>X axis
+            <select id="xAxis">
+              <option value="lat">Latitude (°N)</option>
+              <option value="elev">Elevation (ft)</option>
+              <option value="uvi">UV Index</option>
+              <option value="nhw">Population: Non-Hispanic White (%)</option>
+              <option value="rate">Melanoma rate</option>
+            </select>
+          </label>
+          <label>Y axis
+            <select id="yAxis">
+              <option value="rate">Melanoma rate</option>
+              <option value="lat">Latitude (°N)</option>
+              <option value="elev">Elevation (ft)</option>
+              <option value="uvi">UV Index</option>
+              <option value="nhw">Population: Non-Hispanic White (%)</option>
+            </select>
+          </label>
+        </div>
+        <p class="helptext" style="margin:0 0 0.25rem;">"Population: Non-Hispanic White (%)" is a U.S. Census category, not a direct measurement of skin tone — melanin levels vary within every group, and this category mixes many skin tones together. It's included because it's the exact population category the CDC's own melanoma data is broken down by, so it helps explain part of the state-to-state pattern — but treat it as a rough proxy, not a biological measurement. (Puerto Rico's value looks tiny not because its population is uniformly dark-skinned, but because most Puerto Ricans are classified as Hispanic under this Census category regardless of skin tone — a good example of how a demographic category can hide as much as it reveals.)
+        <svg id="chart" viewBox="0 0 620 420" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="legend" id="legend"></div>
+        <div class="fieldcard" id="fieldcard">
+          <span class="fc-title">Click a location to see its field card</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-label">Data table</div>
+    <h2>Full dataset — click any column header to sort</h2>
+    <div style="overflow-x:auto;">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th data-key="city">Location</th>
+            <th data-key="lat">Latitude (°N)</th>
+            <th data-key="elev">Elevation (ft)</th>
+            <th data-key="uvi">UV Index</th>
+            <th data-key="nhw">Pop. Non-Hispanic White (%)</th>
+            <th data-key="rate">Melanoma rate (per 100,000)</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-label">Step 3 — Test your model: the mystery city</div>
+    <h2>Predict Denver, Colorado before you see its data</h2>
+    <p class="helptext">Here's what you know about Denver without looking anything up: it sits at 39.7°N — almost the same latitude as Salt Lake City — at 5,280 feet elevation (the highest of any major U.S. city), with a clear-sky UV Index of 11, same as Salt Lake City's mountain-air intensity.</p>
+
+    <div class="dq-box">
+      <strong>Known values for Denver, CO</strong>
+      Latitude: <b>39.7°N</b> &nbsp;·&nbsp; Elevation: <b>5,280 ft</b> &nbsp;·&nbsp; UV Index: <b>11</b> &nbsp;·&nbsp; Melanoma rate: <b>???</b>
+    </div>
+
+    <div class="qgroup">
+      <span class="qnum">Predict:</span> Based on the pattern you've found so far — especially what elevation seemed to do to Utah's rate — what melanoma rate (per 100,000) do you predict for Denver?
+    </div>
+
+    <div class="btnrow">
+      <button class="util" id="revealDenver" type="button">Reveal Denver's real data</button>
+    </div>
+
+    <div id="denverReveal" style="display:none; margin-top:1rem;">
+      <div class="fieldcard">
+        <span class="fc-title">Denver, CO — revealed</span>
+        <span class="fc-row"><b>39.7°N</b> latitude · <b>5,280 ft</b> elevation</span>
+        <span class="fc-row">UV Index <b>11</b> · Non-Hispanic White <b>63.6%</b> · Melanoma rate <b>22.1</b> per 100,000</span>
+        <span class="fc-row" style="font-style:italic;">Colorado statewide rate, CDC State Cancer Profiles, 2018–2022</span>
+      </div>
+      <p class="helptext" style="margin-top:0.75rem;">Denver has been added to the chart and data table in Step 2 — scroll up to see exactly where it landed next to the other 11 locations. Notice that it's nowhere near Utah, despite almost identical elevation and UV Index.</p>
+
+      <div class="dq-box">
+        <strong>Why isn't Denver's rate closer to Utah's?</strong>
+        Elevation and UV Index at the <em>city</em> level don't capture two things that matter more:
+        <ul style="margin:0.5rem 0 0.2rem; padding-left:1.2rem;">
+          <li style="margin-bottom:0.4rem;"><b>Where people actually spend time outdoors.</b> Denver's 5,280 ft is where most Coloradans live day to day. Utah's ski towns — Park City, Alta, Snowbird — sit 7,000&ndash;9,000+ ft, well above Denver, and a large share of Utahns recreate there regularly. Snow also reflects up to 80% of UV back upward, so a day skiing in Utah's mountains can deliver far more total UV dose than a day at Denver's elevation, even though both cities report similar numbers.</li>
+          <li><b>Who lives there.</b> Utah's population is about 74.4% non-Hispanic White (U.S. Census), the highest share of any location in this dataset besides Vermont — a demographic pattern tied to the state's settlement history. Colorado's is 63.6% — still a majority, but a meaningfully more ethnically mixed population, including a larger Hispanic/Latino share than Utah's. Melanin (the pigment that helps protect skin from UV damage) varies within every population, but averaged across a whole state, that difference in composition pulls Colorado's statewide rate down even under nearly identical sunlight. You can check this yourself: switch the chart's X axis to "Population: Non-Hispanic White (%)" and see how closely it tracks the melanoma rate axis compared to elevation or UV Index.</li>
+        </ul>
+        <p style="margin:0.6rem 0 0;"><b>A caution about this variable:</b> "Non-Hispanic White" is a Census ethnicity category, not a direct skin-tone measurement — it lumps together people with a wide range of actual melanin levels, and it can make some places look misleading. Puerto Rico, for example, shows just 0.8% non-Hispanic White, but that's because the Census classifies most Puerto Ricans as Hispanic regardless of skin tone — not because the island's population is uniformly dark-skinned. Use this variable to spot a real pattern in the data, not to assume anything about individual people.</p>
+        <p style="margin:0.6rem 0 0;">In other words: Denver's UV Index of 11 wasn't wrong. It just can't tell you where people actually stand under the sun, or whose skin is standing there. That's the same limitation you found with Utah, seen from the other direction.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-label">Step 4 — Open the case file</div>
+    <details>
+      <summary>Reveal: what else is going on here?</summary>
+      <div class="reveal-body">
+        <p>Latitude and UV Index affect how much UV radiation reaches the ground — but they don't fully explain who actually gets diagnosed with melanoma. A few other real factors are mixed in:</p>
+        <h3>Elevation</h3>
+        <p>UV radiation gets roughly 10–12% stronger for every 1,000 meters (about 3,280 feet) of elevation gain, because there's less atmosphere to filter it. That's part of why Utah, at an average elevation over a mile high, has a higher measured UV Index than its latitude alone would predict.</p>
+        <h3>Skin tone and detection</h3>
+        <p>Melanin (the pigment in skin) absorbs and scatters UV radiation, which is protective — people with more melanin in their skin have a lower baseline melanoma risk. Puerto Rico and Miami have larger Hispanic and Black populations than Utah or Vermont, which is a major reason their reported melanoma rates are lower despite far more direct sun. Melanoma is also sometimes caught later or under-diagnosed in patients with darker skin, since it's less commonly looked for there — so some of the reported difference reflects detection, not just biology.</p>
+        <h3>Behavior</h3>
+        <p>States like Utah and Vermont have high rates of outdoor recreation (skiing, hiking) at elevation, often with less consistent sun protection during colder-weather activities than people use at the beach. Coastal, hot-climate states often have stronger sun-safety norms — sunscreen, shade, covering up — precisely because the heat makes sun exposure more obviously uncomfortable.</p>
+        <h3>What this means for "cause and effect"</h3>
+        <p>UV radiation is still a real, well-established cause of the DNA mutations that lead to melanoma — that part of the science is solid. But "more UV in the environment" doesn't translate directly into "more diagnosed cases" in a simple straight line, because population (who lives there), behavior, and detection all interact with the biology. This is a common pattern in biology: a real cause can still produce a messy, non-obvious pattern in real-world data once other variables are mixed in.</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel sources">
+    <div class="panel-label">Sources</div>
+    <p>Melanoma incidence rates (age-adjusted, cases per 100,000, all races, both sexes, all ages): National Cancer Institute / CDC, <em>State Cancer Profiles</em>, "Melanoma of the Skin (All Stages), 2018–2022," statecancerprofiles.cancer.gov. Texas rate reflects the most recent available multi-year estimate (2017–2021) from the same source.</p>
+    <p>UV Index values: NOAA Climate Prediction Center / EPA UV Index Forecast bulletin, cpc.ncep.noaa.gov, clear-sky solar-noon forecast values (a single representative day; actual UV Index varies daily with season and cloud cover).</p>
+    <p>Latitude and elevation: standard published geographic reference data for each city.</p>
+    <p>Population: Non-Hispanic White (%): U.S. Census Bureau, Vintage 2024 Population Estimates and 2020 Decennial Census (Vermont, Puerto Rico), via Census Bureau state population estimates by race and Hispanic origin.</p>
+    <p>Denver/Utah comparison (recreation elevation, snow UV reflection, population ancestry patterns): American Cancer Society press materials on UV-attributable melanoma by state (Islami et al., <em>International Journal of Cancer</em>, 2020); Huntsman Cancer Institute commentary on Utah melanoma rates.</p>
+    <div class="btnrow">
+      <button class="util" onclick="window.print()">Print / save this page</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// ---------- Data ----------
+// city, state, lat (°N), elev (ft), uvi (NOAA/EPA clear-sky forecast),
+// rate (melanoma per 100,000, CDC State Cancer Profiles 2018-2022 unless noted),
+// nhw (% of state population that is Non-Hispanic White, US Census Bureau — see note below)
+const DATA = [
+  { city: "San Juan",      state: "PR", lat: 18.4, elev: 10,   uvi: 11, rate: 3.3,  nhw: 0.8,  note: "2018–2022 statewide/territory rate" },
+  { city: "Miami",         state: "FL", lat: 25.8, elev: 6,    uvi: 12, rate: 26.2, nhw: 49.1, note: "Florida statewide rate" },
+  { city: "Mobile",        state: "AL", lat: 30.7, elev: 10,   uvi: 11, rate: 21.0, nhw: 62.8, note: "Alabama statewide rate" },
+  { city: "Dallas",        state: "TX", lat: 32.8, elev: 430,  uvi: 11, rate: 15.0, nhw: 39.8, note: "Texas rate, 2017–2021 estimate" },
+  { city: "Phoenix",       state: "AZ", lat: 33.4, elev: 1086, uvi: 11, rate: 32.3, nhw: 51.2, note: "Arizona statewide rate" },
+  { city: "Los Angeles",   state: "CA", lat: 34.1, elev: 285,  uvi: 11, rate: 23.4, nhw: 32.6, note: "California statewide rate" },
+  { city: "Washington",    state: "DC", lat: 38.9, elev: 150,  uvi: 9,  rate: 9.8,  nhw: 36.2, note: "Lowest rate in this dataset" },
+  { city: "Salt Lake City",state: "UT", lat: 40.8, elev: 4226, uvi: 10, rate: 42.7, nhw: 74.4, note: "Highest rate in the entire U.S." },
+  { city: "Burlington",    state: "VT", lat: 44.5, elev: 340,  uvi: 7,  rate: 35.1, nhw: 89.8, note: "Vermont statewide rate" },
+  { city: "Minneapolis",   state: "MN", lat: 45.0, elev: 830,  uvi: 8,  rate: 38.8, nhw: 79.0, note: "Minnesota statewide rate" },
+  { city: "Anchorage",     state: "AK", lat: 61.2, elev: 102,  uvi: 4,  rate: 16.2, nhw: 57.0, note: "Alaska statewide rate" },
+];
+
+// Held out for the Step 3 predict-and-reveal exercise — not added to DATA until revealed
+const DENVER = { city: "Denver", state: "CO", lat: 39.7, elev: 5280, uvi: 11, rate: 22.1, nhw: 63.6, note: "Colorado statewide rate, CDC State Cancer Profiles, 2018\u20132022" };
+
+const AXES = {
+  lat:  { label: "Latitude (°N)",   fmt: v => v.toFixed(1), min: 15, max: 65 },
+  elev: { label: "Elevation (ft)",  fmt: v => Math.round(v), min: 0, max: 5500 },
+  uvi:  { label: "UV Index",        fmt: v => v, min: 0, max: 14 },
+  rate: { label: "Melanoma rate / 100,000", fmt: v => v.toFixed(1), min: 0, max: 46 },
+  nhw:  { label: "Population: Non-Hispanic White (%)", fmt: v => v.toFixed(1) + "%", min: 0, max: 100 },
+};
+
+function uvColor(uvi) {
+  if (uvi <= 2) return getCss('--uv-low');
+  if (uvi <= 5) return getCss('--uv-mod');
+  if (uvi <= 7) return getCss('--uv-high');
+  if (uvi <= 10) return getCss('--uv-vhigh');
+  return getCss('--uv-extreme');
+}
+function getCss(varName) { return getComputedStyle(document.documentElement).getPropertyValue(varName).trim(); }
+
+let activeCity = null;
+
+// ---------- Location list ----------
+const locList = document.getElementById('locList');
+function addLocCard(d) {
+  const card = document.createElement('button');
+  card.className = 'loc-card';
+  card.type = 'button';
+  card.dataset.city = d.city;
+  card.innerHTML = `<span class="loc-dot" style="background:${uvColor(d.uvi)}"></span>
+    <span><span class="loc-name">${d.city}, ${d.state}</span><br><span class="loc-sub">${d.lat}°N · UV ${d.uvi}</span></span>`;
+  card.addEventListener('click', () => selectCity(d.city));
+  locList.appendChild(card);
+}
+DATA.forEach(addLocCard);
+
+function selectCity(city) {
+  activeCity = city;
+  document.querySelectorAll('.loc-card').forEach(c => c.classList.toggle('active', c.dataset.city === city));
+  const d = DATA.find(x => x.city === city);
+  const fc = document.getElementById('fieldcard');
+  fc.innerHTML = `
+    <span class="fc-title">${d.city}, ${d.state}</span>
+    <span class="fc-row"><b>${d.lat}°N</b> latitude · <b>${d.elev.toLocaleString()} ft</b> elevation</span>
+    <span class="fc-row">UV Index <b>${d.uvi}</b> (clear-sky forecast) · Non-Hispanic White <b>${d.nhw.toFixed(1)}%</b> · Melanoma rate <b>${d.rate}</b> per 100,000</span>
+    <span class="fc-row" style="font-style:italic;">${d.note}</span>`;
+  drawChart();
+  renderTable();
+}
+
+// ---------- Chart ----------
+const svg = document.getElementById('chart');
+const PAD = { l: 56, r: 20, t: 20, b: 44 };
+const W = 620, H = 420;
+
+function scaleFor(key) {
+  const a = AXES[key];
+  return v => (v - a.min) / (a.max - a.min);
+}
+
+function drawChart() {
+  const xKey = document.getElementById('xAxis').value;
+  const yKey = document.getElementById('yAxis').value;
+  const xs = scaleFor(xKey), ys = scaleFor(yKey);
+  const plotW = W - PAD.l - PAD.r, plotH = H - PAD.t - PAD.b;
+
+  let svgContent = '';
+
+  // gridlines + ticks (5 divisions)
+  for (let i = 0; i <= 5; i++) {
+    const fx = i / 5;
+    const px = PAD.l + fx * plotW;
+    const xv = AXES[xKey].min + fx * (AXES[xKey].max - AXES[xKey].min);
+    svgContent += `<line class="grid-line" x1="${px}" y1="${PAD.t}" x2="${px}" y2="${H - PAD.b}" />`;
+    svgContent += `<text class="axis-tick" x="${px}" y="${H - PAD.b + 16}" text-anchor="middle">${AXES[xKey].fmt(xv)}</text>`;
+
+    const py = H - PAD.b - fx * plotH;
+    const yv = AXES[yKey].min + fx * (AXES[yKey].max - AXES[yKey].min);
+    svgContent += `<line class="grid-line" x1="${PAD.l}" y1="${py}" x2="${W - PAD.r}" y2="${py}" />`;
+    svgContent += `<text class="axis-tick" x="${PAD.l - 8}" y="${py + 3}" text-anchor="end">${AXES[yKey].fmt(yv)}</text>`;
+  }
+
+  // axis lines
+  svgContent += `<line class="axis-line" x1="${PAD.l}" y1="${H - PAD.b}" x2="${W - PAD.r}" y2="${H - PAD.b}" />`;
+  svgContent += `<line class="axis-line" x1="${PAD.l}" y1="${PAD.t}" x2="${PAD.l}" y2="${H - PAD.b}" />`;
+
+  // axis labels
+  svgContent += `<text class="axis-tick" x="${PAD.l + plotW / 2}" y="${H - 6}" text-anchor="middle" style="font-size:10.5px;">${AXES[xKey].label}</text>`;
+  svgContent += `<text class="axis-tick" x="${14}" y="${PAD.t + plotH / 2}" text-anchor="middle" transform="rotate(-90 14 ${PAD.t + plotH / 2})" style="font-size:10.5px;">${AXES[yKey].label}</text>`;
+
+  // points
+  DATA.forEach(d => {
+    const px = PAD.l + xs(d[xKey]) * plotW;
+    const py = H - PAD.b - ys(d[yKey]) * plotH;
+    const isActive = d.city === activeCity;
+    svgContent += `<circle class="pt${isActive ? ' active' : ''}" cx="${px}" cy="${py}" r="${isActive ? 8 : 6}" fill="${uvColor(d.uvi)}" data-city="${d.city}" />`;
+    svgContent += `<text class="pt-label" x="${px + 9}" y="${py - 8}">${d.city}</text>`;
+  });
+
+  svg.innerHTML = svgContent;
+
+  svg.querySelectorAll('.pt').forEach(c => {
+    c.addEventListener('click', () => selectCity(c.dataset.city));
+  });
+}
+
+document.getElementById('xAxis').addEventListener('change', drawChart);
+document.getElementById('yAxis').addEventListener('change', drawChart);
+
+// legend
+const legend = document.getElementById('legend');
+legend.innerHTML = [
+  ['Low (0–2)', '--uv-low'],
+  ['Moderate (3–5)', '--uv-mod'],
+  ['High (6–7)', '--uv-high'],
+  ['Very High (8–10)', '--uv-vhigh'],
+  ['Extreme (11+)', '--uv-extreme'],
+].map(([label, varName]) => `<span><i style="background:${getCss(varName)}"></i>${label}</span>`).join('') +
+  `<span style="margin-left:auto;">Dot color = UV Index category (EPA scale)</span>`;
+
+// ---------- Table ----------
+let sortKey = 'rate', sortDir = -1;
+function renderTable() {
+  const rows = [...DATA].sort((a, b) => (a[sortKey] > b[sortKey] ? 1 : -1) * sortDir);
+  const body = document.getElementById('tableBody');
+  body.innerHTML = rows.map(d => `
+    <tr style="${d.city === activeCity ? 'background:var(--paper);font-weight:600;' : ''}">
+      <td>${d.city}, ${d.state}</td>
+      <td class="num">${d.lat}</td>
+      <td class="num">${d.elev.toLocaleString()}</td>
+      <td class="num">${d.uvi}</td>
+      <td class="num">${d.nhw.toFixed(1)}%</td>
+      <td class="num">${d.rate}</td>
+    </tr>`).join('');
+  document.querySelectorAll('#dataTable th').forEach(th => {
+    th.classList.toggle('sorted', th.dataset.key === sortKey);
+  });
+}
+document.querySelectorAll('#dataTable th').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.key;
+    sortDir = (key === sortKey) ? -sortDir : -1;
+    sortKey = key;
+    renderTable();
+  });
+});
+
+// ---------- Denver predict-and-reveal ----------
+document.getElementById('revealDenver').addEventListener('click', function revealDenverHandler() {
+  if (DATA.some(d => d.city === 'Denver')) return; // already revealed
+  DATA.push(DENVER);
+  addLocCard(DENVER);
+  document.getElementById('denverReveal').style.display = 'block';
+  this.textContent = 'Revealed \u2014 see chart & table above';
+  this.disabled = true;
+  selectCity('Denver');
+});
+
+// ---------- Init ----------
+drawChart();
+renderTable();
+</script>
+</body>
+</html>

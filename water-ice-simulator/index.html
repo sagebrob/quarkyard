@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Water-Ice Investigation Simulator</title>
+<style>
+  :root{
+    --navy:#0b2942;
+    --navy-deep:#071b2e;
+    --teal:#1c7a8c;
+    --teal-light:#eaf6f6;
+    --coral:#e8734a;
+    --ice:#dff1f5;
+    --paper:#fbfaf6;
+    --ink:#1c2b36;
+    --grey:#5c6b75;
+    --line:#c9dbe0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--navy-deep);
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(28,122,140,0.35), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(232,115,74,0.12), transparent 45%);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    padding:28px 18px 60px;
+  }
+  .wrap{max-width:1120px;margin:0 auto;}
+  header{
+    text-align:center;
+    color:var(--ice);
+    margin-bottom:26px;
+  }
+  header .eyebrow{
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    font-size:12px;
+    color:var(--teal);
+    font-weight:700;
+  }
+  header h1{
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:clamp(28px,4vw,42px);
+    margin:6px 0 6px;
+    font-weight:700;
+  }
+  header p{
+    color:#9db9c7;
+    max-width:640px;
+    margin:0 auto;
+    font-size:15px;
+    line-height:1.5;
+  }
+  .panel{
+    background:var(--paper);
+    border-radius:14px;
+    box-shadow:0 20px 45px rgba(0,0,0,0.35);
+    overflow:hidden;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:340px 1fr;
+    gap:0;
+  }
+  @media (max-width:820px){ .grid{grid-template-columns:1fr;} }
+
+  .controls{
+    background:var(--navy);
+    color:#e7f1f4;
+    padding:26px 24px;
+  }
+  .controls h2{
+    font-family:Georgia,serif;
+    font-size:19px;
+    margin:0 0 4px;
+  }
+  .controls .sub{
+    font-size:12.5px;
+    color:#8fb0bf;
+    margin-bottom:20px;
+    line-height:1.4;
+  }
+  .field{margin-bottom:20px;}
+  .field label{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  .field label span.val{
+    color:var(--coral);
+    font-variant-numeric:tabular-nums;
+  }
+  input[type=range]{
+    width:100%;
+    accent-color:var(--coral);
+  }
+  .apparatus{
+    display:flex;
+    gap:14px;
+    align-items:flex-end;
+    justify-content:center;
+    margin:18px 0 10px;
+    height:120px;
+  }
+  .cup{
+    position:relative;
+    width:78px;height:100px;
+    border:3px solid #cfe6ec;
+    border-top:none;
+    border-radius:0 0 14px 14px;
+    background:linear-gradient(to top, var(--teal) 0%, var(--teal) var(--fill,55%), rgba(255,255,255,0.05) var(--fill,55%));
+    overflow:hidden;
+  }
+  .ice{
+    position:absolute;
+    left:50%;
+    bottom:8px;
+    transform:translateX(-50%);
+    font-size:22px;
+  }
+  .thermo{
+    width:16px;height:100px;
+    border-radius:8px;
+    background:#0f3a52;
+    position:relative;
+    overflow:hidden;
+    border:2px solid #cfe6ec;
+  }
+  .thermo .mercury{
+    position:absolute;bottom:0;left:0;right:0;
+    background:var(--coral);
+    height:var(--h,30%);
+  }
+  button{
+    font-family:inherit;
+    font-weight:700;
+    font-size:13.5px;
+    letter-spacing:.02em;
+    border:none;
+    border-radius:8px;
+    padding:12px 16px;
+    cursor:pointer;
+    width:100%;
+    transition:transform .12s ease, opacity .12s ease;
+  }
+  button:active{transform:scale(0.98);}
+  .btn-run{background:var(--coral);color:white;margin-top:6px;}
+  .btn-run:hover{opacity:.92;}
+  .btn-fit{background:var(--teal);color:white;margin-top:10px;}
+  .btn-fit:disabled{background:#3a5865;color:#7d99a5;cursor:not-allowed;}
+  .btn-reset{
+    background:transparent;color:#9db9c7;border:1px solid #35566a;
+    margin-top:10px;
+  }
+
+  .work{padding:26px 28px;}
+  .work h2{
+    font-family:Georgia,serif;
+    font-size:19px;
+    margin:0 0 4px;
+    color:var(--navy);
+  }
+  .work .sub{color:var(--grey);font-size:13px;margin-bottom:16px;}
+
+  canvas{
+    width:100%;
+    max-width:100%;
+    background:var(--ice);
+    border-radius:10px;
+    border:1px solid var(--line);
+  }
+
+  .slope-readout{
+    margin-top:12px;
+    background:var(--teal-light);
+    border:1px dashed var(--teal);
+    border-radius:8px;
+    padding:12px 14px;
+    font-size:14px;
+    color:var(--navy);
+    display:none;
+  }
+  .slope-readout strong{color:var(--coral);}
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:18px;
+    font-size:13px;
+  }
+  th,td{
+    text-align:left;
+    padding:8px 10px;
+    border-bottom:1px solid var(--line);
+  }
+  th{
+    color:var(--navy);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    background:var(--teal-light);
+  }
+  td{color:var(--ink);}
+  .empty-row td{color:var(--grey);font-style:italic;text-align:center;padding:18px;}
+
+  .time-row{display:flex;align-items:center;gap:12px;margin-top:10px;}
+  .time-row label{font-size:13px;font-weight:700;color:var(--navy);white-space:nowrap;}
+  .time-row input[type=range]{flex:1;accent-color:var(--teal);}
+  .readouts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;}
+  .readout{background:var(--teal-light);border:1px solid var(--line);border-radius:8px;padding:8px 10px;}
+  .readout .k{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--grey);font-weight:700;}
+  .readout .v{font-size:18px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;}
+  .readout.water .v{color:#c2542d;}
+  .status{font-size:13.5px;line-height:1.45;color:var(--navy);margin:10px 0 26px;min-height:40px;}
+
+  footer{
+    text-align:center;
+    color:#7d99a5;
+    font-size:12px;
+    margin-top:24px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Chemistry · Latent heat</div>
+    <h1>Water-Ice Investigation Simulator</h1>
+    <p>How does heat affect the amount of ice melt? Run trials with different water baths, collect your data, and find the slope of the best-fit line — just like the in-class investigation.</p>
+  </header>
+
+  <div class="panel">
+    <div class="grid">
+
+      <div class="controls">
+        <h2>Set Up Your Trial</h2>
+        <div class="sub">Choose the mass of your water bath and its starting temperature, then run the investigation. Excess ice is provided in every trial.</div>
+
+        <div class="field">
+          <label>Mass of water (g) <span class="val" id="massVal">65</span></label>
+          <input type="range" id="massSlider" min="30" max="100" step="5" value="65">
+        </div>
+
+        <div class="field">
+          <label>Initial water temperature (°C) <span class="val" id="tempVal">20</span></label>
+          <input type="range" id="tempSlider" min="10" max="30" step="1" value="20">
+        </div>
+
+        <div class="apparatus">
+          <div class="thermo"><div class="mercury" id="mercury"></div></div>
+          <div class="cup" id="cup" style="--fill:55%">
+            <div class="ice" id="iceEmoji">🧊</div>
+          </div>
+        </div>
+
+        <button class="btn-run" id="runBtn">Run Trial ▶</button>
+        <button class="btn-fit" id="fitBtn" disabled>Add Best-Fit Line</button>
+        <button class="btn-reset" id="resetBtn">Reset All Trials</button>
+      </div>
+
+      <div class="work">
+        <h2>Watch the Temperature</h2>
+        <div class="sub" id="tempSub">Run a trial. Then drag the time slider to see the water temperature change while the ice stays at 0 °C.</div>
+        <canvas id="tempChart" width="640" height="300"></canvas>
+        <div class="time-row">
+          <label for="timeSlider">Time</label>
+          <input type="range" id="timeSlider" min="0" max="300" step="1" value="0" disabled>
+        </div>
+        <div class="readouts">
+          <div class="readout"><div class="k">Time</div><div class="v" id="timeOut">0:00</div></div>
+          <div class="readout water"><div class="k">Water temperature</div><div class="v" id="waterOut">—</div></div>
+          <div class="readout"><div class="k">Ice temperature</div><div class="v" id="iceOut">—</div></div>
+        </div>
+        <div class="status" id="status"></div>
+
+        <h2>Your Data: Heat Released vs. Ice Melted</h2>
+        <div class="sub">X-axis: mass of ice melted (g) &nbsp;•&nbsp; Y-axis: heat released by the water (cal). Run at least 4–5 trials with different water masses and temperatures before you add your best-fit line.</div>
+        <canvas id="chart" width="640" height="360"></canvas>
+        <div class="slope-readout" id="slopeReadout"></div>
+
+        <table>
+          <thead>
+            <tr><th>Trial</th><th>Water mass (g)</th><th>Initial temp (°C)</th><th>Final temp (°C)</th><th>Ice melted (g)</th><th>Heat released (cal)</th></tr>
+          </thead>
+          <tbody id="dataBody">
+            <tr class="empty-row"><td colspan="6">No trials yet — run your first investigation above.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const massSlider = document.getElementById('massSlider');
+  const tempSlider = document.getElementById('tempSlider');
+  const massVal = document.getElementById('massVal');
+  const tempVal = document.getElementById('tempVal');
+  const runBtn = document.getElementById('runBtn');
+  const fitBtn = document.getElementById('fitBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const dataBody = document.getElementById('dataBody');
+  const canvas = document.getElementById('chart');
+  const ctx = canvas.getContext('2d');
+  const slopeReadout = document.getElementById('slopeReadout');
+  const mercury = document.getElementById('mercury');
+  const cup = document.getElementById('cup');
+  const iceEmoji = document.getElementById('iceEmoji');
+
+  const tempCanvas = document.getElementById('tempChart');
+  const tctx = tempCanvas.getContext('2d');
+  const timeSlider = document.getElementById('timeSlider');
+  const timeOut = document.getElementById('timeOut');
+  const waterOut = document.getElementById('waterOut');
+  const iceOut = document.getElementById('iceOut');
+  const statusEl = document.getElementById('status');
+  const tempSub = document.getElementById('tempSub');
+  const tempSubDefault = tempSub.textContent;
+
+  const T_END = 300;      // seconds shown on the temperature graph
+  const PLAY_MS = 5000;   // how long the automatic playback takes
+
+  let trials = [];
+  let showFit = false;
+  let current = null;     // the trial shown on the temperature graph
+  let curTime = 0;
+  let playing = null;
+
+  massSlider.addEventListener('input', ()=> massVal.textContent = massSlider.value);
+  tempSlider.addEventListener('input', ()=> tempVal.textContent = tempSlider.value);
+
+  // Water temperature t seconds after the ice goes in. It falls quickly at first, then
+  // levels off at the final temperature (1-2 C) because ice is still left in the cup.
+  function waterTemp(tr, t){
+    const e = Math.exp(-tr.k * t), eEnd = Math.exp(-tr.k * T_END);
+    return tr.finalTemp + (tr.initTemp - tr.finalTemp) * (e - eEnd) / (1 - eEnd);
+  }
+
+  function runTrial(){
+    if(playing) return;
+    const massWater = parseFloat(massSlider.value);
+    const initTemp = parseFloat(tempSlider.value);
+
+    // Excess ice: the water cools until it is 1-2 C, then stops changing.
+    const finalTemp = Math.round((1 + Math.random()) * 10) / 10;
+    // Heat released by the water (cal) = mass x temperature change (c_water = 1 cal/g C).
+    // This matches what a student gets from the table, so it carries no extra error.
+    const heatReleased = massWater * (initTemp - finalTemp);
+    // 80 cal melts 1 g of ice. The scale reading gets a small measurement error (+/- 5%),
+    // so the trials do not all land exactly on one line and a best-fit line is needed.
+    const massMelted = heatReleased / 80 * (1 + (Math.random() * 0.10 - 0.05));
+    const k = 0.022 * Math.sqrt(65 / massWater);   // more water cools more slowly
+
+    current = {n: trials.length + 1, massWater, initTemp, finalTemp, massMelted, heatReleased, k};
+    tempSub.textContent = `Trial ${current.n}: ${massWater} g of water starting at ${initTemp} °C. The ice stays at 0 °C.`;
+    runBtn.disabled = true;
+    timeSlider.disabled = true;
+
+    const start = performance.now();
+    function step(now){
+      const f = Math.min(1, (now - start) / PLAY_MS);
+      setTime(f * T_END);
+      if(f < 1){ playing = requestAnimationFrame(step); }
+      else { playing = null; finishTrial(); }
+    }
+    playing = requestAnimationFrame(step);
+  }
+
+  function finishTrial(){
+    trials.push(current);
+    renderTable();
+    drawChart();
+    fitBtn.disabled = trials.length < 2;
+    runBtn.disabled = false;
+    timeSlider.disabled = false;
+  }
+
+  function setTime(t){
+    curTime = t;
+    timeSlider.value = Math.round(t);
+    updateView();
+  }
+
+  function updateView(){
+    const mins = Math.floor(curTime / 60), secs = Math.floor(curTime % 60);
+    timeOut.textContent = mins + ':' + String(secs).padStart(2, '0');
+    if(!current){
+      waterOut.textContent = '—';
+      iceOut.textContent = '—';
+      statusEl.textContent = '';
+      tempSub.textContent = tempSubDefault;
+    } else {
+      const T = waterTemp(current, curTime);
+      waterOut.textContent = T.toFixed(1) + ' °C';
+      iceOut.textContent = '0.0 °C';
+      statusEl.textContent = (T - current.finalTemp > 0.3)
+        ? 'The water is still cooling. Energy is moving from the water to the ice.'
+        : `The water temperature has stopped changing at ${current.finalTemp.toFixed(1)} °C. This is the final temperature. There is still ice in the cup.`;
+      const frac = (current.initTemp - T) / (current.initTemp - current.finalTemp);
+      animateApparatus(T, current.massMelted * frac);
+    }
+    drawTempChart();
+  }
+
+  function drawTempChart(){
+    const W = tempCanvas.width, H = tempCanvas.height;
+    const padL=55, padB=45, padT=20, padR=20;
+    tctx.clearRect(0,0,W,H);
+
+    if(!current){
+      tctx.fillStyle = '#5c6b75';
+      tctx.font = '13px sans-serif';
+      tctx.fillText('Run a trial to see the temperature graph.', padL, H/2);
+      return;
+    }
+
+    const yMin = -5;
+    const yMax = Math.ceil((current.initTemp + 2) / 5) * 5;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const px = t => padL + (t / T_END) * plotW;
+    const py = v => padT + (yMax - v) / (yMax - yMin) * plotH;
+
+    // 1-2 C zone
+    tctx.fillStyle = 'rgba(28,122,140,0.22)';
+    tctx.fillRect(padL, py(2), plotW, py(1) - py(2));
+
+    // gridlines + ticks
+    tctx.font = '11px sans-serif';
+    for(let v = yMin; v <= yMax; v += 5){
+      tctx.strokeStyle = 'rgba(28,122,140,0.12)';
+      tctx.lineWidth = 1;
+      tctx.beginPath(); tctx.moveTo(padL, py(v)); tctx.lineTo(W - padR, py(v)); tctx.stroke();
+      tctx.fillStyle = '#5c6b75';
+      tctx.fillText(String(v), padL - 26, py(v) + 4);
+    }
+    for(let m = 0; m <= T_END / 60; m++){
+      const xp = px(m * 60);
+      tctx.strokeStyle = 'rgba(28,122,140,0.12)';
+      tctx.beginPath(); tctx.moveTo(xp, padT); tctx.lineTo(xp, H - padB); tctx.stroke();
+      tctx.fillStyle = '#5c6b75';
+      tctx.fillText(String(m), xp - 3, H - padB + 16);
+    }
+
+    // axes
+    tctx.strokeStyle = '#9db9c7';
+    tctx.lineWidth = 1.5;
+    tctx.beginPath();
+    tctx.moveTo(padL, padT); tctx.lineTo(padL, H - padB); tctx.lineTo(W - padR, H - padB);
+    tctx.stroke();
+
+    // axis labels
+    tctx.fillStyle = '#0b2942';
+    tctx.font = 'bold 12px sans-serif';
+    tctx.fillText('Time (minutes)', W/2 - 40, H - 8);
+    tctx.save();
+    tctx.translate(14, H/2 + 50);
+    tctx.rotate(-Math.PI/2);
+    tctx.fillText('Temperature (°C)', 0, 0);
+    tctx.restore();
+
+    // ice line (stays at 0 C)
+    tctx.strokeStyle = '#0b2942';
+    tctx.lineWidth = 3;
+    tctx.beginPath(); tctx.moveTo(px(0), py(0)); tctx.lineTo(px(curTime), py(0)); tctx.stroke();
+
+    // water curve, drawn up to the slider time
+    tctx.strokeStyle = '#e8734a';
+    tctx.lineWidth = 3;
+    tctx.beginPath();
+    tctx.moveTo(px(0), py(current.initTemp));
+    for(let t = 2; t < curTime; t += 2){ tctx.lineTo(px(t), py(waterTemp(current, t))); }
+    tctx.lineTo(px(curTime), py(waterTemp(current, curTime)));
+    tctx.stroke();
+
+    // markers at the slider time
+    [[waterTemp(current, curTime), '#e8734a'], [0, '#0b2942']].forEach(([v, c])=>{
+      tctx.beginPath();
+      tctx.arc(px(curTime), py(v), 6, 0, Math.PI*2);
+      tctx.fillStyle = c; tctx.fill();
+      tctx.strokeStyle = '#ffffff'; tctx.lineWidth = 2; tctx.stroke();
+    });
+
+    // legend
+    const lx = W - padR - 150, ly = padT + 8;
+    tctx.fillStyle = 'rgba(251,250,246,0.9)';
+    tctx.fillRect(lx - 8, ly - 6, 152, 62);
+    tctx.font = '12px sans-serif';
+    [['Water', '#e8734a'], ['Ice', '#0b2942'], ['1–2 °C zone', 'rgba(28,122,140,0.45)']].forEach(([label, c], i)=>{
+      tctx.fillStyle = c;
+      tctx.fillRect(lx, ly + i*18 + (i < 2 ? 4 : 0), 22, i < 2 ? 4 : 10);
+      tctx.fillStyle = '#0b2942';
+      tctx.fillText(label, lx + 30, ly + i*18 + 10);
+    });
+  }
+
+  function animateApparatus(waterT, massMelted){
+    const mercuryHeight = Math.min(95, 20 + waterT*2.2);
+    mercury.style.setProperty('--h', mercuryHeight+'%');
+    mercury.style.height = mercuryHeight+'%';
+    const iceScale = Math.max(0.35, 1 - massMelted/30);
+    iceEmoji.style.transform = 'translateX(-50%) scale('+iceScale.toFixed(2)+')';
+    cup.style.setProperty('--fill', Math.min(85, 40+massMelted)+'%');
+  }
+
+  function renderTable(){
+    if(trials.length === 0){
+      dataBody.innerHTML = '<tr class="empty-row"><td colspan="6">No trials yet — run your first investigation above.</td></tr>';
+      return;
+    }
+    dataBody.innerHTML = trials.map((t,i)=>
+      `<tr>
+        <td>${i+1}</td>
+        <td>${t.massWater} g</td>
+        <td>${t.initTemp} °C</td>
+        <td>${t.finalTemp.toFixed(1)} °C</td>
+        <td>${t.massMelted.toFixed(1)} g</td>
+        <td>${Number(t.heatReleased.toFixed(1))} cal</td>
+      </tr>`
+    ).join('');
+  }
+
+  function leastSquares(points){
+    const n = points.length;
+    let sumX=0,sumY=0,sumXY=0,sumXX=0;
+    points.forEach(p=>{ sumX+=p.x; sumY+=p.y; sumXY+=p.x*p.y; sumXX+=p.x*p.x; });
+    const slope = (n*sumXY - sumX*sumY) / (n*sumXX - sumX*sumX);
+    const intercept = (sumY - slope*sumX)/n;
+    return {slope, intercept};
+  }
+
+  function drawChart(){
+    const W = canvas.width, H = canvas.height;
+    const padL=55, padB=45, padT=20, padR=20;
+    ctx.clearRect(0,0,W,H);
+
+    if(trials.length === 0){
+      ctx.fillStyle = '#5c6b75';
+      ctx.font = '13px sans-serif';
+      ctx.fillText('Run a trial to plot your first data point.', padL, H/2);
+      return;
+    }
+
+    const xs = trials.map(t=>t.massMelted);
+    const ys = trials.map(t=>t.heatReleased);
+    const xMax = Math.max(...xs, 5) * 1.2;
+    const yMax = Math.max(...ys, 100) * 1.2;
+
+    const plotW = W - padL - padR;
+    const plotH = H - padT - padB;
+
+    function px(x){ return padL + (x/xMax)*plotW; }
+    function py(y){ return H - padB - (y/yMax)*plotH; }
+
+    // axes
+    ctx.strokeStyle = '#9db9c7';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(padL, padT); ctx.lineTo(padL, H-padB); ctx.lineTo(W-padR, H-padB);
+    ctx.stroke();
+
+    // gridlines + ticks
+    ctx.fillStyle = '#5c6b75';
+    ctx.font = '11px sans-serif';
+    for(let i=0;i<=5;i++){
+      const xv = (xMax/5)*i;
+      const xp = px(xv);
+      ctx.strokeStyle = 'rgba(28,122,140,0.12)';
+      ctx.beginPath(); ctx.moveTo(xp,padT); ctx.lineTo(xp,H-padB); ctx.stroke();
+      ctx.fillText(xv.toFixed(0), xp-8, H-padB+16);
+
+      const yv = (yMax/5)*i;
+      const yp = py(yv);
+      ctx.strokeStyle = 'rgba(28,122,140,0.12)';
+      ctx.beginPath(); ctx.moveTo(padL,yp); ctx.lineTo(W-padR,yp); ctx.stroke();
+      ctx.fillText(yv.toFixed(0), padL-42, yp+4);
+    }
+
+    // axis labels
+    ctx.fillStyle = '#0b2942';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText('Mass of ice melted (g)', W/2-60, H-8);
+    ctx.save();
+    ctx.translate(14, H/2+50);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillText('Heat released (cal)', 0, 0);
+    ctx.restore();
+
+    // points
+    trials.forEach(t=>{
+      ctx.beginPath();
+      ctx.arc(px(t.massMelted), py(t.heatReleased), 5, 0, Math.PI*2);
+      ctx.fillStyle = '#e8734a';
+      ctx.fill();
+      ctx.strokeStyle = '#0b2942';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+
+    // best fit line
+    if(showFit && trials.length >= 2){
+      const pts = trials.map(t=>({x:t.massMelted, y:t.heatReleased}));
+      const {slope, intercept} = leastSquares(pts);
+      ctx.beginPath();
+      ctx.moveTo(px(0), py(intercept));
+      ctx.lineTo(px(xMax), py(slope*xMax+intercept));
+      ctx.strokeStyle = '#1c7a8c';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([6,4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      slopeReadout.style.display = 'block';
+      slopeReadout.innerHTML = `Your best-fit slope ≈ <strong>${slope.toFixed(1)} cal/g</strong>. This means it took about ${slope.toFixed(1)} calories of energy to melt each gram of ice in your trials. Scientists have measured the real value to be <strong>80 cal/g</strong> — how close did your simulated data come?`;
+    } else {
+      slopeReadout.style.display = 'none';
+    }
+  }
+
+  runBtn.addEventListener('click', runTrial);
+  fitBtn.addEventListener('click', ()=>{ showFit = true; drawChart(); });
+  timeSlider.addEventListener('input', ()=>{ curTime = parseFloat(timeSlider.value); updateView(); });
+  resetBtn.addEventListener('click', ()=>{
+    if(playing){ cancelAnimationFrame(playing); playing = null; }
+    trials = [];
+    showFit = false;
+    current = null;
+    curTime = 0;
+    timeSlider.value = 0;
+    timeSlider.disabled = true;
+    runBtn.disabled = false;
+    fitBtn.disabled = true;
+    updateView();
+    renderTable();
+    drawChart();
+  });
+
+  drawChart();
+  updateView();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Simulador del Ciclo Celular — Prototipo</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --ink-soft: #45484c;
+    --paper: #faf9f6;
+    --panel: #ffffff;
+    --line: #d8d6cf;
+    --line-soft: #eae8e2;
+    --g-phase: #5b7a91;
+    --g-phase-soft: #e4ebef;
+    --s-phase: #b8892b;
+    --s-phase-soft: #f5ecd8;
+    --m-phase: #a8452f;
+    --m-phase-soft: #f4e1db;
+    --checkpoint: #1a1a1a;
+    --finish: #7fae4a;
+    --noncancer: #35618c;
+    --destroyed: #6b6f74;
+    --cancer: #a8352a;
+    --good: #3f7d4f;
+    --warn: #b8892b;
+    --p1: #7c3aed;
+    --p2: #e6399b;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    --sans: 'Segoe UI', 'Calibri', system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+  }
+  .app { max-width: 1120px; margin: 0 auto; padding: 0 0 48px; }
+
+  .masthead { background: var(--ink); color: #fff; padding: 18px 24px 20px; }
+  .lang-row { text-align: right; margin-bottom: 10px; }
+  .lang-link { color: #fff; font-size: 11.5px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; opacity: .85; }
+  .lang-link:hover { opacity: 1; }
+  .kicker { font-size: 11px; letter-spacing: 1.6px; font-weight: 700; color: #c7c5bf; text-transform: uppercase; margin-bottom: 6px; }
+  .masthead h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.2px; }
+  .masthead p { margin: 6px 0 0; font-size: 13.5px; color: #d6d4ce; max-width: 700px; line-height: 1.5; }
+
+  .strip { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: var(--panel); border-bottom: 1px solid var(--line); padding: 12px 24px; }
+  .round-toggle { display: inline-flex; border: 1px solid var(--ink); border-radius: 3px; overflow: hidden; }
+  .round-toggle button { border: none; background: #fff; color: var(--ink); font-family: var(--sans); font-size: 12.5px; font-weight: 600; padding: 8px 14px; cursor: pointer; letter-spacing: 0.2px; }
+  .round-toggle button + button { border-left: 1px solid var(--ink); }
+  .round-toggle button.active { background: var(--ink); color: #fff; }
+  .round-note { font-size: 12px; color: var(--ink-soft); max-width: 460px; line-height: 1.4; }
+
+  .board-panel { margin: 20px 24px 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px; }
+  .board-panel h2 { margin: 0 0 12px; font-size: 13px; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .board-panel h2 .sq { width: 9px; height: 9px; background: var(--ink); flex: none; }
+  .track-wrap { overflow-x: auto; padding-bottom: 10px; }
+  .track { display: grid; grid-template-columns: repeat(12, minmax(48px, 1fr)); grid-auto-rows: 52px; gap: 3px; min-width: 760px; position: relative; }
+  .cell { border-radius: 3px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 17px; font-weight: 800; color: #fff; position: relative; background: #cfcfc9; line-height: 0.95; }
+  .cell.g1, .cell.g2 { background: var(--g-phase); }
+  .cell.s { background: var(--s-phase); }
+  .cell.m { background: var(--m-phase); font-size: 10.5px; line-height: 1.05; text-align: center; padding: 1px; }
+  .cell.start, .cell.check { background: var(--checkpoint); }
+  .cell.start { font-size: 9.5px; }
+  .cell.finish { background: var(--finish); }
+  .cell.check { font-size: 10.5px; text-align: center; line-height: 1.05; }
+  .cell.chance.g1, .cell.chance.g2 { background: var(--g-phase-soft); color: var(--ink); }
+  .cell.chance.s { background: var(--s-phase-soft); color: var(--ink); }
+  .cell.chance.m { background: var(--m-phase-soft); color: var(--ink); }
+  .cell.chance::after { content: '\2606'; position: absolute; bottom: 2px; right: 3px; font-size: 8px; opacity: .7; }
+  .cell-label { position: relative; z-index: 1; text-align: center; pointer-events: none; width: 100%; padding: 0 1px; }
+  .token { position: absolute; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; border-radius: 4px; color: #fff; font-size: 9px; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 1.5px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.6); z-index: 3; }
+  .token.p1 { left: 2px; background: var(--p1); }
+  .token.p2 { right: 2px; background: var(--p2); }
+  .board-tray { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+  @media (max-width: 640px) { .board-tray { grid-template-columns: 1fr; } }
+  .tray-card { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px 12px; background: var(--line-soft); }
+  .tray-card.p1 { border-top: 3px solid var(--p1); }
+  .tray-card.p2 { border-top: 3px solid var(--p2); }
+  .tray-head { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 12.5px; margin-bottom: 8px; }
+  .tray-dice { display: flex; gap: 6px; flex-wrap: wrap; min-height: 36px; align-items: center; }
+  .tray-dice .die { width: 34px; height: 34px; font-size: 15px; border-radius: 6px; }
+  .tray-res { display: flex; gap: 4px 12px; margin-top: 8px; font-size: 11px; color: var(--ink-soft); flex-wrap: wrap; }
+  .tray-res b { color: var(--ink); font-family: var(--mono); }
+  .track-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 11px; color: var(--ink-soft); }
+  .track-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; border: 1px solid var(--line); }
+  .legend-token { width: 12px; height: 12px; border-radius: 3px; display: inline-block; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); }
+
+  .section { padding: 20px 24px 0; }
+  .cols3 { display: grid; grid-template-columns: 1fr 1fr 1.15fr; gap: 20px; padding: 20px 24px 0; }
+  @media (max-width: 900px) { .cols3 { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 18px 20px; }
+  .panel + .panel { margin-top: 20px; }
+  .panel h2 { margin: 0 0 12px; font-size: 13px; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+  .panel h2 .sq { width: 9px; height: 9px; background: var(--ink); flex: none; }
+  .player-col.p1col { border-top: 3px solid var(--p1); }
+  .player-col.p2col { border-top: 3px solid var(--p2); }
+  .subhead { font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 700; color: var(--ink-soft); margin: 16px 0 8px; border-top: 1px dashed var(--line); padding-top: 12px; }
+  .panel-divider { border-top: 1px solid var(--line); margin: 18px 0 0; }
+  .log-badge { display: inline-block; font-size: 9.5px; font-weight: 800; padding: 1px 5px; border-radius: 3px; color: #fff; margin-right: 6px; letter-spacing: 0.3px; vertical-align: 1px; }
+  .log-badge.p1 { background: var(--p1); }
+  .log-badge.p2 { background: var(--p2); }
+  .log .roll-vals { font-weight: 800; background: var(--line-soft); border-radius: 2px; padding: 0 2px; }
+  .log-empty { color: var(--ink-soft); font-style: italic; font-size: 11.5px; }
+
+  .turn-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 4px; border: 1px solid var(--ink); margin-bottom: 14px; font-weight: 700; font-size: 13px; }
+  .turn-banner .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--ink); }
+
+  .dice-row { display: flex; gap: 10px; margin: 14px 0 10px; flex-wrap: wrap; }
+  .die { width: 46px; height: 46px; border: 2px solid var(--ink); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 20px; font-weight: 700; background: #fff; }
+  .die.hit { background: var(--good); color: #fff; border-color: var(--good); }
+  .die.miss { opacity: .45; }
+
+  .btn { font-family: var(--sans); font-size: 13px; font-weight: 600; padding: 10px 18px; border-radius: 4px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; letter-spacing: 0.2px; }
+  .btn:hover { opacity: 0.88; }
+  .btn:disabled { opacity: 0.35; cursor: default; }
+  .btn.secondary { background: #fff; color: var(--ink); }
+  .btn.small { padding: 6px 12px; font-size: 12px; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+
+  .phase-banner { display: flex; align-items: center; justify-content: space-between; background: var(--g-phase-soft); border: 1px solid var(--line); border-radius: 4px; padding: 10px 14px; margin-bottom: 4px; flex-wrap: wrap; gap: 8px; }
+  .phase-banner.s { background: var(--s-phase-soft); }
+  .phase-banner.m { background: var(--m-phase-soft); }
+  .phase-banner.check { background: #ece9e2; }
+  .phase-banner .label { font-weight: 700; font-size: 13px; }
+  .phase-banner .desc { font-size: 12px; color: var(--ink-soft); }
+
+  .checkpoint-alert { margin: 4px 0 14px; padding: 16px; border: 3px solid var(--warn); border-radius: 8px; background: #fdf6e6; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; animation: pulseBorder 1.4s ease-in-out infinite; }
+  @keyframes pulseBorder { 0%,100% { box-shadow: 0 0 0 0 rgba(184,137,43,.35); } 50% { box-shadow: 0 0 0 6px rgba(184,137,43,0); } }
+  .checkpoint-alert .txt { display: flex; align-items: center; gap: 10px; }
+  .checkpoint-alert .icon { font-size: 26px; }
+  .checkpoint-alert .t1 { font-weight: 700; font-size: 14.5px; }
+  .checkpoint-alert .t2 { font-size: 12px; color: var(--ink-soft); }
+  .btn.checkpoint { background: var(--warn); border-color: var(--warn); font-size: 14px; padding: 12px 20px; }
+
+  @keyframes cardRevealIn { 0% { transform: scale(0.9) translateY(6px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+  .card-reveal { margin-top: 12px; padding: 14px; border: 2px solid var(--ink); border-radius: 6px; background: #fffef8; animation: cardRevealIn 0.3s ease-out; transform-origin: top center; }
+  .card-reveal .kicker2 { font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; margin-bottom: 6px; }
+  .card-reveal .body { font-size: 13px; line-height: 1.6; }
+  .card-reveal .body ul { margin: 6px 0 0; padding-left: 18px; }
+  .card-reveal .body li { margin-bottom: 4px; }
+  .card-reveal .outcome { margin-top: 8px; font-weight: 700; font-size: 13px; }
+  .card-reveal .outcome.pass { color: var(--good); }
+  .card-reveal .outcome.fail { color: var(--warn); }
+  .card-reveal .outcome.destroy { color: var(--cancer); }
+  .quiz-q { margin-top: 12px; font-weight: 700; font-size: 13px; }
+  .quiz-options { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .quiz-opt { text-align: left; }
+  .feedback-box { margin-top: 12px; padding: 12px; border-radius: 6px; border: 2px solid var(--line); }
+  .feedback-box.good { border-color: var(--good); background: #eaf4ec; }
+  .feedback-box.bad { border-color: var(--warn); background: #fdf1de; }
+  .feedback-title { font-weight: 700; font-size: 13.5px; margin-bottom: 4px; }
+  .feedback-body { font-size: 12.5px; line-height: 1.55; color: var(--ink-soft); }
+
+  .score-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .score-cell { border: 1px solid var(--line); border-radius: 4px; padding: 10px 8px; text-align: center; background: var(--line-soft); }
+  .score-cell .n { font-family: var(--mono); font-size: 22px; font-weight: 700; }
+  .score-cell .label { font-size: 10px; color: var(--ink-soft); margin-top: 2px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .player-score { border: 1px solid var(--line); border-radius: 5px; padding: 12px; margin-bottom: 12px; }
+  .player-score .ph { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 12.5px; margin-bottom: 8px; }
+
+  .log { font-family: var(--mono); font-size: 11px; line-height: 1.6; color: var(--ink-soft); max-height: 240px; overflow-y: auto; border-top: 1px dashed var(--line); padding-top: 10px; margin-top: 10px; }
+  .log .line { color: var(--ink); }
+  .log .line.warn { color: var(--cancer); font-weight: 700; }
+  .log .line.good { color: var(--good); font-weight: 700; }
+  .log .line.p1tag { border-left: 3px solid var(--p1); padding-left: 6px; }
+  .log .line.p2tag { border-left: 3px solid var(--p2); padding-left: 6px; }
+
+  .tally-row { display: flex; gap: 14px; margin-top: 6px; }
+  .tally-chip { flex: 1; border-radius: 4px; padding: 12px; text-align: center; border: 1px solid var(--line); }
+  .tally-chip .dot { width: 14px; height: 14px; border-radius: 50%; margin: 0 auto 6px; }
+  .tally-chip.non .dot { background: var(--noncancer); }
+  .tally-chip.des .dot { background: var(--destroyed); }
+  .tally-chip.can .dot { background: var(--cancer); }
+  .tally-chip .n { font-family: var(--mono); font-size: 24px; font-weight: 700; }
+  .tally-chip .l { font-size: 10.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.3px; }
+  .tally-pct { text-align: center; font-size: 12px; color: var(--ink-soft); margin-top: 10px; }
+
+  .result-banner { margin-top: 14px; padding: 14px; border-radius: 4px; text-align: center; border: 1px solid var(--line); }
+  .result-banner.non { background: #e9f0f6; }
+  .result-banner.can { background: #f7e6e3; }
+  .result-banner .chip-glyph { font-size: 30px; }
+  .result-banner .title { font-weight: 700; font-size: 15px; margin-top: 4px; }
+  .result-banner .sub { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
+  .assumptions { margin-top: 20px; font-size: 11.5px; color: var(--ink-soft); line-height: 1.6; border-top: 1px solid var(--line); padding: 16px 24px 0; }
+  .assumptions summary { cursor: pointer; font-weight: 700; color: var(--ink); font-size: 12.5px; }
+  .assumptions ul { margin: 8px 0 0; padding-left: 18px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="masthead">
+    <div class="lang-row"><a class="lang-link" href="cellgame-journey.html">El viaje de una célula &rarr;</a> &nbsp;·&nbsp; <a class="lang-link" href="cellgame-simulator.html">Simular miles de células &rarr;</a> &nbsp;·&nbsp; <a class="lang-link" href="cellgame.html">English</a></div>
+    <div class="kicker">Biología — Prototipo</div>
+    <h1>Simulador del Ciclo Celular</h1>
+    <p>Una versión digital del Juego Celular de la clase, para dos jugadores que comparten una computadora. Túrnense para tirar los dados, muevan su célula alrededor del tablero, y volteen la carta en cada punto de control p53 para ver si su célula se divide normalmente — o se convierte en una célula cancerosa.</p>
+  </div>
+
+  <div class="strip">
+    <div>
+      <div class="round-toggle" id="roundToggle">
+        <button data-round="1" class="active">Ronda 1</button>
+        <button data-round="2">Ronda 2</button>
+      </div>
+    </div>
+    <div class="round-note" id="roundNote">Ronda 1: los puntos de control se revisan normalmente. Las casillas de Oportunidad más claras no hacen nada esta ronda.</div>
+  </div>
+
+  <div class="board-panel">
+    <h2><span class="sq"></span>Tablero del Juego Celular</h2>
+    <div class="track-wrap"><div class="track" id="track"></div></div>
+    <div class="board-tray">
+      <div class="tray-card p1">
+        <div class="tray-head"><span class="token p1" style="position:static;">1</span>Jugador 1 — Última Tirada</div>
+        <div class="tray-dice" id="trayDice1"></div>
+        <div class="tray-res" id="trayRes1"></div>
+      </div>
+      <div class="tray-card p2">
+        <div class="tray-head"><span class="token p2" style="position:static;">2</span>Jugador 2 — Última Tirada</div>
+        <div class="tray-dice" id="trayDice2"></div>
+        <div class="tray-res" id="trayRes2"></div>
+      </div>
+    </div>
+    <div class="track-legend">
+      <span><span class="legend-dot" style="background:var(--g-phase)"></span>G1 / G2 (crecimiento)</span>
+      <span><span class="legend-dot" style="background:var(--s-phase)"></span>S (replicación del ADN)</span>
+      <span><span class="legend-dot" style="background:var(--m-phase)"></span>M (mitosis)</span>
+      <span><span class="legend-dot" style="background:var(--checkpoint)"></span>Punto de control p53 — voltea la carta</span>
+      <span><span class="legend-dot" style="background:var(--g-phase-soft)"></span>Casilla de Oportunidad Celular (solo Ronda 2)</span>
+      <span><span class="legend-token" style="background:var(--p1)"></span>Jugador 1</span>
+      <span><span class="legend-token" style="background:var(--p2)"></span>Jugador 2</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="panel">
+      <div class="turn-banner" id="turnBanner"></div>
+      <div class="phase-banner" id="phaseBanner">
+        <div>
+          <div class="label" id="phaseLabel">Fase: G1</div>
+          <div class="desc" id="phaseDesc"></div>
+        </div>
+      </div>
+
+      <div id="checkpointPrompt"></div>
+      <div class="btn-row" id="actionRow"></div>
+      <div id="cardReveal"></div>
+      <div id="resultBanner"></div>
+    </div>
+  </div>
+
+  <div class="cols3">
+    <div class="panel player-col p1col">
+      <h2><span class="sq" style="background:var(--p1)"></span>Jugador 1</h2>
+      <div class="player-score" id="p1Score"></div>
+      <div class="subhead">Tiradas y Eventos del Jugador 1</div>
+      <div class="log" id="p1Log"></div>
+    </div>
+
+    <div class="panel player-col p2col">
+      <h2><span class="sq" style="background:var(--p2)"></span>Jugador 2</h2>
+      <div class="player-score" id="p2Score"></div>
+      <div class="subhead">Tiradas y Eventos del Jugador 2</div>
+      <div class="log" id="p2Log"></div>
+    </div>
+
+    <div class="panel">
+      <h2><span class="sq"></span>Registro de Actividad (Ambos Jugadores)</h2>
+      <div class="log" id="log"></div>
+      <div class="panel-divider"></div>
+      <h2 style="margin-top:14px;"><span class="sq"></span>Datos de la Clase (esta sesión)</h2>
+      <div class="tally-row">
+        <div class="tally-chip non"><div class="dot"></div><div class="n" id="tallyNon">0</div><div class="l">No Cancerosa</div></div>
+        <div class="tally-chip des"><div class="dot"></div><div class="n" id="tallyDes">0</div><div class="l">Destruida</div></div>
+        <div class="tally-chip can"><div class="dot"></div><div class="n" id="tallyCan">0</div><div class="l">Cancerosa</div></div>
+      </div>
+      <div class="tally-pct" id="tallyPct">Ejecuta la simulación para empezar a recopilar datos.</div>
+      <div class="btn-row"><button class="btn secondary small" id="resetTally">Reiniciar datos de la clase</button></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  // ---------- Board ----------
+  function buildSpaces() {
+    // "chance" squares are the lighter-tinted Cellular Chance spaces — every
+    // other space within each phase (2nd, 4th, ... space of that phase).
+    const s = [];
+    s.push({ type: 'START' });
+    for (let i = 0; i < 6; i++) s.push({ type: 'G1', chance: i % 2 === 1 });
+    s.push({ type: 'G1_CHECK' });
+    for (let i = 0; i < 8; i++) s.push({ type: 'S', chance: i % 2 === 1 });
+    for (let i = 0; i < 7; i++) s.push({ type: 'G2', chance: i % 2 === 1 });
+    s.push({ type: 'G2_CHECK' });
+    for (let i = 1; i <= 5; i++) s.push({ type: 'M', need: i, chance: i % 2 === 0 });
+    s.push({ type: 'M_CHECK' });
+    s.push({ type: 'FINISH' });
+    return s;
+  }
+  const SPACES = buildSpaces();
+
+  // ---------- Rectangular loop layout (12 cols x 6 rows) ----------
+  // Top row: indices 0-11 (Start,6xG1,G1_CHECK,4xS) -> row1, col1..col12
+  // Right column (interior): indices 12-15 (4xS) -> col12, rows2-5
+  // Bottom row: indices 16-26 (7xG2,G2_CHECK,3xM) -> row6, col12..col2 (right to left)
+  // Left column (interior): indices 27-30 (2xM,M_CHECK,FINISH) -> col1, rows5..2 (bottom to top)
+  function cellGridPos(i) {
+    if (i <= 11) return { col: i + 1, row: 1 };
+    if (i <= 15) return { col: 12, row: 2 + (i - 12) };
+    if (i <= 26) return { col: 12 - (i - 16), row: 6 };
+    return { col: 1, row: 5 - (i - 27) };
+  }
+  const IDX = {
+    START: 0,
+    G1_FIRST: 1, G1_LAST: 6,
+    G1_CHECK: 7,
+    S_FIRST: 8, S_LAST: 15,
+    G2_FIRST: 16, G2_LAST: 22,
+    G2_CHECK: 23,
+    M_FIRST: 24, M_LAST: 28,
+    M_CHECK: 29,
+    FINISH: 30,
+  };
+
+  const REQ = {
+    g1: { nutrients: 3, proteins: 3, organelles: 3 },
+    g2dna: 4,
+    g2npo: 1,
+  };
+
+  // Real "Teacher Reference Game Cards 2" deck — 14 Cellular Chance cards,
+  // drawn from one shared, reusable stack (a card returns to the bottom after use).
+  const CHANCE_DECK_SOURCE = [
+    { text: '¡p53 está funcionando bien! ¡Obtienes una tirada extra!', effect: 'extraRoll' },
+    { text: '¡p53 está funcionando bien! ¡Obtienes una tirada extra!', effect: 'extraRoll' },
+    { text: '¡p53 está funcionando bien! ¡Obtienes una tirada extra!', effect: 'extraRoll' },
+    { text: '¡p53 está funcionando bien! p53 detecta daño en tu ADN y destruye tu célula. Vuelve al inicio.', effect: 'destroy' },
+    { text: '¡p53 está funcionando bien! p53 detecta daño en tu ADN y destruye tu célula. Vuelve al inicio.', effect: 'destroy' },
+    { text: '¡p53 está funcionando bien! p53 detecta daño en tu ADN y destruye tu célula. Vuelve al inicio.', effect: 'destroy' },
+    { text: '¡p53 está funcionando bien! ¡Completas todos tus requisitos de ADN para esta ronda!', effect: 'fillDNA' },
+    { text: "¡p53 no está funcionando! Mueve tu ficha a la casilla después del siguiente punto de control sin revisar tu tarjeta de puntuación.", effect: 'skipCheckpointBypass' },
+    { text: '¡p53 está funcionando bien! ¡Obtienes una tirada extra!', effect: 'extraRoll' },
+    { text: '¡p53 no está funcionando! Ve directamente a la Meta. Toma una nueva ficha de célula ROJA y comienza el juego de nuevo.', effect: 'moveToFinishRed' },
+    { text: '¡p53 no está funcionando! p53 no te deja pasar. ¡Pierdes un turno!', effect: 'loseTurn' },
+    { text: '¡p53 está funcionando bien! ¡Obtienes una tirada extra!', effect: 'extraRoll' },
+    { text: '¡p53 no está funcionando! Avanza 3 casillas.', effect: 'ahead3' },
+    { text: "¡p53 no está funcionando! Salta dos puntos de control hacia adelante y revisa tu tarjeta de puntuación. Si solo queda un punto de control, salta al punto de control final y revisa tu tarjeta de puntuación.", effect: 'skipToFinalCheckpoint' },
+  ];
+  function shuffled(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function freshResources() { return { nutrients: 0, proteins: 0, organelles: 0, chromosomes: 0 }; }
+
+  function makePlayer(id, name, cls) {
+    return {
+      id, name, cls,
+      position: IDX.G1_FIRST,
+      resources: freshResources(),
+      cellFlagged: false,
+      status: 'PLAYING', // PLAYING | DONE
+      g2RollPending: false,
+      lastRoll: [],
+      lastHits: [],
+      pendingFlow: null,
+      log: [],
+    };
+  }
+
+  const state = {
+    round: 1,
+    active: 0,
+    tally: { non: 0, can: 0, des: 0 },
+    log: [],
+    chanceDeck: shuffled(CHANCE_DECK_SOURCE),
+    players: [makePlayer(1, 'Jugador 1', 'p1'), makePlayer(2, 'Jugador 2', 'p2')],
+  };
+  function drawChance() {
+    const card = state.chanceDeck.shift();
+    state.chanceDeck.push(card);
+    return card;
+  }
+  function nextCheckpointIndex(pos) {
+    return [IDX.G1_CHECK, IDX.G2_CHECK, IDX.M_CHECK].find(idx => idx > pos) || IDX.M_CHECK;
+  }
+
+  const els = {
+    track: document.getElementById('track'),
+    trayDice1: document.getElementById('trayDice1'),
+    trayDice2: document.getElementById('trayDice2'),
+    trayRes1: document.getElementById('trayRes1'),
+    trayRes2: document.getElementById('trayRes2'),
+    actionRow: document.getElementById('actionRow'),
+    turnBanner: document.getElementById('turnBanner'),
+    phaseBanner: document.getElementById('phaseBanner'),
+    phaseLabel: document.getElementById('phaseLabel'),
+    phaseDesc: document.getElementById('phaseDesc'),
+    checkpointPrompt: document.getElementById('checkpointPrompt'),
+    cardReveal: document.getElementById('cardReveal'),
+    resultBanner: document.getElementById('resultBanner'),
+    log: document.getElementById('log'),
+    p1Log: document.getElementById('p1Log'),
+    p2Log: document.getElementById('p2Log'),
+    p1Score: document.getElementById('p1Score'),
+    p2Score: document.getElementById('p2Score'),
+    tallyNon: document.getElementById('tallyNon'),
+    tallyDes: document.getElementById('tallyDes'),
+    tallyCan: document.getElementById('tallyCan'),
+    tallyPct: document.getElementById('tallyPct'),
+    roundNote: document.getElementById('roundNote'),
+  };
+
+  function activePlayer() { return state.players[state.active]; }
+  function otherIndex() { return state.active === 0 ? 1 : 0; }
+
+  // Bolds/highlights the actual numbers rolled (e.g. "[1, 2, 3, 4]" or
+  // "sacó un 4") so a skimmed log line still shows what came up.
+  function highlightRolls(msg) {
+    return msg
+      .replace(/\[(\d+(?:,\s*\d+)*)\]/g, (m, nums) => `[<span class="roll-vals">${nums}</span>]`)
+      .replace(/sacó un (\d)\b/g, 'sacó un <span class="roll-vals">$1</span>');
+  }
+
+  function logLine(msg, cls, playerCls) {
+    const playerId = playerCls === 'p1' ? 1 : playerCls === 'p2' ? 2 : null;
+    const tag = playerCls ? (playerCls + 'tag') : '';
+    const badge = playerCls ? `<span class="log-badge ${playerCls}">${playerCls.toUpperCase()}</span>` : '';
+    const html = highlightRolls(msg);
+
+    state.log.unshift({ html, cls: [cls, tag].filter(Boolean).join(' '), badge });
+    if (state.log.length > 80) state.log.pop();
+    els.log.innerHTML = state.log.map(l => `<div class="line ${l.cls || ''}">${l.badge}${l.html}</div>`).join('')
+      || '<div class="log-empty">Aún no hay actividad.</div>';
+
+    if (playerId) {
+      const p = state.players[playerId - 1];
+      p.log.unshift({ html, cls });
+      if (p.log.length > 40) p.log.pop();
+      const target = playerId === 1 ? els.p1Log : els.p2Log;
+      target.innerHTML = p.log.map(l => `<div class="line ${l.cls || ''}">${l.html}</div>`).join('')
+        || '<div class="log-empty">Aún no hay tiradas.</div>';
+    }
+  }
+
+  function spaceClass(sp) {
+    let base;
+    if (sp.type === 'START') base = 'start';
+    else if (sp.type === 'FINISH') base = 'finish';
+    else if (sp.type === 'G1' || sp.type === 'G2') base = 'g1';
+    else if (sp.type === 'S') base = 's';
+    else if (sp.type === 'M') base = 'm';
+    else if (sp.type.endsWith('_CHECK')) base = 'check';
+    else base = '';
+    return sp.chance ? `${base} chance` : base;
+  }
+  function spaceLabel(sp) {
+    if (sp.type === 'START') return 'INICIO';
+    if (sp.type === 'FINISH') return 'FIN';
+    if (sp.type === 'G1') return 'G1';
+    if (sp.type === 'G2') return 'G2';
+    if (sp.type === 'S') return 'S';
+    if (sp.type === 'M') return `Saca un<br>${sp.need}`;
+    if (sp.type === 'G1_CHECK') return 'Control<br>G1';
+    if (sp.type === 'G2_CHECK') return 'Control<br>G2';
+    if (sp.type === 'M_CHECK') return 'Control<br>M';
+    return '';
+  }
+
+  function renderTrack() {
+    els.track.innerHTML = SPACES.map((sp, i) => {
+      const p1Here = state.players[0].position === i;
+      const p2Here = state.players[1].position === i;
+      const { col, row } = cellGridPos(i);
+      return `<div class="cell ${spaceClass(sp)}" style="grid-column:${col};grid-row:${row}">` +
+        (p1Here ? `<span class="token p1" title="Jugador 1">1</span>` : '') +
+        (p2Here ? `<span class="token p2" title="Jugador 2">2</span>` : '') +
+        `<span class="cell-label">${spaceLabel(sp)}</span></div>`;
+    }).join('');
+  }
+
+  function renderScorecards() {
+    state.players.forEach((p, i) => {
+      const el = i === 0 ? els.p1Score : els.p2Score;
+      el.innerHTML = `
+        <div class="ph"><span class="token ${p.cls}" style="position:static;">${p.id}</span> ${p.name} — ${statusText(p)}</div>
+        <div class="score-grid">
+          <div class="score-cell"><div class="n">${p.resources.nutrients}</div><div class="label">Nutrientes</div></div>
+          <div class="score-cell"><div class="n">${p.resources.proteins}</div><div class="label">Proteínas</div></div>
+          <div class="score-cell"><div class="n">${p.resources.organelles}</div><div class="label">Orgánulos</div></div>
+          <div class="score-cell"><div class="n">${p.resources.chromosomes}</div><div class="label">Cromosomas (ADN)</div></div>
+        </div>`;
+      renderTrayResources(p);
+    });
+  }
+
+  // Resumen compacto de recursos en la bandeja del tablero, justo debajo de
+  // los dados, para que se vea posición + tirada + recursos acumulados sin
+  // desplazarse hasta la tarjeta de puntuación completa.
+  function renderTrayResources(p) {
+    const el = p.id === 1 ? els.trayRes1 : els.trayRes2;
+    const r = p.resources;
+    el.innerHTML = `Nutrientes <b>${r.nutrients}</b> &nbsp;·&nbsp; Proteínas <b>${r.proteins}</b> &nbsp;·&nbsp; Orgánulos <b>${r.organelles}</b> &nbsp;·&nbsp; ADN <b>${r.chromosomes}</b>`;
+  }
+
+  function statusText(p) {
+    const sp = SPACES[p.position];
+    if (p.status === 'DONE') return 'Terminado — listo para una nueva célula';
+    if (p.g2RollPending) return 'Tirando para pasar el punto de control G2';
+    if (sp.type === 'START') return 'En el inicio';
+    if (sp.type === 'FINISH') return 'En la meta';
+    if (sp.type.endsWith('_CHECK')) return 'En el punto de control';
+    return 'Fase ' + sp.type;
+  }
+
+  function renderTally() {
+    els.tallyNon.textContent = state.tally.non;
+    els.tallyDes.textContent = state.tally.des;
+    els.tallyCan.textContent = state.tally.can;
+    // "Destruida" es un resultado propio, no un paso hacia los otros dos —
+    // la historia de una célula destruida termina ahí; lo que el jugador
+    // haga después es una célula completamente nueva.
+    const total = state.tally.non + state.tally.des + state.tally.can;
+    if (total === 0) { els.tallyPct.textContent = 'Ejecuta la simulación para empezar a recopilar datos.'; return; }
+    const canPct = Math.round((state.tally.can / total) * 100);
+    const desPct = Math.round((state.tally.des / total) * 100);
+    els.tallyPct.textContent = `${total} célula${total === 1 ? '' : 's'} iniciada${total === 1 ? '' : 's'} hasta ahora — ${desPct}% fueron destruidas, ${canPct}% resultaron cancerosas.`;
+  }
+
+  // Los dados se renderizan en la bandeja del jugador que tiró, dentro del
+  // panel del tablero — así el resultado queda junto a la posición en el
+  // tablero, sin necesidad de desplazarse.
+  function renderDice(p, rolls, hits) {
+    p.lastRoll = rolls;
+    p.lastHits = hits;
+    const el = p.id === 1 ? els.trayDice1 : els.trayDice2;
+    el.innerHTML = rolls.length
+      ? rolls.map((r, i) => `<div class="die ${hits && hits[i] ? 'hit' : 'miss'}">${r}</div>`).join('')
+      : '<div class="log-empty">Aún no hay tirada.</div>';
+  }
+
+  function phaseInfo(p) {
+    const sp = SPACES[p.position];
+    if (p.g2RollPending) return { cls: 'check', label: `${p.name} — Punto de Control G2`, desc: 'Tarjeta de puntuación confirmada — ahora tira un 1 para entrar realmente a la fase M.' };
+    switch (sp.type) {
+      case 'START': return { cls: 'g', label: `${p.name}: Listo para comenzar`, desc: 'Tira los dados para entrar a G1.' };
+      case 'G1': return { cls: 'g', label: `${p.name} — Fase: G1`, desc: 'Tira 4 dados. 1 → nutriente, 2 → proteína, 3 → orgánulo.' };
+      case 'G1_CHECK': return { cls: 'check', label: `${p.name} — Punto de Control G1`, desc: 'Voltea la carta para ver si p53 deja que tu célula continúe.' };
+      case 'S': return { cls: 's', label: `${p.name} — Fase: S`, desc: 'Tira 4 dados. El ADN se replica — un 4 duplica un cromosoma.' };
+      case 'G2': return { cls: 'g', label: `${p.name} — Fase: G2`, desc: 'Tira 4 dados. 1/2/3 siguen acumulando recursos; el 4 también cuenta para los cromosomas.' };
+      case 'G2_CHECK': return { cls: 'check', label: `${p.name} — Punto de Control G2`, desc: 'Voltea la carta para ver si p53 deja que tu célula continúe.' };
+      case 'M': return { cls: 'm', label: `${p.name} — Fase: M (necesitas un ${sp.need})`, desc: `Tira 1 dado — necesitas exactamente un ${sp.need} para avanzar.` };
+      case 'M_CHECK': return { cls: 'check', label: `${p.name} — Punto de Control M`, desc: 'Voltea la carta — esto termina la mitosis.' };
+      case 'FINISH': return { cls: 'm', label: `${p.name} — Mitosis Completa`, desc: 'Esta célula se ha dividido.' };
+    }
+  }
+
+  function renderPhaseBanner() {
+    const p = activePlayer();
+    const info = phaseInfo(p);
+    els.phaseBanner.className = 'phase-banner ' + info.cls;
+    els.phaseLabel.textContent = info.label;
+    els.phaseDesc.textContent = info.desc;
+  }
+
+  function renderTurnBanner() {
+    const p = activePlayer();
+    els.turnBanner.innerHTML = `<span class="dot" style="background:var(--${p.cls})"></span> Turno de ${p.name}`;
+  }
+
+  function isCheckpointType(t) { return t === 'G1_CHECK' || t === 'G2_CHECK' || t === 'M_CHECK'; }
+
+  function renderActions() {
+    els.actionRow.innerHTML = '';
+    els.checkpointPrompt.innerHTML = '';
+    const p = activePlayer();
+
+    if (p.pendingFlow) {
+      renderFlow(p);
+      return;
+    }
+    els.cardReveal.innerHTML = '';
+
+    const sp = SPACES[p.position];
+    const add = (label, fn, secondary) => {
+      const b = document.createElement('button');
+      b.className = 'btn' + (secondary ? ' secondary' : '');
+      b.textContent = label;
+      b.onclick = fn;
+      els.actionRow.appendChild(b);
+      return b;
+    };
+    if (p.status === 'DONE') {
+      add('Comenzar una Nueva Célula', () => startNewCell(p));
+      return;
+    }
+    if (p.g2RollPending) {
+      add('Tirar para el Punto de Control G2 (necesitas un 1)', doG2RollAttempt);
+      return;
+    }
+    if (sp.type === 'START' || sp.type === 'G1' || sp.type === 'S' || sp.type === 'G2' || sp.type === 'M') {
+      add('Tirar los Dados', doRoll);
+      return;
+    }
+    if (isCheckpointType(sp.type)) {
+      const checkName = sp.type.replace('_CHECK', '');
+      els.checkpointPrompt.innerHTML = `
+        <div class="checkpoint-alert">
+          <div class="txt">
+            <span class="icon">\u{1F6D1}</span>
+            <div>
+              <div class="t1">¡${p.name} llegó al punto de control ${checkName}!</div>
+              <div class="t2">p53 necesita revisar la tarjeta de puntuación. Voltea la carta para descubrir qué sucede.</div>
+            </div>
+          </div>
+          <button class="btn checkpoint" id="checkpointBtn">Voltear la Carta</button>
+        </div>`;
+      document.getElementById('checkpointBtn').onclick = () => startCheckpointFlow(p);
+      return;
+    }
+  }
+
+  function doRoll() {
+    const p = activePlayer();
+    const sp = SPACES[p.position];
+
+    if (sp.type === 'START') {
+      p.position = IDX.G1_FIRST;
+      logLine(`${p.name} tiró los dados y entró a G1.`, '', p.cls);
+      renderDice(p, [], []);
+      afterMove(p, true);
+      return;
+    }
+
+    if (sp.type === 'G1' || sp.type === 'G2') {
+      const rolls = [1, 2, 3, 4].map(() => 1 + Math.floor(Math.random() * 6));
+      const hits = [false, false, false, false];
+      rolls.forEach((r, i) => {
+        if (r === 1) { p.resources.nutrients++; hits[i] = true; }
+        else if (r === 2) { p.resources.proteins++; hits[i] = true; }
+        else if (r === 3) { p.resources.organelles++; hits[i] = true; }
+        else if (r === 4 && sp.type === 'G2') { p.resources.chromosomes++; hits[i] = true; }
+      });
+      logLine(`${p.name} tiró [${rolls.join(', ')}] durante ${sp.type}.`, '', p.cls);
+      renderDice(p, rolls, hits);
+      p.position++;
+      afterMove(p, true);
+      return;
+    }
+
+    if (sp.type === 'S') {
+      const rolls = [1, 2, 3, 4].map(() => 1 + Math.floor(Math.random() * 6));
+      const hits = rolls.map(r => r === 4);
+      rolls.forEach((r, i) => { if (r === 4) p.resources.chromosomes++; });
+      logLine(`${p.name} tiró [${rolls.join(', ')}] durante la fase S.`, '', p.cls);
+      renderDice(p, rolls, hits);
+      p.position++;
+      afterMove(p, true);
+      return;
+    }
+
+    if (sp.type === 'M') {
+      const roll = 1 + Math.floor(Math.random() * 6);
+      const hit = roll === sp.need;
+      renderDice(p, [roll], [hit]);
+      if (hit) {
+        logLine(`${p.name} sacó un ${roll} — necesitaba un ${sp.need}. Avanza.`, 'good', p.cls);
+        p.position++;
+        afterMove(p, true);
+      } else {
+        logLine(`${p.name} sacó un ${roll} — necesitaba un ${sp.need}. Sin movimiento este turno.`, '', p.cls);
+        afterMove(p, false);
+      }
+      return;
+    }
+  }
+
+  // Called after a movement roll resolves. If the cell landed on a checkpoint,
+  // leave it for the player to turn over the card (same turn). If it landed on
+  // a Cellular Chance square in Round 2, kick off that flow. Otherwise, end the turn.
+  function afterMove(p, moved) {
+    if (!moved) { renderAll(); endTurn(); return; }
+    const sp = SPACES[p.position];
+    if (isCheckpointType(sp.type)) {
+      logLine(`${p.name} llegó al punto de control ${sp.type.replace('_CHECK', '')}.`, '', p.cls);
+      renderAll();
+      return;
+    }
+    if (state.round === 2 && sp.chance) {
+      startChanceFlow(p);
+      return;
+    }
+    renderAll();
+    endTurn();
+  }
+
+  function moveTo(p, idx, minIdx) {
+    p.position = Math.max(minIdx != null ? minIdx : IDX.G1_FIRST, idx);
+  }
+
+  // ---------- Real checkpoint card text (from Teacher Reference Game Cards 1), translated ----------
+  const CARD_TEXT = {
+    G1_CHECK: {
+      title: 'Punto de Control G1',
+      intro: 'Revisa tu tarjeta de puntuación. Si tienes:',
+      lines: [
+        'Al menos 3 nutrientes, 3 proteínas y 3 orgánulos — PASAS EL PUNTO DE CONTROL.',
+        '2 en cualquier categoría — RETROCEDE 3 CASILLAS.',
+        '1 en cualquier categoría — RETROCEDE 5 CASILLAS.',
+        'Un 0 en cualquier categoría — HAS SIDO DESTRUIDO por p53 Y DEBES VOLVER AL INICIO.',
+      ],
+    },
+    G2_CHECK: {
+      title: 'Punto de Control G2',
+      intro: 'Revisa tu tarjeta de puntuación. Si tienes:',
+      lines: [
+        'Al menos 4 de ADN y al menos 1 nutriente, 1 proteína y 1 orgánulo — PASAS EL PUNTO DE CONTROL.',
+        'Menos de 4 de ADN — VUELVE A LA PRIMERA CASILLA.',
+        'Un 0 en cualquier categoría — HAS SIDO DESTRUIDO por p53 Y DEBES VOLVER AL INICIO.',
+      ],
+    },
+    M_CHECK: {
+      title: 'Punto de Control M',
+      intro: 'Vuelve a revisar tu tarjeta de puntuación. Asegúrate de tener:',
+      lines: [
+        'G1: al menos 3 nutrientes, 3 proteínas y 3 orgánulos.',
+        'S: al menos 4 de ADN.',
+        'G2: al menos 1 nutriente, 1 proteína y 1 orgánulo.',
+        'Si todo está en orden — ¡TE DIVIDISTE CON ÉXITO! ¡Toma una nueva ficha de célula azul!',
+      ],
+    },
+  };
+
+  const OUTCOME_LABELS = {
+    G1_CHECK: {
+      pass: 'Pasar el punto de control — avanzar a la fase S',
+      back3: 'Retroceder 3 casillas',
+      back5: 'Retroceder 5 casillas',
+      destroy: 'Destruida — volver al inicio',
+    },
+    G2_CHECK: {
+      pass: 'Pasar el punto de control — entrar a la mitosis (fase M)',
+      backfirst: 'Volver a la primera casilla',
+      destroy: 'Destruida — volver al inicio',
+    },
+    M_CHECK: {
+      divide: 'Dividirse con éxito — tomar una nueva ficha de célula',
+      backfirst: 'Volver a la primera casilla',
+    },
+  };
+
+  const CATEGORY_ES = { nutrients: 'nutrientes', proteins: 'proteínas', organelles: 'orgánulos' };
+
+  function computeOutcome(checkType, p) {
+    if (checkType === 'G1_CHECK') return computeG1(p);
+    if (checkType === 'G2_CHECK') return computeG2(p);
+    return computeM(p);
+  }
+  function computeG1(p) {
+    const r = p.resources;
+    if (r.nutrients === 0 || r.proteins === 0 || r.organelles === 0) return { result: 'destroy' };
+    if (r.nutrients === 1 || r.proteins === 1 || r.organelles === 1) return { result: 'back5' };
+    if (r.nutrients === 2 || r.proteins === 2 || r.organelles === 2) return { result: 'back3' };
+    return { result: 'pass' };
+  }
+  function computeG2(p) {
+    const r = p.resources;
+    if (r.nutrients === 0 || r.proteins === 0 || r.organelles === 0) return { result: 'destroy' };
+    if (r.chromosomes < REQ.g2dna) return { result: 'backfirst' };
+    return { result: 'pass' };
+  }
+  function computeM(p) {
+    const r = p.resources, req = REQ.g1;
+    const ok = r.nutrients >= req.nutrients && r.proteins >= req.proteins && r.organelles >= req.organelles && r.chromosomes >= REQ.g2dna;
+    return ok ? { result: 'divide' } : { result: 'backfirst' };
+  }
+  function explainOutcome(checkType, outcome, p) {
+    const r = p.resources;
+    if (checkType === 'G1_CHECK') {
+      const cats = [['nutrients', r.nutrients], ['proteins', r.proteins], ['organelles', r.organelles]];
+      if (outcome.result === 'pass') return `Tu tarjeta muestra ${r.nutrients} nutrientes, ${r.proteins} proteínas y ${r.organelles} orgánulos — todos al menos 3, así que p53 deja pasar a la célula.`;
+      const worst = cats.reduce((a, b) => (b[1] < a[1] ? b : a));
+      const catEs = CATEGORY_ES[worst[0]];
+      if (outcome.result === 'destroy') return `Tu tarjeta muestra un 0 en ${catEs} — la carta dice que un 0 en cualquier categoría significa que p53 destruye la célula.`;
+      if (outcome.result === 'back5') return `Tu tarjeta muestra un 1 en ${catEs} — la carta dice que un 1 en cualquier categoría envía a la célula 5 casillas atrás.`;
+      if (outcome.result === 'back3') return `Tu tarjeta muestra un 2 en ${catEs} — la carta dice que un 2 en cualquier categoría envía a la célula 3 casillas atrás.`;
+    }
+    if (checkType === 'G2_CHECK') {
+      if (outcome.result === 'pass') return `Tu tarjeta muestra ${r.chromosomes} cromosomas (se necesitan al menos 4) y al menos 1 de cada uno de los demás recursos — la célula pasa.`;
+      if (outcome.result === 'destroy') return `Tu tarjeta muestra un 0 en una categoría de recursos — la carta dice que un 0 en cualquier categoría significa que p53 destruye la célula.`;
+      if (outcome.result === 'backfirst') return `Tu tarjeta muestra solo ${r.chromosomes} cromosoma${r.chromosomes === 1 ? '' : 's'} — menos de los 4 necesarios, así que la célula vuelve a la primera casilla.`;
+    }
+    if (checkType === 'M_CHECK') {
+      if (outcome.result === 'divide') return `Tu tarjeta cumple con todos los requisitos de G1, S y G2 — la célula se divide con éxito.`;
+      return `Algo en la tarjeta todavía no cumple los requisitos — vuelve a la primera casilla para intentarlo de nuevo.`;
+    }
+    return '';
+  }
+
+  // ---------- Checkpoint flow: real card -> quiz -> feedback -> continue ----------
+  // Checkpoint cards are identical in both rounds — Cellular Chance only affects
+  // the Chance squares scattered through G1/S/G2/M (see startChanceFlow below).
+  function startCheckpointFlow(p) {
+    const sp = SPACES[p.position];
+    p.pendingFlow = {
+      kind: 'checkpoint',
+      checkType: sp.type,
+      quizAnswered: false,
+      selected: null,
+      correctOutcome: null,
+    };
+    renderAll();
+  }
+
+  function renderFlow(p) {
+    const flow = p.pendingFlow;
+    if (flow.kind === 'chanceSquare') { renderChanceFlow(p, flow); return; }
+
+    if (!flow.quizAnswered) {
+      if (!flow.correctOutcome) flow.correctOutcome = computeOutcome(flow.checkType, p);
+      const card = CARD_TEXT[flow.checkType];
+      const opts = Object.keys(OUTCOME_LABELS[flow.checkType]).sort(() => Math.random() - 0.5);
+      els.cardReveal.innerHTML = `
+        <div class="card-reveal">
+          <div class="kicker2">${card.title} — Voltear la Carta</div>
+          <div class="body"><em>${card.intro}</em><ul>${card.lines.map(l => `<li>${l}</li>`).join('')}</ul></div>
+          <div class="quiz-q">Según la tarjeta de ${p.name} — ¿qué le pasa a esta célula?</div>
+          <div class="quiz-options">${opts.map(r => `<button class="btn secondary quiz-opt" data-result="${r}">${OUTCOME_LABELS[flow.checkType][r]}</button>`).join('')}</div>
+        </div>`;
+      [...els.cardReveal.querySelectorAll('.quiz-opt')].forEach(btn => {
+        btn.onclick = () => {
+          flow.selected = btn.dataset.result;
+          flow.quizAnswered = true;
+          renderAll();
+        };
+      });
+      return;
+    }
+
+    // feedback stage
+    const correct = flow.selected === flow.correctOutcome.result;
+    const label = OUTCOME_LABELS[flow.checkType][flow.correctOutcome.result];
+    const explain = explainOutcome(flow.checkType, flow.correctOutcome, p);
+    const outcomeCls = (flow.correctOutcome.result === 'destroy') ? 'destroy' : (flow.correctOutcome.result === 'pass' || flow.correctOutcome.result === 'divide') ? 'pass' : 'fail';
+    els.cardReveal.innerHTML = `
+      <div class="card-reveal">
+        <div class="kicker2">${CARD_TEXT[flow.checkType].title}</div>
+        <div class="feedback-box ${correct ? 'good' : 'bad'}">
+          <div class="feedback-title">${correct ? '✅ ¡Correcto!' : '❌ No exactamente.'}</div>
+          <div class="feedback-body">${explain}</div>
+        </div>
+        <div class="outcome ${outcomeCls}">Lo que realmente sucede: ${label}</div>
+        <div class="btn-row"><button class="btn" id="flowContinueBtn">Continuar</button></div>
+      </div>`;
+    document.getElementById('flowContinueBtn').onclick = () => finalizeFlow(p);
+  }
+
+  function finalizeFlow(p) {
+    const flow = p.pendingFlow;
+    applyOutcome(p, flow.checkType, flow.correctOutcome, false);
+    p.pendingFlow = null;
+    endTurn();
+  }
+
+  // ---------- Cellular Chance flow (Round 2 only, triggered by landing on a Chance square) ----------
+  function startChanceFlow(p) {
+    p.pendingFlow = { kind: 'chanceSquare', card: drawChance(), resolved: false };
+    renderAll();
+  }
+
+  function renderChanceFlow(p, flow) {
+    if (!flow.resolved) {
+      els.cardReveal.innerHTML = `
+        <div class="card-reveal">
+          <div class="kicker2">Oportunidad Celular</div>
+          <div class="body">"${flow.card.text}"</div>
+          <div class="btn-row"><button class="btn" id="chanceContinueBtn">Continuar</button></div>
+        </div>`;
+      document.getElementById('chanceContinueBtn').onclick = () => {
+        const extraRoll = applyChanceEffect(p, flow.card);
+        p.pendingFlow = null;
+        if (extraRoll) { renderAll(); } else { endTurn(); }
+      };
+      return;
+    }
+  }
+
+  // Any positional chance effect that would land a cell on or past Finish
+  // skips straight to a (flagged) mitosis completion instead of leaving the
+  // token past the end of the track with no checkpoint left to trigger it.
+  function moveOrFinish(p, targetPos) {
+    if (targetPos >= IDX.FINISH) {
+      p.cellFlagged = true;
+      p.position = IDX.FINISH;
+      finishMitosis(p);
+    } else {
+      p.position = targetPos;
+    }
+  }
+
+  function applyChanceEffect(p, card) {
+    switch (card.effect) {
+      case 'extraRoll':
+        logLine(`${p.name} — p53 funciona bien: ¡tirada extra!`, 'good', p.cls);
+        return true; // don't end turn; same player rolls again
+      case 'destroy':
+        destroyCell(p);
+        logLine(`${p.name} — p53 detecta daño en el ADN y destruye la célula. Vuelve al inicio.`, 'warn', p.cls);
+        return false;
+      case 'fillDNA':
+        p.resources.chromosomes = Math.max(p.resources.chromosomes, REQ.g2dna);
+        logLine(`${p.name} — se completan todos los requisitos de ADN para esta ronda.`, 'good', p.cls);
+        return false;
+      case 'skipCheckpointBypass': {
+        const idx = nextCheckpointIndex(p.position);
+        p.cellFlagged = true;
+        logLine(`${p.name} — p53 no está funcionando: avanzó más allá del siguiente punto de control sin revisar la tarjeta.`, 'warn', p.cls);
+        moveOrFinish(p, idx + 1);
+        return false;
+      }
+      case 'moveToFinishRed':
+        p.cellFlagged = true;
+        logLine(`${p.name} — p53 no está funcionando: avanzó directamente a la Meta.`, 'warn', p.cls);
+        p.position = IDX.FINISH;
+        finishMitosis(p);
+        return false;
+      case 'loseTurn':
+        logLine(`${p.name} — p53 no deja pasar a la célula. Turno perdido.`, '', p.cls);
+        return false;
+      case 'ahead3':
+        logLine(`${p.name} — p53 no está funcionando: avanzó 3 casillas.`, 'warn', p.cls);
+        moveOrFinish(p, p.position + 3);
+        return false;
+      case 'skipToFinalCheckpoint':
+        p.position = IDX.M_CHECK;
+        logLine(`${p.name} — p53 no está funcionando: saltó al punto de control final.`, 'warn', p.cls);
+        return false;
+    }
+    return false;
+  }
+
+  function applyOutcome(p, checkType, outcome, bypassed) {
+    if (bypassed) p.cellFlagged = true;
+    switch (outcome.result) {
+      case 'pass':
+        if (checkType === 'G1_CHECK') {
+          p.position = IDX.S_FIRST;
+          logLine(`${p.name}: punto de control superado.`, 'good', p.cls);
+        } else if (checkType === 'G2_CHECK') {
+          p.g2RollPending = true;
+          logLine(`${p.name}: la tarjeta está en orden — ahora necesita sacar un 1 para pasar realmente el punto de control G2.`, 'good', p.cls);
+        }
+        break;
+      case 'back3':
+        moveTo(p, IDX.G1_CHECK - 3, IDX.G1_FIRST);
+        logLine(`${p.name}: retrocede 3 casillas.`, '', p.cls);
+        break;
+      case 'back5':
+        moveTo(p, IDX.G1_CHECK - 5, IDX.G1_FIRST);
+        logLine(`${p.name}: retrocede 5 casillas.`, '', p.cls);
+        break;
+      case 'backfirst':
+        p.position = IDX.G1_FIRST;
+        logLine(`${p.name}: vuelve a la primera casilla.`, '', p.cls);
+        break;
+      case 'destroy':
+        destroyCell(p);
+        logLine(`${p.name}: célula destruida por p53 — vuelve al inicio.`, 'warn', p.cls);
+        break;
+      case 'divide':
+        finishMitosis(p);
+        break;
+    }
+  }
+
+  function destroyCell(p) {
+    // La historia de una célula destruida termina aquí — es un tercer
+    // resultado final junto a "sana" y "cancerosa", no un paso intermedio.
+    state.tally.des++;
+    renderTally();
+    p.position = IDX.G1_FIRST;
+    p.resources = freshResources();
+    p.cellFlagged = false;
+    p.g2RollPending = false;
+  }
+
+  function doG2RollAttempt() {
+    const p = activePlayer();
+    const roll = 1 + Math.floor(Math.random() * 6);
+    const hit = roll === 1;
+    renderDice(p, [roll], [hit]);
+    if (hit) {
+      p.g2RollPending = false;
+      p.position = IDX.M_FIRST;
+      logLine(`${p.name} sacó un 1 — punto de control G2 superado. Entrando a la mitosis (fase M).`, 'good', p.cls);
+    } else {
+      logLine(`${p.name} sacó un ${roll} — necesitaba un 1 para pasar el punto de control G2. Inténtalo de nuevo el próximo turno.`, '', p.cls);
+    }
+    endTurn();
+  }
+
+  function finishMitosis(p) {
+    p.status = 'DONE';
+    const isCancer = p.cellFlagged;
+    if (isCancer) state.tally.can++; else state.tally.non++;
+    renderTally();
+    els.resultBanner.innerHTML = `
+      <div class="result-banner ${isCancer ? 'can' : 'non'}">
+        <div class="chip-glyph">${isCancer ? '\u{1F534}' : '\u{1F535}'}</div>
+        <div class="title">${p.name}: ${isCancer ? 'Célula cancerosa producida' : 'Célula no cancerosa producida'}</div>
+        <div class="sub">${isCancer ? 'Se pasó por alto un punto de control durante el ciclo de esta célula.' : 'Se cumplieron todos los puntos de control — la mitosis se completó con normalidad.'}</div>
+      </div>`;
+    logLine(isCancer ? `${p.name}: Mitosis completa — célula CANCEROSA producida.` : `${p.name}: Mitosis completa — célula no cancerosa producida.`, isCancer ? 'warn' : 'good', p.cls);
+  }
+
+  function startNewCell(p) {
+    p.position = IDX.G1_FIRST;
+    p.resources = freshResources();
+    p.cellFlagged = false;
+    p.g2RollPending = false;
+    p.status = 'PLAYING';
+    p.pendingFlow = null;
+    els.resultBanner.innerHTML = '';
+    renderDice(p, [], []);
+    logLine(`${p.name} comenzó una nueva célula.`, '', p.cls);
+    renderAll();
+  }
+
+  function endTurn() {
+    state.active = otherIndex();
+    renderAll();
+  }
+
+  function renderAll() {
+    renderTrack();
+    renderScorecards();
+    renderPhaseBanner();
+    renderTurnBanner();
+    renderActions();
+  }
+
+  function resetForNewRound() {
+    state.players.forEach(p => {
+      p.position = IDX.G1_FIRST;
+      p.resources = freshResources();
+      p.cellFlagged = false;
+      p.g2RollPending = false;
+      p.status = 'PLAYING';
+      p.pendingFlow = null;
+      p.log = [];
+    });
+    state.active = 0;
+    state.chanceDeck = shuffled(CHANCE_DECK_SOURCE);
+    els.resultBanner.innerHTML = '';
+    els.p1Log.innerHTML = '<div class="log-empty">Aún no hay tiradas.</div>';
+    els.p2Log.innerHTML = '<div class="log-empty">Aún no hay tiradas.</div>';
+    renderDice(state.players[0], [], []);
+    renderDice(state.players[1], [], []);
+  }
+
+  document.getElementById('roundToggle').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const r = Number(btn.dataset.round);
+    if (r === state.round) return;
+    state.round = r;
+    [...document.getElementById('roundToggle').children].forEach(b => b.classList.toggle('active', Number(b.dataset.round) === r));
+    els.roundNote.textContent = r === 1
+      ? 'Ronda 1: los puntos de control se revisan normalmente. Las casillas de Oportunidad más claras no hacen nada esta ronda.'
+      : 'Ronda 2: caer en una casilla de Oportunidad más clara saca una carta de Oportunidad Celular.';
+    resetForNewRound();
+    logLine(`Cambiado a la Ronda ${r} — las células de ambos jugadores vuelven al inicio.`);
+    renderAll();
+  });
+
+  document.getElementById('resetTally').addEventListener('click', () => {
+    state.tally = { non: 0, can: 0, des: 0 };
+    renderTally();
+    logLine('Datos de la clase reiniciados.');
+  });
+
+  renderAll();
+  renderTally();
+  els.p1Log.innerHTML = '<div class="log-empty">Aún no hay tiradas.</div>';
+  els.p2Log.innerHTML = '<div class="log-empty">Aún no hay tiradas.</div>';
+  renderDice(state.players[0], [], []);
+  renderDice(state.players[1], [], []);
+  logLine('¡Simulador listo! El Jugador 1 va primero — presiona "Tirar los Dados" para comenzar G1.');
+})();
+</script>
+</body>
+</html>

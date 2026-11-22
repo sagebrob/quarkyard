@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Simulador del hielo a la ebullición</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:wght@600;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: lab bench. Beaker and controls side by side on top, then data table + graph, then challenges and questions. */
+:root{
+  --bg:#eef2f5; --panel:#ffffff; --ink:#16232e; --muted:#566676; --line:#c9d3dc;
+  --water:#2f7fc4; --water-soft:#cfe4f5; --heat:#d9541e; --heat-soft:#fbe3d6; --air:#7b8a99; --good:#1f7a4d; --good-soft:#d9efe3;
+  --display:"Bricolage Grotesque","Trebuchet MS",sans-serif;
+  --body:"Atkinson Hyperlegible",Verdana,sans-serif;
+  --mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10181f; --panel:#18232d; --ink:#e6edf3; --muted:#9db0c0; --line:#33434f;
+  --water:#5aa9ea; --water-soft:#1d3a52; --heat:#ff8048; --heat-soft:#4a2718; --air:#8fa1b1; --good:#5fd09a; --good-soft:#173a2a; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#10181f; --panel:#18232d; --ink:#e6edf3; --muted:#9db0c0; --line:#33434f;
+  --water:#5aa9ea; --water-soft:#1d3a52; --heat:#ff8048; --heat-soft:#4a2718; --air:#8fa1b1; --good:#5fd09a; --good-soft:#173a2a; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:24px 48px;display:flex;flex-direction:column;gap:20px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(1.7rem,4vw,2.4rem);line-height:1.1;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:600;font-size:1.2rem;margin:0;text-wrap:balance}
+p{margin:0}
+.es{font-style:italic;color:var(--muted);font-size:.92em}
+.lead{max-width:65ch;display:flex;flex-direction:column;gap:4px}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px}
+@media (max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+canvas{width:100%;height:auto;display:block;border-radius:4px;background:var(--bg)}
+.readouts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ro{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ro small{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ro b{font-family:var(--mono);font-size:1.25rem;font-variant-numeric:tabular-nums}
+#state.boil{color:var(--heat)}
+label{font-weight:700}
+input[type=range]{width:100%;accent-color:var(--water)}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-weight:700;color:var(--ink);background:var(--panel);border:1.5px solid var(--ink);border-radius:4px;padding:8px 12px;cursor:pointer}
+button:hover{background:var(--water-soft)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--water);outline-offset:2px}
+button.preset{font-weight:400;border-color:var(--line);font-size:.92rem}
+#heat[aria-pressed="true"]{background:var(--heat);border-color:var(--heat);color:var(--panel)}
+#record{background:var(--ink);color:var(--panel)}
+#record:hover{background:var(--water);border-color:var(--water)}
+#msg{min-height:1.5em;color:var(--muted);font-size:.95rem}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}
+th{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td{font-family:var(--mono)}
+td button{padding:2px 8px;border-color:var(--line);font-weight:400}
+.empty{color:var(--muted);font-family:var(--body)}
+svg{width:100%;height:auto;display:block}
+svg text{font-family:var(--mono);font-size:10px;fill:var(--muted)}
+ul.tasks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+ul.tasks li{display:flex;gap:12px;align-items:flex-start}
+.pill{flex:none;font-size:.75rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);min-width:5.5em;text-align:center}
+.pill.done{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+ol.q{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:10px;max-width:70ch}
+.eyebrow{font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--water)}
+textarea{display:block;width:100%;min-height:70px;margin-top:8px;border:1px dashed var(--water);border-radius:6px;background:var(--bg);color:var(--ink);padding:10px 12px;font:inherit;font-size:.95rem;resize:vertical}
+footer{text-align:center;color:var(--muted);font-size:.8rem}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 16px}
+.lang{font-size:.85rem;font-weight:700;color:var(--water)}
+.sub{color:var(--muted);font-size:.92em}
+.pill{min-width:7em}
+h1{max-width:30ch}
+.hcgrid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px}
+@media (max-width:760px){.hcgrid{grid-template-columns:minmax(0,1fr)}}
+.hccol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.hcr{grid-template-columns:repeat(2,minmax(0,1fr))}
+select{font:inherit;width:100%;margin-top:4px;padding:7px 8px;border:1.5px solid var(--line);border-radius:4px;background:var(--panel);color:var(--ink)}
+button:disabled{opacity:.5;cursor:default}
+#hcGo[aria-pressed="true"]{background:var(--heat);border-color:var(--heat);color:var(--panel)}
+ol.stages{margin:0;padding-left:1.3em;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+ol.stages li.on{color:var(--heat);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="lead">
+    <div class="top"><div class="eyebrow">Química · Curva de calentamiento</div><a class="lang" href="index.html">View in English →</a></div>
+    <h1>¿Qué hace la temperatura cuando calientas hielo hasta que hierve?</h1>
+    <p>Calienta un bloque de hielo con un quemador constante. Mira cómo el hielo se derrite y el agua hierve, y mira la gráfica de abajo.</p>
+  </header>
+
+  <section class="panel" aria-label="Simulación del hielo a la ebullición">
+    <div class="hcgrid">
+      <div class="hccol">
+        <canvas id="hcv" width="520" height="300" role="img" aria-label="Vaso con un bloque de hielo sobre un quemador. El hielo se derrite, se vuelve agua y luego hierve."></canvas>
+        <canvas id="hcg" width="520" height="260" role="img" aria-label="Gráfica de línea de la temperatura contra el tiempo de calentamiento"></canvas>
+      </div>
+      <div class="hccol">
+        <p>Empiezas con un bloque de hielo a −40 °C. El quemador agrega energía al mismo ritmo constante todo el tiempo.</p>
+        <div class="readouts hcr">
+          <div class="ro"><small>Temperatura</small><b id="hcT">−40.0 °C</b></div>
+          <div class="ro"><small>Tiempo calentando</small><b id="hcTime">0 s</b></div>
+        </div>
+        <div><label for="hcPlace">Lugar (presión del aire)</label><select id="hcPlace"><option value="101.3">Nivel del mar</option><option value="83.4">Denver</option><option value="31.4">Cima del monte Everest</option></select></div>
+        <div class="row">
+          <button id="hcGo" aria-pressed="false">Empezar a calentar</button>
+          <button id="hcReset">Empezar de nuevo con hielo nuevo</button>
+        </div>
+        <p id="hcMsg" aria-live="polite" class="sub"></p>
+        <div><p><b>Qué está pasando</b></p><ol class="stages"><li id="hcS0">El hielo se calienta</li><li id="hcS1">El hielo se derrite</li><li id="hcS2">El agua se calienta</li><li id="hcS3">El agua hierve</li></ol></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  // Part 1: heating curve. 100 g of ice at -40 C heated at a steady rate until half the water has boiled away.
+  var ES=document.documentElement.lang==='es';function tr(en,es){return ES?es:en}
+  var $=function(id){return document.getElementById(id)};
+  var M=100,T0=-40,POWER=1000,C_ICE=0.5,LF=80,C_W=1,LV=540,TMAX=50;
+  function bp(kPa){return 1730.63/(8.07131-Math.log10(kPa*7.50062))-233.426}
+  var dpr=Math.min(window.devicePixelRatio||1,2);
+  function setup(id,w,h){var c=$(id);c.width=w*dpr;c.height=h*dpr;var x=c.getContext('2d');x.scale(dpr,dpr);return x}
+  var VW=520,VH=300,GW=520,GH=260,v=setup('hcv',VW,VH),g=setup('hcg',GW,GH);
+  var col={};
+  function readCols(){var cs=getComputedStyle(document.documentElement);['bg','panel','ink','muted','line','water','water-soft','heat'].forEach(function(k){col[k]=cs.getPropertyValue('--'+k).trim()})}
+  readCols();setInterval(readCols,1000);
+
+  var BX=170,BW=180,TOP=40,BOT=230,HW=120,IW=120,IH=90,COLS=10,ROWS=6,N=COLS*ROWS;
+  var H,parts,bub,vap,last=performance.now();
+  var MSG=[
+    tr('The ice is getting warmer. Its particles shake faster but stay in place.','El hielo se calienta. Sus partículas vibran más rápido pero se quedan en su lugar.'),
+    tr('The ice is melting. Look at the graph: the temperature is not going up.','El hielo se derrite. Mira la gráfica: la temperatura no sube.'),
+    tr('All the ice has melted. Now the water gets warmer.','Todo el hielo se derritió. Ahora el agua se calienta.'),
+    tr('The water is boiling. Look at the graph again: the temperature is not going up.','El agua hierve. Mira la gráfica otra vez: la temperatura no sube.')];
+  var LAB=[tr('ice warming','el hielo se calienta'),tr('melting','se derrite'),tr('water warming','el agua se calienta'),tr('boiling','hierve')];
+
+  function reset(){
+    H={T:T0,f:0,g:0,t:0,on:false,done:false,pts:[[0,T0]],lastPt:0,st:[0],Tb:bp(+$('hcPlace').value)};
+    var order=[];for(var i=0;i<N;i++)order.push(i);
+    for(i=N-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=order[i];order[i]=order[j];order[j]=t}
+    parts=[];for(i=0;i<N;i++)parts.push({c:i%COLS,r:Math.floor(i/COLS),k:order[i],liq:false,gone:false,x:0,y:0});
+    bub=[];vap=[];
+    $('hcGo').disabled=false;$('hcGo').setAttribute('aria-pressed','false');$('hcGo').textContent=tr('Start heating','Empezar a calentar');
+    $('hcMsg').textContent=tr('Press Start heating. Watch the picture and the graph.','Presiona Empezar a calentar. Mira el dibujo y la gráfica.');
+  }
+  function stage(){return H.f===0&&H.T<0?0:H.f<1?1:H.g===0&&H.T<H.Tb?2:3}
+
+  function step(dt){
+    if(!H.on||H.done)return;
+    var E=POWER*dt,need;H.t+=dt;
+    if(E>0&&H.f===0&&H.T<0){need=(0-H.T)*C_ICE*M;if(E<need){H.T+=E/(C_ICE*M);E=0}else{H.T=0;E-=need}}
+    if(E>0&&H.f<1){need=(1-H.f)*LF*M;if(E<need){H.f+=E/(LF*M);E=0}else{H.f=1;E-=need}}
+    if(E>0&&H.f>=1&&H.T<H.Tb){need=(H.Tb-H.T)*C_W*M;if(E<need){H.T+=E/(C_W*M);E=0}else{H.T=H.Tb;E-=need}}
+    if(E>0){H.g+=E/(LV*M);if(H.g>=0.5){H.g=0.5;H.done=true;H.on=false}}
+    var s=stage();
+    if(H.st.length<=s){H.st[s]=H.t;$('hcMsg').textContent=MSG[s]}
+    if(H.t-H.lastPt>=0.1||H.done){H.pts.push([H.t,H.T]);H.lastPt=H.t}
+    if(H.done){
+      $('hcGo').disabled=true;$('hcGo').setAttribute('aria-pressed','false');
+      $('hcMsg').textContent=tr('Half the water has boiled away. The burner was on the whole time.','La mitad del agua se evaporó. El quemador estuvo encendido todo el tiempo.');
+    }
+  }
+
+  function drawVisual(){
+    v.clearRect(0,0,VW,VH);
+    var h=HW*(H.f-H.g),surf=BOT-h,hRem=IH*(1-H.f),ix=BX+(BW-IW)/2,itop,ibot,s=stage();
+    itop=surf-0.12*hRem;ibot=itop+hRem;if(ibot>BOT){ibot=BOT;itop=BOT-hRem}
+    // liquid water
+    if(h>0.5){v.fillStyle=col['water-soft'];v.fillRect(BX,surf,BW,h)}
+    var sp=0.4+Math.max(0,H.T)/30,amp=0.4+(Math.min(H.T,0)-T0)/40*1.6,cw=IW/COLS,rh=IH/ROWS,gone=H.g*N;
+    v.fillStyle=col.water;
+    parts.forEach(function(p){
+      var solid=H.f<1&&(p.r+0.5)*rh<hRem-1;
+      if(solid){p.x=ix+(p.c+0.5)*cw;p.y=itop+(p.r+0.5)*rh;return}
+      if(!p.liq){p.liq=true;p.x=BX+8+Math.random()*(BW-16);p.fy=Math.random()}
+      if(p.gone)return;
+      if(p.k<gone){p.gone=true;vap.push({x:p.x,y:surf,a:1});return}
+      p.x+=(Math.random()-.5)*sp*2;p.fy=Math.max(0,Math.min(1,p.fy+(Math.random()-.5)*sp*0.035));
+      p.x=Math.max(BX+5,Math.min(BX+BW-5,p.x));p.y=BOT-4-p.fy*Math.max(0,h-9);
+      v.beginPath();v.arc(p.x,p.y,3,0,6.3);v.fill()});
+    // bubbles and steam
+    if(s===3&&H.on&&Math.random()<0.3)bub.push({x:BX+15+Math.random()*(BW-30),y:BOT-6,r:3+Math.random()*4});
+    v.strokeStyle=col.water;v.fillStyle=col.panel;v.lineWidth=1.5;
+    bub=bub.filter(function(b){b.y-=1.8+b.r*0.2;b.x+=(Math.random()-.5);
+      if(b.y<surf){vap.push({x:b.x,y:surf,a:0.8});return false}
+      v.beginPath();v.arc(b.x,b.y,b.r,0,6.3);v.fill();v.stroke();return true});
+    vap=vap.filter(function(q){q.y-=1.3;q.x+=(Math.random()-.5)*2;q.a-=0.011;if(q.a<=0)return false;
+      v.globalAlpha=q.a;v.fillStyle=col.water;v.beginPath();v.arc(q.x,q.y,3,0,6.3);v.fill();v.globalAlpha=1;return true});
+    // ice block with its particles held in a grid
+    if(hRem>1){
+      v.fillStyle=col.panel;v.strokeStyle=col.water;v.lineWidth=2;
+      v.beginPath();v.rect(ix,itop,IW,hRem);v.fill();v.stroke();
+      v.fillStyle=col.water;
+      parts.forEach(function(p){if(H.f<1&&(p.r+0.5)*rh<hRem-1){
+        v.beginPath();v.arc(p.x+(Math.random()-.5)*amp*2,p.y+(Math.random()-.5)*amp*2,3,0,6.3);v.fill()}});
+    }
+    // beaker, burner, thermometer
+    v.strokeStyle=col.ink;v.lineWidth=3;v.beginPath();v.moveTo(BX,TOP);v.lineTo(BX,BOT);v.lineTo(BX+BW,BOT);v.lineTo(BX+BW,TOP);v.stroke();
+    v.fillStyle=col.muted;v.fillRect(BX+25,BOT+32,BW-50,9);
+    if(H.on){v.fillStyle=col.heat;for(var f=0;f<6;f++){var fx=BX+40+f*20,fh=13+Math.random()*11;
+      v.beginPath();v.moveTo(fx-7,BOT+32);v.lineTo(fx,BOT+32-fh);v.lineTo(fx+7,BOT+32);v.fill()}}
+    var tx=410,ty0=BOT,th=190;
+    v.fillStyle=col.panel;v.strokeStyle=col.ink;v.lineWidth=1.5;v.fillRect(tx,ty0-th,14,th);v.strokeRect(tx,ty0-th,14,th);
+    var fr=Math.max(0.02,Math.min(1,(H.T-T0)/160));v.fillStyle=col.heat;v.fillRect(tx+2,ty0-th*fr,10,th*fr);
+    v.fillStyle=col.muted;v.font='11px JetBrains Mono, monospace';v.textBaseline='middle';v.textAlign='left';
+    [0,50,100].forEach(function(t){var y=ty0-th*(t-T0)/160;v.fillRect(tx+14,y-0.5,6,1);v.fillText(t+'°',tx+24,y)});
+    if(hRem>1)v.fillText(tr('ice','hielo'),40,(itop+ibot)/2);
+    if(h>14)v.fillText(tr('water','agua'),40,Math.min(BOT-8,surf+h/2+(hRem>1?16:0)));
+    if(s===3)v.fillText(tr('steam','vapor'),40,surf-30);
+  }
+
+  function drawGraph(){
+    g.clearRect(0,0,GW,GH);
+    var L=48,R=GW-14,T=14,B=GH-38,y0=-40,y1=120;
+    function X(t){return L+(R-L)*t/TMAX}function Y(c){return B-(B-T)*(c-y0)/(y1-y0)}
+    g.font='10px JetBrains Mono, monospace';g.lineWidth=1;g.strokeStyle=col.line;g.fillStyle=col.muted;g.textBaseline='middle';
+    for(var c=y0;c<=y1;c+=20){g.beginPath();g.moveTo(L,Y(c));g.lineTo(R,Y(c));g.stroke();g.textAlign='right';g.fillText(c,L-6,Y(c))}
+    for(var t=0;t<=TMAX;t+=10){g.beginPath();g.moveTo(X(t),T);g.lineTo(X(t),B);g.stroke();g.textAlign='center';g.fillText(t,X(t),B+12)}
+    g.fillText(tr('Time heating (s)','Tiempo calentando (s)'),(L+R)/2,GH-8);
+    g.save();g.translate(11,(T+B)/2);g.rotate(-Math.PI/2);g.fillText(tr('Temperature (°C)','Temperatura (°C)'),0,0);g.restore();
+    // the curve so far
+    g.strokeStyle=col.heat;g.lineWidth=2.5;g.lineJoin='round';g.beginPath();
+    H.pts.forEach(function(p,i){if(i)g.lineTo(X(p[0]),Y(p[1]));else g.moveTo(X(p[0]),Y(p[1]))});
+    g.lineTo(X(H.t),Y(H.T));g.stroke();
+    g.fillStyle=col.heat;g.beginPath();g.arc(X(H.t),Y(H.T),4.5,0,6.3);g.fill();
+    // name each part of the curve once it has started
+    g.fillStyle=col.ink;g.font='11px Atkinson Hyperlegible, Verdana, sans-serif';
+    for(var i=0;i<H.st.length;i++){
+      var a=H.st[i],b=i+1<H.st.length?H.st[i+1]:H.t,mid=(a+b)/2;
+      if(i===0){g.textAlign='left';g.fillText(LAB[0],X(b)+8,Y(-28))}
+      else if(i===1){g.textAlign='center';g.fillText(LAB[1],X(Math.max(mid,a+2.5)),Y(0)-12)}
+      else if(i===2){g.textAlign='left';g.fillText(LAB[2],X(mid)+16,Y(H.Tb/2)+10)}
+      else{g.textAlign='center';g.fillText(LAB[3],X(Math.max(mid,a+2)),Y(H.Tb)-12)}
+    }
+  }
+
+  function ui(){
+    $('hcT').textContent=H.T.toFixed(1)+' °C';$('hcTime').textContent=H.t.toFixed(0)+' s';
+    var s=stage(),started=H.t>0;
+    for(var i=0;i<4;i++)$('hcS'+i).className=started&&i===s?'on':'';
+  }
+  function loop(now){var dt=Math.min(0.05,(now-last)/1000);last=now;step(dt);drawVisual();drawGraph();ui();requestAnimationFrame(loop)}
+
+  $('hcGo').addEventListener('click',function(){if(H.done)return;H.on=!H.on;this.setAttribute('aria-pressed',H.on);
+    this.textContent=H.on?tr('Pause','Pausa'):tr('Keep heating','Seguir calentando');
+    if(H.on&&H.t===0)$('hcMsg').textContent=MSG[0]});
+  $('hcReset').addEventListener('click',reset);
+  $('hcPlace').addEventListener('change',reset);
+  reset();requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Meiosis &amp; Crossing Over Simulator — Chromosome 17</title>
+<style>
+  :root{
+    --p53-A:#2b6cb0;
+    --p53-B:#63b3ed;
+    --brca-C:#c53030;
+    --brca-D:#d69e2e;
+    --good:#2f855a;
+    --good-soft:#e6f4ea;
+    --bad:#c53030;
+    --bad-soft:#fbe9e9;
+    --warn:#b7791f;
+    --warn-soft:#fdf3dc;
+    --bg:#f5f7fa;
+    --card:#ffffff;
+    --ink:#1a202c;
+    --muted:#67748c;
+    --line:#e2e8f0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    padding:24px 16px 60px;
+  }
+  .wrap{max-width:820px;margin:0 auto;}
+  h1{font-size:1.4rem;margin:0 0 4px;}
+  .subtitle{color:var(--muted);margin:0 0 20px;font-size:0.95rem;}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px 24px;
+    margin-bottom:18px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.04);
+  }
+  .progress{
+    display:flex;
+    gap:6px;
+    margin-bottom:18px;
+  }
+  .progress .dot{
+    flex:1;
+    height:5px;
+    border-radius:3px;
+    background:var(--line);
+  }
+  .progress .dot.done{background:var(--good);}
+  .progress .dot.current{background:var(--p53-A);}
+  h2{font-size:1.15rem;margin:0 0 10px;}
+  p{line-height:1.5;}
+  .key{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    background:#f8fafc;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 14px;
+    margin:14px 0;
+    font-size:0.88rem;
+  }
+  .key-item{display:flex;align-items:center;gap:6px;}
+  .swatch{width:14px;height:14px;border-radius:50%;display:inline-block;flex:none;}
+  .chrom-area{
+    display:flex;
+    gap:36px;
+    justify-content:center;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    padding:22px 10px;
+    min-height:170px;
+  }
+  .homolog-group{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+  }
+  .homolog-label{font-size:0.78rem;color:var(--muted);font-weight:600;}
+  .sister-pair{
+    display:flex;
+    gap:8px;
+    align-items:flex-end;
+  }
+  .chromatid{
+    width:38px;
+    background:#fff;
+    border:2px solid #cbd5e0;
+    border-radius:19px;
+    padding:8px 0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:20px;
+    cursor:default;
+    transition:transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  }
+  .chromatid.clickable{cursor:pointer;}
+  .chromatid.clickable:hover{transform:translateY(-3px);box-shadow:0 3px 8px rgba(0,0,0,0.12);}
+  .chromatid.selected{border-color:var(--p53-A);box-shadow:0 0 0 3px rgba(43,108,176,0.18);}
+  .bead{
+    width:24px;
+    height:24px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    font-weight:700;
+    font-size:0.78rem;
+  }
+  .gamete-row{
+    display:flex;
+    gap:18px;
+    justify-content:center;
+    flex-wrap:wrap;
+    padding:14px 10px;
+  }
+  .gamete{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+  }
+  .gamete .chromatid{cursor:default;}
+  .gamete-label{font-size:0.78rem;color:var(--muted);}
+  .gamete-tag{
+    font-size:0.72rem;
+    font-weight:700;
+    padding:2px 8px;
+    border-radius:10px;
+    background:var(--line);
+  }
+  .gamete-tag.parental{background:#e2e8f0;color:var(--muted);}
+  .gamete-tag.recombinant{background:var(--warn-soft);color:var(--warn);}
+  button{
+    font-family:inherit;
+    font-size:0.92rem;
+    font-weight:600;
+    padding:10px 18px;
+    border-radius:9px;
+    border:none;
+    cursor:pointer;
+    background:var(--p53-A);
+    color:#fff;
+    transition:opacity 0.15s;
+  }
+  button:disabled{opacity:0.4;cursor:not-allowed;}
+  button.secondary{background:#e2e8f0;color:var(--ink);}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+  .nav-row{display:flex;justify-content:space-between;margin-top:18px;}
+  .quiz{
+    margin-top:16px;
+    border-top:1px solid var(--line);
+    padding-top:14px;
+  }
+  .quiz-q{font-weight:600;margin-bottom:10px;}
+  .quiz-options{display:flex;flex-direction:column;gap:8px;}
+  .quiz-options.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .opt{
+    text-align:left;
+    background:#f8fafc;
+    border:1.5px solid var(--line);
+    color:var(--ink);
+    font-weight:500;
+    padding:9px 12px;
+    border-radius:8px;
+  }
+  .opt.selected{border-color:var(--p53-A);}
+  .opt.correct{background:var(--good-soft);border-color:var(--good);color:var(--good);}
+  .opt.incorrect{background:var(--bad-soft);border-color:var(--bad);color:var(--bad);}
+  .feedback{
+    margin-top:10px;
+    padding:10px 12px;
+    border-radius:8px;
+    font-size:0.9rem;
+    line-height:1.45;
+    display:none;
+  }
+  .feedback.show{display:block;}
+  .feedback.good{background:var(--good-soft);color:var(--good);}
+  .feedback.bad{background:var(--bad-soft);color:var(--bad);}
+  .error-msg{
+    margin-top:10px;
+    padding:9px 12px;
+    border-radius:8px;
+    background:var(--bad-soft);
+    color:var(--bad);
+    font-size:0.87rem;
+    display:none;
+  }
+  .error-msg.show{display:block;}
+  .callout{
+    background:#f8fafc;
+    border-left:4px solid var(--p53-A);
+    padding:10px 14px;
+    border-radius:6px;
+    font-size:0.9rem;
+    margin:12px 0;
+  }
+  .compare-table{width:100%;border-collapse:collapse;margin-top:14px;font-size:0.9rem;}
+  .compare-table th, .compare-table td{border:1px solid var(--line);padding:8px 10px;text-align:left;}
+  .compare-table th{background:#f8fafc;}
+  .hint{font-size:0.85rem;color:var(--muted);margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Meiosis &amp; Crossing Over Simulator</h1>
+  <p class="subtitle">Model chromosome 17 (p53 + BRCA1) in Dad's sperm cells and watch crossing over create new allele combinations.</p>
+  <div class="progress" id="progress"></div>
+  <div id="screenRoot"></div>
+</div>
+
+<script>
+(function(){
+
+  // ---------- Data ----------
+  // Allele definitions (color/letter key):
+  // Dark blue = A = p53, corrects mutations
+  // Light blue = B = p53, does not correct mutations
+  // Red = C = BRCA1, low-risk breast cancer
+  // Yellow = D = BRCA1, higher-risk breast cancer
+  var COLORS = { A: 'var(--p53-A)', B: 'var(--p53-B)', C: 'var(--brca-C)', D: 'var(--brca-D)' };
+  var LABELS = {
+    A: 'p53 — corrects mutations',
+    B: 'p53 — does NOT correct mutations',
+    C: 'BRCA1 — low breast cancer risk',
+    D: 'BRCA1 — higher breast cancer risk'
+  };
+
+  // Dad's starting genotype: "In the dad, all cancer-associated alleles (B and D) were on the same chromosome."
+  var START = {
+    homolog1: { p53: 'A', brca1: 'C' }, // safe chromosome
+    homolog2: { p53: 'B', brca1: 'D' }  // risk chromosome
+  };
+
+  var state = {
+    screen: 0,
+    crossPick: [],       // selected chromatid ids during crossover picking
+    crossoverApplied: false,
+    crossChromatids: null, // the 4 chromatids after crossover
+    quiz: {}              // quizId -> {answered:bool, selected:[], correct:bool}
+  };
+
+  function cid(a,b){ return a+b; }
+
+  function makeSisterPair(p53, brca1, groupId){
+    return [
+      { id: groupId+'a', p53:p53, brca1:brca1, group:groupId },
+      { id: groupId+'b', p53:p53, brca1:brca1, group:groupId }
+    ];
+  }
+
+  // ---------- Rendering helpers ----------
+  function bead(letter){
+    return '<div class="bead" style="background:'+COLORS[letter]+'" title="'+LABELS[letter]+'">'+letter+'</div>';
+  }
+
+  function chromatidHTML(c, opts){
+    opts = opts || {};
+    var cls = 'chromatid';
+    if(opts.clickable) cls += ' clickable';
+    if(opts.selected) cls += ' selected';
+    return '<div class="'+cls+'" data-cid="'+c.id+'" '+(opts.clickable ? 'data-clickable="1"' : '')+'>'+
+      bead(c.p53) + bead(c.brca1) +
+      '</div>';
+  }
+
+  function gameteTag(c){
+    var isParental = (c.p53==='A' && c.brca1==='C') || (c.p53==='B' && c.brca1==='D');
+    return isParental
+      ? '<span class="gamete-tag parental">parental combo</span>'
+      : '<span class="gamete-tag recombinant">recombinant (new!)</span>';
+  }
+
+  // ---------- Quiz engine ----------
+  // Single-select quiz
+  function renderSingleQuiz(id, question, options, correctIndex, explainGood, explainBad){
+    var q = state.quiz[id] || { answered:false, selectedIndex:null };
+    state.quiz[id] = q;
+    var html = '<div class="quiz"><div class="quiz-q">'+question+'</div><div class="quiz-options">';
+    options.forEach(function(opt, i){
+      var cls = 'opt';
+      if(q.answered){
+        if(i===correctIndex) cls += ' correct';
+        else if(i===q.selectedIndex) cls += ' incorrect';
+      } else if(i===q.selectedIndex){
+        cls += ' selected';
+      }
+      html += '<button type="button" class="'+cls+'" data-quiz="'+id+'" data-idx="'+i+'" '+(q.answered?'disabled':'')+'>'+opt+'</button>';
+    });
+    html += '</div>';
+    if(q.answered){
+      var good = q.selectedIndex === correctIndex;
+      html += '<div class="feedback show '+(good?'good':'bad')+'">'+(good ? explainGood : explainBad)+'</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function handleSingleQuizClick(id, idx, correctIndex){
+    var q = state.quiz[id];
+    if(q.answered) return;
+    q.selectedIndex = idx;
+    q.answered = true;
+    q.correct = (idx === correctIndex);
+    render();
+  }
+
+  // Multi-select quiz (checkbox-style toggle, then Check button)
+  function renderMultiQuiz(id, question, options, correctSet, explainGood, explainBad){
+    var q = state.quiz[id] || { picked:{}, checked:false };
+    state.quiz[id] = q;
+    var html = '<div class="quiz"><div class="quiz-q">'+question+'</div><div class="quiz-options grid">';
+    options.forEach(function(opt, i){
+      var picked = !!q.picked[i];
+      var cls = 'opt';
+      if(q.checked){
+        var shouldBeCorrect = correctSet.indexOf(i) !== -1;
+        if(shouldBeCorrect && picked) cls += ' correct';
+        else if(shouldBeCorrect && !picked) cls += ' incorrect';
+        else if(!shouldBeCorrect && picked) cls += ' incorrect';
+      } else if(picked){
+        cls += ' selected';
+      }
+      html += '<button type="button" class="'+cls+'" data-mquiz="'+id+'" data-idx="'+i+'" '+(q.checked?'disabled':'')+'>'+opt+'</button>';
+    });
+    html += '</div>';
+    if(!q.checked){
+      html += '<div class="btn-row"><button type="button" data-check-multi="'+id+'">Check answer</button></div>';
+    } else {
+      var allCorrect = correctSet.every(function(i){ return !!q.picked[i]; }) &&
+                        Object.keys(q.picked).filter(function(k){return q.picked[k];}).length === correctSet.length;
+      html += '<div class="feedback show '+(allCorrect?'good':'bad')+'">'+(allCorrect ? explainGood : explainBad)+'</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  // ---------- Screens ----------
+  var TOTAL_SCREENS = 7;
+
+  function screenIntro(){
+    var h1 = START.homolog1, h2 = START.homolog2;
+    var html = '<div class="card">' +
+      '<h2>Meet Dad\'s Chromosome 17</h2>' +
+      '<p>Elena\'s family has a history of cancer linked to two genes. Let\'s use her dad\'s chromosome 17 — the one carrying both the <strong>p53</strong> gene and the <strong>BRCA1</strong> gene — to see exactly how meiosis and crossing over produce the sperm cells that could explain Elena\'s pedigree.</p>' +
+      '<div class="key">' +
+        '<div class="key-item"><span class="swatch" style="background:'+COLORS.A+'"></span> A = p53, corrects mutations</div>' +
+        '<div class="key-item"><span class="swatch" style="background:'+COLORS.B+'"></span> B = p53, does NOT correct mutations</div>' +
+        '<div class="key-item"><span class="swatch" style="background:'+COLORS.C+'"></span> C = BRCA1, low breast cancer risk</div>' +
+        '<div class="key-item"><span class="swatch" style="background:'+COLORS.D+'"></span> D = BRCA1, higher breast cancer risk</div>' +
+      '</div>' +
+      '<div class="chrom-area">' +
+        '<div class="homolog-group"><div class="homolog-label">Chromosome 17 (from Dad\'s dad)</div>'+chromatidHTML({id:'start1',p53:h1.p53,brca1:h1.brca1})+'</div>' +
+        '<div class="homolog-group"><div class="homolog-label">Chromosome 17 (from Dad\'s mom)</div>'+chromatidHTML({id:'start2',p53:h2.p53,brca1:h2.brca1})+'</div>' +
+      '</div>' +
+      '<div class="callout">Just like the real pedigree: "In the dad, all cancer-associated alleles (B and D) were on the same chromosome." Dad has Li-Fraumeni syndrome (allele B) and also carries the higher-risk BRCA1 allele (D) — both on one chromosome 17.</div>' +
+      '<div class="btn-row"><button type="button" data-next="1">Start meiosis &#8594;</button></div>' +
+    '</div>';
+    return html;
+  }
+
+  function screenReplication(){
+    var replicated = state.replicated;
+    var html = '<div class="card"><h2>Step 1: DNA Replication</h2>' +
+      '<p>Before meiosis begins, the DNA replicates. Each chromosome makes an identical copy of itself, forming two <strong>sister chromatids</strong> joined together.</p>';
+    if(!replicated){
+      html += '<div class="chrom-area">' +
+        '<div class="homolog-group"><div class="homolog-label">Chromosome 1</div>'+chromatidHTML({id:'start1',p53:START.homolog1.p53,brca1:START.homolog1.brca1})+'</div>' +
+        '<div class="homolog-group"><div class="homolog-label">Chromosome 2</div>'+chromatidHTML({id:'start2',p53:START.homolog2.p53,brca1:START.homolog2.brca1})+'</div>' +
+      '</div>' +
+      '<div class="btn-row"><button type="button" data-action="replicate">Replicate DNA</button></div>';
+    } else {
+      html += '<div class="chrom-area">' +
+        '<div class="homolog-group"><div class="homolog-label">Chromosome 1 (sister chromatids)</div><div class="sister-pair">'+
+          chromatidHTML({id:'c1a',p53:START.homolog1.p53,brca1:START.homolog1.brca1})+
+          chromatidHTML({id:'c1b',p53:START.homolog1.p53,brca1:START.homolog1.brca1})+
+        '</div></div>' +
+        '<div class="homolog-group"><div class="homolog-label">Chromosome 2 (sister chromatids)</div><div class="sister-pair">'+
+          chromatidHTML({id:'c2a',p53:START.homolog2.p53,brca1:START.homolog2.brca1})+
+          chromatidHTML({id:'c2b',p53:START.homolog2.p53,brca1:START.homolog2.brca1})+
+        '</div></div>' +
+      '</div>' +
+      renderSingleQuiz('q1',
+        'How many total chromatids does the cell now have for chromosome 17?',
+        ['2','4','8'], 1,
+        'Right — replication turns 2 chromosomes into 4 chromatids total (2 sister chromatids per chromosome).',
+        'Not quite. Each of the 2 chromosomes replicated into 2 sister chromatids, so 2 &times; 2 = 4 chromatids total.'
+      );
+    }
+    html += navRow(1, replicated && state.quiz.q1 && state.quiz.q1.answered);
+    html += '</div>';
+    return html;
+  }
+
+  function screenBaseline(){
+    var divided = state.baselineDivided;
+    var html = '<div class="card"><h2>Step 2: Meiosis Without Crossing Over (baseline)</h2>' +
+      '<p>Let\'s first see what happens if <strong>no</strong> crossing over occurs — this is what your pedigree model looked like before you read <em>Passing on Alleles</em>.</p>';
+    if(!divided){
+      html += '<div class="btn-row"><button type="button" data-action="baselineDivide">Run Meiosis I &amp; II (no crossing over)</button></div>';
+    } else {
+      html += '<p>Meiosis I separates the two chromosomes into two cells; Meiosis II separates each pair of sister chromatids. Without crossing over, here are the 4 sperm cells Dad would produce:</p>' +
+      '<div class="gamete-row">' +
+        gameteBlock('AC1', START.homolog1.p53, START.homolog1.brca1) +
+        gameteBlock('AC2', START.homolog1.p53, START.homolog1.brca1) +
+        gameteBlock('BD1', START.homolog2.p53, START.homolog2.brca1) +
+        gameteBlock('BD2', START.homolog2.p53, START.homolog2.brca1) +
+      '</div>' +
+      renderSingleQuiz('q2',
+        'Without crossing over, how many genetically DIFFERENT sperm combinations can Dad make for these two genes?',
+        ['1', '2', '4'], 1,
+        'Correct — every sperm is either AC or BD. Only 2 unique combinations are possible without crossing over.',
+        'Look again at the 4 sperm above: two are AC and two are BD. That\'s only 2 unique combinations, even though there are 4 cells.'
+      );
+    }
+    html += navRow(2, divided && state.quiz.q2 && state.quiz.q2.answered);
+    html += '</div>';
+    return html;
+  }
+
+  function gameteBlock(id, p53, brca1){
+    return '<div class="gamete">'+chromatidHTML({id:id,p53:p53,brca1:brca1})+
+      '<span class="gamete-label">'+p53+brca1+'</span>'+gameteTag({p53:p53,brca1:brca1})+'</div>';
+  }
+
+  function screenCrossIntro(){
+    var html = '<div class="card"><h2>Step 3: Now Add Crossing Over</h2>' +
+      '<p>But Dad\'s pedigree shows offspring with allele combinations that AC/BD alone can\'t explain. That\'s where <strong>crossing over</strong> comes in: during Prophase I, homologous chromosomes pair up, and non-sister chromatids can swap sections of DNA.</p>' +
+      '<div class="callout">From the reading: "The duplicates of each chromosome come together. When they do, they can swap sections. This process is called crossing over."</div>' +
+      navRow(3, true) +
+    '</div>';
+    return html;
+  }
+
+  function screenCrossoverPick(){
+    var picked = state.crossPick;
+    var html = '<div class="card"><h2>Step 4: Choose a Crossing-Over Pair</h2>' +
+      '<p>Crossing over happens between <strong>non-sister chromatids</strong> — one chromatid from each homologous chromosome, not two sisters from the same chromosome. Click one chromatid from Chromosome 1 and one from Chromosome 2 below.</p>';
+
+    if(!state.crossoverApplied){
+      html += '<div class="chrom-area">' +
+        '<div class="homolog-group"><div class="homolog-label">Chromosome 1 sisters</div><div class="sister-pair">'+
+          chromatidHTML({id:'c1a',p53:START.homolog1.p53,brca1:START.homolog1.brca1},{clickable:true, selected:picked.indexOf('c1a')!==-1})+
+          chromatidHTML({id:'c1b',p53:START.homolog1.p53,brca1:START.homolog1.brca1},{clickable:true, selected:picked.indexOf('c1b')!==-1})+
+        '</div></div>' +
+        '<div class="homolog-group"><div class="homolog-label">Chromosome 2 sisters</div><div class="sister-pair">'+
+          chromatidHTML({id:'c2a',p53:START.homolog2.p53,brca1:START.homolog2.brca1},{clickable:true, selected:picked.indexOf('c2a')!==-1})+
+          chromatidHTML({id:'c2b',p53:START.homolog2.p53,brca1:START.homolog2.brca1},{clickable:true, selected:picked.indexOf('c2b')!==-1})+
+        '</div></div>' +
+      '</div>';
+      var err = state.crossError;
+      if(err){ html += '<div class="error-msg show">'+err+'</div>'; }
+      html += '<div class="hint">Selected: '+ (picked.length ? picked.join(', ') : 'none yet') +'</div>';
+      html += '<div class="btn-row">' +
+        '<button type="button" data-action="doCrossover" '+(picked.length===2?'':'disabled')+'>Cross over!</button>' +
+        (picked.length ? '<button type="button" class="secondary" data-action="clearPick">Clear selection</button>' : '') +
+      '</div>';
+    } else {
+      var cc = state.crossChromatids;
+      html += '<p>The segment below the p53 gene swapped between your two chosen chromatids:</p>' +
+      '<div class="chrom-area">' +
+        '<div class="homolog-group"><div class="homolog-label">Chromosome 1 sisters</div><div class="sister-pair">'+
+          chromatidHTML(cc.c1a)+chromatidHTML(cc.c1b)+
+        '</div></div>' +
+        '<div class="homolog-group"><div class="homolog-label">Chromosome 2 sisters</div><div class="sister-pair">'+
+          chromatidHTML(cc.c2a)+chromatidHTML(cc.c2b)+
+        '</div></div>' +
+      '</div>' +
+      renderMultiQuiz('q3',
+        'Which TWO allele combinations were newly created by this crossover? (select 2)',
+        ['AC','BD','AD','BC'],
+        [2,3],
+        'Exactly — the swapped chromatids became AD and BC, combinations that didn\'t exist in either of Dad\'s original chromosomes.',
+        'Check the swapped chromatids above. The two chromatids that DIDN\'T get selected stayed AC and BD (parental); the two you picked became AD and BC (new, recombinant).'
+      );
+    }
+    html += navRow(4, state.crossoverApplied && state.quiz.q3 && state.quiz.q3.checked);
+    html += '</div>';
+    return html;
+  }
+
+  function screenCrossDivide(){
+    var divided = state.crossDivided;
+    var cc = state.crossChromatids;
+    var html = '<div class="card"><h2>Step 5: Finish Meiosis I &amp; II (with crossing over)</h2>' +
+      '<p>Now let\'s finish meiosis using the chromatids after crossing over.</p>';
+    if(!divided){
+      html += '<div class="btn-row"><button type="button" data-action="crossDivide">Run Meiosis I &amp; II</button></div>';
+    } else {
+      html += '<p>Meiosis I sends one duplicated chromosome to each of 2 cells. Meiosis II splits the sister chromatids apart, giving 4 sperm cells total:</p>' +
+      '<div class="gamete-row">' +
+        gameteBlock('g1', cc.c1a.p53, cc.c1a.brca1) +
+        gameteBlock('g2', cc.c1b.p53, cc.c1b.brca1) +
+        gameteBlock('g3', cc.c2a.p53, cc.c2a.brca1) +
+        gameteBlock('g4', cc.c2b.p53, cc.c2b.brca1) +
+      '</div>';
+    }
+    html += navRow(5, divided);
+    html += '</div>';
+    return html;
+  }
+
+  function screenFinal(){
+    var cc = state.crossChromatids;
+    var html = '<div class="card"><h2>Step 6: What Crossing Over Explains</h2>' +
+      '<table class="compare-table"><tr><th></th><th>Without crossing over</th><th>With crossing over</th></tr>' +
+      '<tr><td>Sperm combinations produced</td><td>AC, AC, BD, BD</td><td>AC, '+cc.c1b.p53+cc.c1b.brca1+', BD, '+cc.c2b.p53+cc.c2b.brca1+'</td></tr>' +
+      '<tr><td>Unique combinations</td><td>2 (AC, BD)</td><td>4 (AC, BD, AD, BC)</td></tr></table>' +
+      '<div class="callout">This is exactly the mechanism that explains Elena\'s two-gene pedigree: some of her family members have p53 and BRCA1 allele combinations that don\'t match either parent\'s original chromosome — only possible because of crossing over during meiosis. In Dad, all the cancer-associated alleles (B and D) started out on the same chromosome. After meiosis and crossing over, some of them ended up on a chromosome with non-cancer-associated alleles.</div>' +
+      renderMultiQuiz('q4',
+        'Which of the 4 final sperm combinations could NOT have existed without crossing over? (select 2)',
+        ['AC','BD','AD','BC'],
+        [2,3],
+        'Right — AD and BC are the recombinant chromatids. AC and BD were already present in Dad before meiosis even started.',
+        'AC and BD are the two "parental" combinations Dad already had. The new ones — only possible because of crossing over — are AD and BC.'
+      );
+    html += '<div class="btn-row" style="margin-top:16px;"><button type="button" class="secondary" data-action="restart">Start over</button></div>';
+    html += '<div class="nav-row"><button type="button" class="secondary" data-prev="5">&#8592; Back</button><span></span></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function navRow(screenIdx, nextEnabled){
+    return '<div class="nav-row">' +
+      (screenIdx>0 ? '<button type="button" class="secondary" data-prev="'+(screenIdx-1)+'">&#8592; Back</button>' : '<span></span>') +
+      '<button type="button" data-next="'+(screenIdx+1)+'" '+(nextEnabled?'':'disabled')+'>Next &#8594;</button>' +
+    '</div>';
+  }
+
+  var SCREEN_FNS = [screenIntro, screenReplication, screenBaseline, screenCrossIntro, screenCrossoverPick, screenCrossDivide, screenFinal];
+
+  function renderProgress(){
+    var html = '';
+    for(var i=0;i<TOTAL_SCREENS;i++){
+      var cls = 'dot';
+      if(i < state.screen) cls += ' done';
+      else if(i === state.screen) cls += ' current';
+      html += '<div class="'+cls+'"></div>';
+    }
+    document.getElementById('progress').innerHTML = html;
+  }
+
+  function render(){
+    renderProgress();
+    document.getElementById('screenRoot').innerHTML = SCREEN_FNS[state.screen]();
+  }
+
+  // ---------- Event delegation ----------
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if(!(t instanceof Element)) return;
+
+    var nextBtn = t.closest('[data-next]');
+    if(nextBtn && !nextBtn.disabled){
+      state.screen = parseInt(nextBtn.getAttribute('data-next'),10);
+      render();
+      return;
+    }
+    var prevBtn = t.closest('[data-prev]');
+    if(prevBtn){
+      state.screen = parseInt(prevBtn.getAttribute('data-prev'),10);
+      render();
+      return;
+    }
+
+    var actionBtn = t.closest('[data-action]');
+    if(actionBtn && !actionBtn.disabled){
+      var action = actionBtn.getAttribute('data-action');
+      if(action === 'replicate'){
+        state.replicated = true;
+      } else if(action === 'baselineDivide'){
+        state.baselineDivided = true;
+      } else if(action === 'doCrossover'){
+        doCrossover();
+      } else if(action === 'clearPick'){
+        state.crossPick = [];
+        state.crossError = null;
+      } else if(action === 'crossDivide'){
+        state.crossDivided = true;
+      } else if(action === 'restart'){
+        resetAll();
+      }
+      render();
+      return;
+    }
+
+    var quizOpt = t.closest('[data-quiz]');
+    if(quizOpt && !quizOpt.disabled){
+      var qid = quizOpt.getAttribute('data-quiz');
+      var idx = parseInt(quizOpt.getAttribute('data-idx'),10);
+      var correctMap = { q1:1, q2:1 };
+      handleSingleQuizClick(qid, idx, correctMap[qid]);
+      return;
+    }
+
+    var mOpt = t.closest('[data-mquiz]');
+    if(mOpt && !mOpt.disabled){
+      var mid = mOpt.getAttribute('data-mquiz');
+      var midx = parseInt(mOpt.getAttribute('data-idx'),10);
+      var q = state.quiz[mid] || { picked:{}, checked:false };
+      q.picked[midx] = !q.picked[midx];
+      state.quiz[mid] = q;
+      render();
+      return;
+    }
+    var checkBtn = t.closest('[data-check-multi]');
+    if(checkBtn){
+      var cmid = checkBtn.getAttribute('data-check-multi');
+      state.quiz[cmid].checked = true;
+      render();
+      return;
+    }
+
+    // chromatid selection during crossover picking
+    var chromEl = t.closest('.chromatid[data-clickable="1"]');
+    if(chromEl && state.screen === 4 && !state.crossoverApplied){
+      var cidv = chromEl.getAttribute('data-cid');
+      toggleCrossPick(cidv);
+      render();
+      return;
+    }
+  });
+
+  function toggleCrossPick(id){
+    var picked = state.crossPick;
+    var i = picked.indexOf(id);
+    if(i !== -1){
+      picked.splice(i,1);
+      state.crossError = null;
+      return;
+    }
+    if(picked.length >= 2) return;
+    picked.push(id);
+    state.crossError = null;
+  }
+
+  function doCrossover(){
+    var picked = state.crossPick;
+    if(picked.length !== 2) return;
+    var group1 = picked[0].slice(0,2); // 'c1' or 'c2'
+    var group2 = picked[1].slice(0,2);
+    if(group1 === group2){
+      state.crossError = 'Those are sister chromatids from the same chromosome — crossing over happens between homologous chromosomes, not sisters. Pick one from Chromosome 1 and one from Chromosome 2.';
+      state.crossPick = [];
+      return;
+    }
+    // Build the 4 final chromatids: the 2 picked get swapped BRCA1 alleles; the 2 unpicked stay parental.
+    var base = {
+      c1a: { id:'c1a', p53:START.homolog1.p53, brca1:START.homolog1.brca1 },
+      c1b: { id:'c1b', p53:START.homolog1.p53, brca1:START.homolog1.brca1 },
+      c2a: { id:'c2a', p53:START.homolog2.p53, brca1:START.homolog2.brca1 },
+      c2b: { id:'c2b', p53:START.homolog2.p53, brca1:START.homolog2.brca1 }
+    };
+    var idA = picked[0], idB = picked[1];
+    var brcaA = base[idA].brca1, brcaB = base[idB].brca1;
+    base[idA].brca1 = brcaB;
+    base[idB].brca1 = brcaA;
+
+    state.crossChromatids = base;
+    state.crossoverApplied = true;
+  }
+
+  function resetAll(){
+    state.screen = 0;
+    state.crossPick = [];
+    state.crossoverApplied = false;
+    state.crossChromatids = null;
+    state.replicated = false;
+    state.baselineDivided = false;
+    state.crossDivided = false;
+    state.crossError = null;
+    state.quiz = {};
+  }
+
+  resetAll();
+  render();
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Pedigree &amp; Allele-Tracing Simulator</title>
+<style>
+  :root{
+    --p53-A:#2b6cb0;
+    --p53-B:#63b3ed;
+    --trait-F:#276749;
+    --trait-f:#68a678;
+    --good:#2f855a;
+    --good-soft:#e6f4ea;
+    --bad:#c53030;
+    --bad-soft:#fbe9e9;
+    --warn:#b7791f;
+    --warn-soft:#fdf3dc;
+    --bg:#f5f7fa;
+    --card:#ffffff;
+    --ink:#1a202c;
+    --muted:#67748c;
+    --line:#e2e8f0;
+    --affected:#bcdcf7;
+    --affected-trait:#cdeedb;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    padding:24px 16px 60px;
+  }
+  .wrap{max-width:1040px;margin:0 auto;}
+  h1{font-size:1.4rem;margin:0 0 4px;}
+  .subtitle{color:var(--muted);margin:0 0 16px;font-size:0.95rem;}
+  .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .tab{
+    background:#e2e8f0;
+    color:var(--ink);
+    border:none;
+    border-radius:9px;
+    padding:10px 16px;
+    font-weight:700;
+    font-size:0.88rem;
+    cursor:pointer;
+  }
+  .tab.active{background:var(--ink);color:#fff;}
+  .tabpanel{display:none;}
+  .tabpanel.active{display:block;}
+  .card-panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px 24px;
+    margin-bottom:18px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.04);
+  }
+  h2{font-size:1.15rem;margin:0 0 10px;}
+  h3{font-size:1rem;margin:18px 0 8px;}
+  p{line-height:1.5;}
+  .key{
+    display:flex;
+    flex-wrap:wrap;
+    gap:16px;
+    background:#f8fafc;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 14px;
+    margin:14px 0;
+    font-size:0.85rem;
+  }
+  .key-item{display:flex;align-items:center;gap:6px;}
+  .swatch-sq{width:14px;height:14px;border:2px solid #333;display:inline-block;flex:none;background:#fff;}
+  .swatch-circ{width:14px;height:14px;border-radius:50%;border:2px solid #333;display:inline-block;flex:none;background:#fff;}
+  .swatch-circ.fill{background:var(--affected);}
+  .swatch-circ.fillg{background:var(--affected-trait);}
+  .swatch-dot{width:14px;height:14px;border-radius:50%;display:inline-block;flex:none;}
+  .callout{
+    background:#f8fafc;
+    border-left:4px solid var(--p53-A);
+    padding:10px 14px;
+    border-radius:6px;
+    font-size:0.9rem;
+    margin:12px 0;
+  }
+  .callout.green{border-left-color:var(--trait-F);}
+  .pedigree-scroll{overflow-x:auto;padding:10px 0;}
+  .pedigree{position:relative;margin:0 auto;}
+  .line{position:absolute;background:#333;}
+  .person{
+    position:absolute;
+    width:60px;
+    height:60px;
+    border:2.5px solid #2d3748;
+    background:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    font-size:1rem;
+    color:var(--muted);
+  }
+  .person.circle{border-radius:50%;}
+  .person.affected{background:var(--affected);}
+  .person.affectedg{background:var(--affected-trait);}
+  .person.deceased::after{
+    content:'';
+    position:absolute;
+    width:84px;
+    height:2.5px;
+    background:#2d3748;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%) rotate(-45deg);
+  }
+  .plabel{
+    position:absolute;
+    width:130px;
+    text-align:center;
+    font-size:0.72rem;
+    color:var(--muted);
+    font-weight:600;
+  }
+  .mutation-badge{
+    position:absolute;
+    width:110px;
+    text-align:center;
+    font-size:0.65rem;
+    font-weight:800;
+    color:var(--bad);
+    background:var(--bad-soft);
+    border-radius:10px;
+    padding:2px 4px;
+  }
+  .picker{
+    position:absolute;
+    width:76px;
+    display:flex;
+    gap:4px;
+    justify-content:center;
+  }
+  .allele-slot{
+    width:34px;
+    height:34px;
+    border-radius:8px;
+    border:2px solid #cbd5e0;
+    background:#f8fafc;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:800;
+    font-size:0.95rem;
+    color:var(--muted);
+    cursor:pointer;
+    user-select:none;
+  }
+  .allele-slot.filled{color:#fff;}
+  .allele-slot.given{cursor:default;opacity:0.85;}
+  .allele-slot.correct{outline:3px solid var(--good);}
+  .allele-slot.incorrect{outline:3px solid var(--bad);}
+  button{
+    font-family:inherit;
+    font-size:0.92rem;
+    font-weight:600;
+    padding:10px 18px;
+    border-radius:9px;
+    border:none;
+    cursor:pointer;
+    background:var(--p53-A);
+    color:#fff;
+    transition:opacity 0.15s;
+  }
+  button:disabled{opacity:0.4;cursor:not-allowed;}
+  button.secondary{background:#e2e8f0;color:var(--ink);}
+  button.greenbtn{background:var(--trait-F);}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center;}
+  .status-msg{font-size:0.88rem;font-weight:600;margin-left:4px;}
+  .status-msg.good{color:var(--good);}
+  .status-msg.bad{color:var(--bad);}
+  .quiz{margin-top:18px;border-top:1px solid var(--line);padding-top:16px;}
+  .quiz-q{font-weight:600;margin-bottom:10px;}
+  .quiz-options{display:flex;flex-direction:column;gap:8px;}
+  .quiz-options.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .opt{
+    text-align:left;
+    background:#f8fafc;
+    border:1.5px solid var(--line);
+    color:var(--ink);
+    font-weight:500;
+    padding:9px 12px;
+    border-radius:8px;
+  }
+  .opt.correct{background:var(--good-soft);border-color:var(--good);color:var(--good);}
+  .opt.incorrect{background:var(--bad-soft);border-color:var(--bad);color:var(--bad);}
+  .feedback{margin-top:10px;padding:10px 12px;border-radius:8px;font-size:0.9rem;line-height:1.45;display:none;}
+  .feedback.show{display:block;}
+  .feedback.good{background:var(--good-soft);color:var(--good);}
+  .feedback.bad{background:var(--bad-soft);color:var(--bad);}
+  .gated{display:none;}
+  .gated.show{display:block;}
+  .punnett-wrap{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin:16px 0;}
+  .punnett-grid{
+    display:grid;
+    grid-template-columns:54px 76px 76px;
+    grid-template-rows:54px 76px 76px;
+    gap:4px;
+  }
+  .pcell{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .pcell.headtop{font-weight:800;font-size:1.05rem;}
+  .pcell.headside{font-weight:800;font-size:1.05rem;}
+  .pcell.corner{}
+  .pcell.body{
+    background:#f8fafc;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Pedigree &amp; Allele-Tracing Simulator</h1>
+  <p class="subtitle">Start with basic Punnett squares, see how a mutation breaks the pattern, then trace the real thing in Jasmine's family.</p>
+
+  <div class="tabs">
+    <button type="button" class="tab active" data-tab="1">Part 1: Punnett Square Basics</button>
+    <button type="button" class="tab" data-tab="2">Part 2: When the Pattern Breaks</button>
+    <button type="button" class="tab" data-tab="3">Part 3: Jasmine's Family (p53)</button>
+  </div>
+
+  <!-- ================= PART 1 ================= -->
+  <div class="tabpanel active" id="tabpanel-1">
+    <div class="card-panel">
+      <h2>Warm-Up Trait: Earlobe Attachment</h2>
+      <p>Before we trace a real cancer-risk gene, let's practice basic Mendelian inheritance and Punnett squares with a simple, harmless trait: earlobe attachment.</p>
+      <div class="key">
+        <div class="key-item"><span class="swatch-dot" style="background:var(--trait-F)"></span> F = free earlobes (dominant)</div>
+        <div class="key-item"><span class="swatch-dot" style="background:var(--trait-f)"></span> f = attached earlobes (recessive)</div>
+      </div>
+      <div class="callout green">FF or Ff &#8594; free earlobes. Only ff &#8594; attached earlobes. Every person has two alleles: one from each parent.</div>
+    </div>
+
+    <div class="card-panel">
+      <h3>Cross 1: Ff &times; Ff</h3>
+      <p>Both parents have free earlobes, but each carries one hidden f. Fill in the Punnett square: click each empty box, then click again to cycle through letters until it shows the correct genotype for that box.</p>
+      <div class="punnett-wrap">
+        <div id="punnett1"></div>
+      </div>
+      <div class="btn-row"><button type="button" id="punnett1CheckBtn" class="greenbtn" disabled>Check Punnett Square</button><span class="status-msg" id="punnett1Status"></span></div>
+      <div id="p1quizzes" class="gated"></div>
+    </div>
+
+    <div class="card-panel">
+      <h3>Cross 2: Ff &times; ff</h3>
+      <p>Now try a different cross: one free-earlobed (but carrier) parent and one attached-earlobed parent.</p>
+      <div class="punnett-wrap">
+        <div id="punnett2"></div>
+      </div>
+      <div class="btn-row"><button type="button" id="punnett2CheckBtn" class="greenbtn" disabled>Check Punnett Square</button><span class="status-msg" id="punnett2Status"></span></div>
+      <div id="p2quiz" class="gated"></div>
+    </div>
+
+    <div class="card-panel gated" id="p1pedigreeCard">
+      <h3>Now Apply It: A Simple Family Pedigree</h3>
+      <p>Both parents are Ff (free earlobes, carrying one hidden f). Use the Punnett-square logic you just practiced to figure out each child's possible genotype(s) from their phenotype.</p>
+      <div class="pedigree-scroll"><div class="pedigree" id="pedigree1Root" style="width:760px;height:380px;"></div></div>
+      <div class="btn-row"><button type="button" id="pedigree1CheckBtn" class="greenbtn" disabled>Check Pedigree</button><span class="status-msg" id="pedigree1Status"></span></div>
+      <div class="callout green gated" id="p1bridge">Every child's genotype here could be explained just by combining alleles the parents already had. But what happens when a phenotype shows up that <strong>can't</strong> be explained that way? That's Part 2. <div class="btn-row"><button type="button" data-goto-tab="2">Go to Part 2 &#8594;</button></div></div>
+    </div>
+  </div>
+
+  <!-- ================= PART 2 ================= -->
+  <div class="tabpanel" id="tabpanel-2">
+    <div class="card-panel">
+      <h2>Family B: Both Parents Have Attached Earlobes (ff &times; ff)</h2>
+      <p>Predict their children's earlobes with a Punnett square before we reveal what actually happened.</p>
+      <div class="punnett-wrap">
+        <div id="punnett3"></div>
+      </div>
+      <div class="btn-row"><button type="button" id="punnett3CheckBtn" class="greenbtn" disabled>Check Punnett Square</button><span class="status-msg" id="punnett3Status"></span></div>
+      <div id="p3quiz" class="gated"></div>
+    </div>
+
+    <div class="card-panel gated" id="p2pedigreeCard">
+      <h3>What Actually Happened</h3>
+      <p>Fill in the two older kids first (straightforward), then look at what happened with the third child.</p>
+      <div class="pedigree-scroll"><div class="pedigree" id="pedigree2Root" style="width:760px;height:380px;"></div></div>
+      <div class="btn-row"><button type="button" id="pedigree2CheckBtn" class="greenbtn" disabled>Check First Two Kids</button><span class="status-msg" id="pedigree2Status"></span></div>
+      <div id="mutationQuiz" class="gated"></div>
+      <div class="callout gated" id="p2bridge">Just like this surprise free-earlobed child, Jasmine's family pedigree has p53 alleles that don't match a simple inheritance pattern either — because of mutation (and, with a second gene, crossing over). Let's trace her real, more complex family next. <div class="btn-row"><button type="button" data-goto-tab="3">Go to Part 3: Jasmine's Family &#8594;</button></div></div>
+    </div>
+  </div>
+
+  <!-- ================= PART 3 ================= -->
+  <div class="tabpanel" id="tabpanel-3">
+    <div class="card-panel">
+      <h2>Part 3: Fill In Jasmine's Family's Genotypes</h2>
+      <p>Same idea as Parts 1 &amp; 2, but for real: chromosome 17 and the p53 gene in Jasmine's family. This case is more complex — some answers are genuinely ambiguous based on what's known.</p>
+      <div class="key">
+        <div class="key-item"><span class="swatch-dot" style="background:var(--p53-A)"></span> A = p53 corrects mutations</div>
+        <div class="key-item"><span class="swatch-dot" style="background:var(--p53-B)"></span> B = p53 does NOT correct mutations</div>
+        <div class="key-item"><span class="swatch-sq"></span> = male &nbsp;&nbsp; <span class="swatch-circ"></span> = female</div>
+        <div class="key-item"><span class="swatch-circ fill"></span> = had cancer linked to a p53 mutation</div>
+        <div class="key-item">? = not tested for Li-Fraumeni Syndrome</div>
+      </div>
+      <div class="callout">
+        <strong>What we already know:</strong> Genetic testing showed Jasmine's grandfather and Jasmine's mother do NOT carry the Li-Fraumeni mutation — they only have the correcting (A) version. Every child gets exactly one chromosome 17 from each parent, so one allele from each parent.
+      </div>
+      <div class="pedigree-scroll">
+        <div class="pedigree" id="pedigree3Root" style="width:1000px;height:580px;"></div>
+      </div>
+      <div class="btn-row">
+        <button type="button" id="pedigree3CheckBtn" disabled>Check Pedigree</button>
+        <span class="status-msg" id="pedigree3Status"></span>
+      </div>
+    </div>
+
+    <div class="card-panel gated" id="part3quizCard">
+      <h2>Making Sense</h2>
+      <div id="quizRoot3"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+  // ===================================================================
+  // Shared quiz engine (single-select and multi-select), keyed by unique id
+  // ===================================================================
+  var quizState = {};
+
+  function norm(pair){ return pair.slice().sort().join(''); }
+
+  function renderSingleQuiz(id, question, options, correctIndex, explainGood, explainBad){
+    var q = quizState[id] || { answered:false, selectedIndex:null };
+    quizState[id] = q;
+    var html = '<div class="quiz"><div class="quiz-q">'+question+'</div><div class="quiz-options">';
+    options.forEach(function(opt, i){
+      var cls = 'opt';
+      if(q.answered){
+        if(i===correctIndex) cls += ' correct';
+        else if(i===q.selectedIndex) cls += ' incorrect';
+      }
+      html += '<button type="button" class="'+cls+'" data-quiz="'+id+'" data-idx="'+i+'" data-correct="'+correctIndex+'" '+(q.answered?'disabled':'')+'>'+opt+'</button>';
+    });
+    html += '</div>';
+    if(q.answered){
+      var good = q.selectedIndex === correctIndex;
+      html += '<div class="feedback show '+(good?'good':'bad')+'">'+(good ? explainGood : explainBad)+'</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderMultiQuiz(id, question, options, correctSet, explainGood, explainBad){
+    var q = quizState[id] || { picked:{}, checked:false };
+    quizState[id] = q;
+    var html = '<div class="quiz"><div class="quiz-q">'+question+'</div><div class="quiz-options grid">';
+    options.forEach(function(opt, i){
+      var picked = !!q.picked[i];
+      var cls = 'opt';
+      if(q.checked){
+        var shouldBeCorrect = correctSet.indexOf(i) !== -1;
+        if(shouldBeCorrect && picked) cls += ' correct';
+        else if(shouldBeCorrect && !picked) cls += ' incorrect';
+        else if(!shouldBeCorrect && picked) cls += ' incorrect';
+      } else if(picked){
+        cls += ' selected';
+      }
+      html += '<button type="button" class="'+cls+'" data-mquiz="'+id+'" data-idx="'+i+'" '+(q.checked?'disabled':'')+'>'+opt+'</button>';
+    });
+    html += '</div>';
+    if(!q.checked){
+      html += '<div class="btn-row"><button type="button" data-check-multi="'+id+'">Check answer</button></div>';
+    } else {
+      var allCorrect = correctSet.every(function(i){ return !!q.picked[i]; }) &&
+                        Object.keys(q.picked).filter(function(k){return q.picked[k];}).length === correctSet.length;
+      html += '<div class="feedback show '+(allCorrect?'good':'bad')+'">'+(allCorrect ? explainGood : explainBad)+'</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  var rerenderCallbacks = [];
+  function rerenderAll(){ rerenderCallbacks.forEach(function(fn){ fn(); }); }
+
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if(!(t instanceof Element)) return;
+
+    var qOpt = t.closest('[data-quiz]');
+    if(qOpt && !qOpt.disabled){
+      var qid = qOpt.getAttribute('data-quiz');
+      var idx = parseInt(qOpt.getAttribute('data-idx'),10);
+      if(!quizState[qid].answered){
+        quizState[qid] = { answered:true, selectedIndex: idx };
+        rerenderAll();
+      }
+      return;
+    }
+    var mOpt = t.closest('[data-mquiz]');
+    if(mOpt && !mOpt.disabled){
+      var mid = mOpt.getAttribute('data-mquiz');
+      var midx = parseInt(mOpt.getAttribute('data-idx'),10);
+      var q = quizState[mid] || { picked:{}, checked:false };
+      q.picked[midx] = !q.picked[midx];
+      quizState[mid] = q;
+      rerenderAll();
+      return;
+    }
+    var checkMultiBtn = t.closest('[data-check-multi]');
+    if(checkMultiBtn){
+      var cmid = checkMultiBtn.getAttribute('data-check-multi');
+      quizState[cmid].checked = true;
+      rerenderAll();
+      return;
+    }
+    var gotoBtn = t.closest('[data-goto-tab]');
+    if(gotoBtn){
+      switchTab(gotoBtn.getAttribute('data-goto-tab'));
+      return;
+    }
+  });
+
+  // ===================================================================
+  // Tabs
+  // ===================================================================
+  function switchTab(n){
+    document.querySelectorAll('.tab').forEach(function(el){
+      el.classList.toggle('active', el.getAttribute('data-tab')===n);
+    });
+    document.querySelectorAll('.tabpanel').forEach(function(el){
+      el.classList.toggle('active', el.id === 'tabpanel-'+n);
+    });
+    window.scrollTo(0,0);
+  }
+  document.querySelectorAll('.tab').forEach(function(tabEl){
+    tabEl.addEventListener('click', function(){ switchTab(tabEl.getAttribute('data-tab')); });
+  });
+
+  function showGated(id){
+    var el = document.getElementById(id);
+    if(el) el.classList.add('show');
+  }
+
+  // ===================================================================
+  // Generic Punnett Square widget factory
+  // ===================================================================
+  function createPunnett(containerId, opts){
+    // opts: { top:[a,b], side:[a,b], colors:{letter:cssColor}, checkBtnId, statusId, onCorrect }
+    var container = document.getElementById(containerId);
+    var cells = [ ['',''], ['',''], ['',''], ['',''] ]; // index = row*2+col
+    var lockedCorrect = [false,false,false,false];
+    var checkedOnce = false;
+
+    function targetFor(cellIdx){
+      var row = Math.floor(cellIdx/2), col = cellIdx%2;
+      return [opts.side[row], opts.top[col]];
+    }
+
+    function slotHTML(cellIdx, slotIdx){
+      var val = cells[cellIdx][slotIdx];
+      var cls = 'allele-slot';
+      var style = '';
+      if(val){ cls += ' filled'; style = 'background:'+opts.colors[val]+';border-color:'+opts.colors[val]+';'; }
+      if(checkedOnce){
+        if(lockedCorrect[cellIdx]) cls += ' correct';
+        else if(val) cls += ' incorrect';
+      }
+      return '<div class="'+cls+'" style="'+style+'" data-cell="'+cellIdx+'" data-slot="'+slotIdx+'">'+(val||'')+'</div>';
+    }
+
+    function render(){
+      var html = '<div class="punnett-grid">';
+      html += '<div class="pcell corner"></div>';
+      html += '<div class="pcell headtop" style="color:'+opts.colors[opts.top[0]]+'">'+opts.top[0]+'</div>';
+      html += '<div class="pcell headtop" style="color:'+opts.colors[opts.top[1]]+'">'+opts.top[1]+'</div>';
+      for(var r=0;r<2;r++){
+        html += '<div class="pcell headside" style="color:'+opts.colors[opts.side[r]]+'">'+opts.side[r]+'</div>';
+        for(var c=0;c<2;c++){
+          var idx = r*2+c;
+          html += '<div class="pcell body"><div class="picker" style="position:static;">'+slotHTML(idx,0)+slotHTML(idx,1)+'</div></div>';
+        }
+      }
+      html += '</div>';
+      container.innerHTML = html;
+
+      var btn = document.getElementById(opts.checkBtnId);
+      if(btn){
+        var allFilled = cells.every(function(c){ return c[0]!=='' && c[1]!==''; });
+        btn.disabled = !allFilled;
+      }
+      var status = document.getElementById(opts.statusId);
+      if(status){
+        if(!checkedOnce){ status.textContent=''; }
+        else if(lockedCorrect.every(Boolean)){ status.className='status-msg good'; status.textContent='All correct!'; }
+        else { status.className='status-msg bad'; status.textContent='Some boxes still need fixing.'; }
+      }
+    }
+
+    container.addEventListener('click', function(e){
+      var slot = e.target.closest('.allele-slot');
+      if(!slot) return;
+      var cellIdx = parseInt(slot.getAttribute('data-cell'),10);
+      if(lockedCorrect[cellIdx]) return;
+      var slotIdx = parseInt(slot.getAttribute('data-slot'),10);
+      var letters = [opts.top[0], opts.top[1]].concat(opts.side).filter(function(v,i,a){ return a.indexOf(v)===i; });
+      // cycle through blank -> letter1 -> letter2 -> blank (use the two distinct allele letters available overall)
+      var uniqueLetters = Object.keys(opts.colors);
+      var cur = cells[cellIdx][slotIdx];
+      var curIdx = uniqueLetters.indexOf(cur);
+      var nextIdx = curIdx + 1;
+      var nextVal = nextIdx >= uniqueLetters.length ? '' : uniqueLetters[nextIdx];
+      cells[cellIdx][slotIdx] = nextVal;
+      render();
+    });
+
+    var checkBtnEl = document.getElementById(opts.checkBtnId);
+    if(checkBtnEl){
+      checkBtnEl.addEventListener('click', function(){
+        if(checkBtnEl.disabled) return;
+        checkedOnce = true;
+        for(var i=0;i<4;i++){
+          var target = norm(targetFor(i));
+          if(norm(cells[i]) === target){ lockedCorrect[i] = true; }
+        }
+        render();
+        if(lockedCorrect.every(Boolean) && opts.onCorrect){ opts.onCorrect(); }
+      });
+    }
+
+    render();
+    return { render: render };
+  }
+
+  // ===================================================================
+  // Generic Pedigree widget factory
+  // ===================================================================
+  function createPedigree(containerId, opts){
+    // opts: { people:[{id,label,sex,cx,row,shaded(true/false/null),deceased,given:[..] or valid:[[..],[..]]}],
+    //         rowTop:{1:y,2:y,3:y}, colors:{letter:color}, connectorLines: function()->[{x,y,w,h}],
+    //         checkBtnId, statusId, affectedClass, onAllCorrect }
+    var container = document.getElementById(containerId);
+    var CARD = 60;
+    var people = opts.people;
+    var picks = {};
+    var lockedCorrect = {};
+    var checkedOnce = false;
+
+    people.forEach(function(p){
+      if(p.given){ picks[p.id] = p.given.slice(); lockedCorrect[p.id] = true; }
+      else { picks[p.id] = ['','']; }
+    });
+
+    function isCorrectFor(person, pair){
+      if(pair[0]==='' || pair[1]==='') return false;
+      var options = person.given ? [person.given] : person.valid;
+      var target = norm(pair);
+      return options.some(function(opt){ return norm(opt) === target; });
+    }
+
+    function renderLinesHTML(){
+      var specs = opts.connectorLines();
+      return specs.map(function(s){
+        return '<div class="line" style="left:'+s.x+'px;top:'+s.y+'px;width:'+s.w+'px;height:'+s.h+'px;"></div>';
+      }).join('');
+    }
+
+    function renderPersonHTML(p){
+      var top = opts.rowTop[p.row];
+      var left = p.cx - CARD/2;
+      var shapeCls = (p.sex==='M') ? '' : 'circle';
+      var affectedCls = p.shaded===true ? opts.affectedClass : '';
+      var deceasedCls = p.deceased ? 'deceased' : '';
+      var content = p.shaded===null ? '?' : '';
+      var html = '<div class="person '+shapeCls+' '+affectedCls+' '+deceasedCls+'" style="left:'+left+'px;top:'+top+'px;">'+content+'</div>';
+      html += '<div class="plabel" style="left:'+(p.cx-65)+'px;top:'+(top+CARD+4)+'px;">'+p.label+'</div>';
+      if(p.mutationBadge){
+        html += '<div class="mutation-badge" style="left:'+(p.cx-55)+'px;top:'+(top-18)+'px;">NEW MUTATION</div>';
+      }
+
+      var pickerTop = top + CARD + 44;
+      var pair = picks[p.id];
+      var locked = lockedCorrect[p.id];
+      html += '<div class="picker" style="left:'+(p.cx-38)+'px;top:'+pickerTop+'px;">';
+      for(var i=0;i<2;i++){
+        var val = pair[i];
+        var cls = 'allele-slot';
+        var style = '';
+        if(val){ cls += ' filled'; style='background:'+opts.colors[val]+';border-color:'+opts.colors[val]+';'; }
+        if(p.given){ cls += ' given'; }
+        if(checkedOnce && !p.given){
+          if(locked) cls += ' correct';
+          else if(val!=='') cls += ' incorrect';
+        }
+        html += '<div class="'+cls+'" style="'+style+'" data-person="'+p.id+'" data-slot="'+i+'">'+(val||'')+'</div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function allFilled(){
+      return people.every(function(p){
+        if(p.given) return true;
+        var pair = picks[p.id];
+        return pair[0]!=='' && pair[1]!=='';
+      });
+    }
+    function allLockedCorrect(){
+      return people.every(function(p){ return lockedCorrect[p.id]; });
+    }
+
+    function render(){
+      var html = renderLinesHTML();
+      people.forEach(function(p){ html += renderPersonHTML(p); });
+      container.innerHTML = html;
+
+      var btn = document.getElementById(opts.checkBtnId);
+      if(btn) btn.disabled = !allFilled();
+
+      var status = document.getElementById(opts.statusId);
+      if(status){
+        if(!checkedOnce){ status.textContent=''; }
+        else if(allLockedCorrect()){ status.className='status-msg good'; status.textContent = opts.correctMsg || 'All correct!'; }
+        else { status.className='status-msg bad'; status.textContent='Some are still off — red boxes need another try.'; }
+      }
+
+      if(checkedOnce && allLockedCorrect() && opts.onAllCorrect){ opts.onAllCorrect(); }
+    }
+
+    container.addEventListener('click', function(e){
+      var slot = e.target.closest('.allele-slot');
+      if(!slot || slot.classList.contains('given')) return;
+      var pid = slot.getAttribute('data-person');
+      if(lockedCorrect[pid]) return;
+      var sidx = parseInt(slot.getAttribute('data-slot'),10);
+      var pair = picks[pid];
+      var uniqueLetters = Object.keys(opts.colors);
+      var cur = pair[sidx];
+      var curIdx = uniqueLetters.indexOf(cur);
+      var nextIdx = curIdx + 1;
+      pair[sidx] = nextIdx >= uniqueLetters.length ? '' : uniqueLetters[nextIdx];
+      render();
+    });
+
+    var checkBtnEl = document.getElementById(opts.checkBtnId);
+    if(checkBtnEl){
+      checkBtnEl.addEventListener('click', function(){
+        if(checkBtnEl.disabled) return;
+        checkedOnce = true;
+        people.forEach(function(p){
+          if(p.given){ lockedCorrect[p.id] = true; return; }
+          var pair = picks[p.id];
+          if(isCorrectFor(p, pair)){ lockedCorrect[p.id] = true; }
+        });
+        render();
+      });
+    }
+
+    render();
+    return { render: render };
+  }
+
+  // ===================================================================
+  // PART 1 setup
+  // ===================================================================
+  var TRAIT_COLORS = { F: 'var(--trait-F)'.trim(), f: 'var(--trait-f)'.trim() };
+  // resolve CSS var to actual usable color strings for inline style (browsers accept var() directly in inline style, fine as-is)
+  TRAIT_COLORS = { F: 'var(--trait-F)', f: 'var(--trait-f)' };
+
+  createPunnett('punnett1', {
+    top:['F','f'], side:['F','f'], colors:TRAIT_COLORS,
+    checkBtnId:'punnett1CheckBtn', statusId:'punnett1Status',
+    onCorrect: function(){ showGated('p1quizzes'); render1Quizzes(); }
+  });
+
+  function render1Quizzes(){
+    var html = '';
+    html += renderSingleQuiz('p1q_attached', 'Based on the Punnett square, what fraction of offspring are expected to have ATTACHED earlobes (ff)?',
+      ['1/4','1/2','3/4','4/4'], 0,
+      'Right — only 1 of the 4 boxes is ff.',
+      'Count the boxes: only 1 of the 4 outcomes is ff. That\'s 1/4.');
+    html += renderSingleQuiz('p1q_free', 'What fraction are expected to have FREE earlobes (FF or Ff)?',
+      ['1/4','1/2','3/4','4/4'], 2,
+      'Right — 3 of the 4 boxes (FF, Ff, Ff) show at least one F, so they\'re all free earlobes.',
+      'Add up every box that has at least one F: FF and both Ff boxes = 3 of the 4 boxes, so 3/4.');
+    document.getElementById('p1quizzes').innerHTML = html;
+  }
+
+  createPunnett('punnett2', {
+    top:['F','f'], side:['f','f'], colors:TRAIT_COLORS,
+    checkBtnId:'punnett2CheckBtn', statusId:'punnett2Status',
+    onCorrect: function(){
+      showGated('p2quiz');
+      document.getElementById('p2quiz').innerHTML = renderSingleQuiz('p1q_half',
+        'What fraction of offspring from Ff × ff are expected to have attached earlobes?',
+        ['1/4','1/2','3/4','1'], 1,
+        'Right — half the boxes are Ff (free) and half are ff (attached).',
+        'Two of the four boxes are Ff (free) and two are ff (attached) — that\'s 1/2.');
+      showGated('p1pedigreeCard');
+      setupPedigree1();
+    }
+  });
+
+  var pedigree1Built = false;
+  function setupPedigree1(){
+    if(pedigree1Built) return;
+    pedigree1Built = true;
+    var people1 = [
+      { id:'p1parent1', label:'Parent 1', sex:'F', cx:300, row:1, shaded:false, deceased:false, given:['F','f'] },
+      { id:'p1parent2', label:'Parent 2', sex:'M', cx:460, row:1, shaded:false, deceased:false, given:['F','f'] },
+      { id:'p1child1', label:'Child 1 (attached)', sex:'F', cx:220, row:2, shaded:true, deceased:false, valid:[['f','f']] },
+      { id:'p1child2', label:'Child 2 (free)', sex:'M', cx:380, row:2, shaded:false, deceased:false, valid:[['F','F'],['F','f']] },
+      { id:'p1child3', label:'Child 3 (attached)', sex:'F', cx:540, row:2, shaded:true, deceased:false, valid:[['f','f']] }
+    ];
+    createPedigree('pedigree1Root', {
+      people: people1,
+      rowTop: {1:20, 2:210},
+      colors: TRAIT_COLORS,
+      affectedClass: 'affectedg',
+      checkBtnId: 'pedigree1CheckBtn',
+      statusId: 'pedigree1Status',
+      connectorLines: function(){
+        var lines = [];
+        function hline(x1,x2,y){ lines.push({x:x1,y:y-1,w:x2-x1,h:2}); }
+        function vline(x,y1,y2){ lines.push({x:x-1,y:y1,w:2,h:y2-y1}); }
+        hline(300+30, 460-30, 20+30);
+        vline((330+430)/2, 20+60, 190);
+        hline(220, 540, 190);
+        [220,380,540].forEach(function(cx){ vline(cx, 190, 210); });
+        return lines;
+      },
+      onAllCorrect: function(){ showGated('p1bridge'); }
+    });
+  }
+
+  // ===================================================================
+  // PART 2 setup
+  // ===================================================================
+  createPunnett('punnett3', {
+    top:['f','f'], side:['f','f'], colors:TRAIT_COLORS,
+    checkBtnId:'punnett3CheckBtn', statusId:'punnett3Status',
+    onCorrect: function(){
+      showGated('p3quiz');
+      document.getElementById('p3quiz').innerHTML = renderSingleQuiz('p2q_predict',
+        'Based on this Punnett square, what percent of Family B\'s children should have FREE earlobes?',
+        ['0%','25%','50%','100%'], 0,
+        'Right — ff × ff can only ever produce ff offspring. 0% should have free earlobes.',
+        'Every box is ff. Neither parent has an F to give, so 0% should have free earlobes.');
+      showGated('p2pedigreeCard');
+      setupPedigree2();
+    }
+  });
+
+  var pedigree2Built = false;
+  function setupPedigree2(){
+    if(pedigree2Built) return;
+    pedigree2Built = true;
+    var people2 = [
+      { id:'p2parent1', label:'Parent 1', sex:'F', cx:300, row:1, shaded:true, deceased:false, given:['f','f'] },
+      { id:'p2parent2', label:'Parent 2', sex:'M', cx:460, row:1, shaded:true, deceased:false, given:['f','f'] },
+      { id:'p2child1', label:'Child 1 (attached)', sex:'F', cx:220, row:2, shaded:true, deceased:false, valid:[['f','f']] },
+      { id:'p2child2', label:'Child 2 (attached)', sex:'M', cx:380, row:2, shaded:true, deceased:false, valid:[['f','f']] },
+      { id:'p2child3', label:'Child 3 (FREE earlobes!)', sex:'F', cx:540, row:2, shaded:false, deceased:false, given:['F','f'], mutationBadge:true }
+    ];
+    createPedigree('pedigree2Root', {
+      people: people2,
+      rowTop: {1:20, 2:210},
+      colors: TRAIT_COLORS,
+      affectedClass: 'affectedg',
+      checkBtnId: 'pedigree2CheckBtn',
+      statusId: 'pedigree2Status',
+      correctMsg: 'Both kids match what the Punnett square predicted. But look at Child 3...',
+      connectorLines: function(){
+        var lines = [];
+        function hline(x1,x2,y){ lines.push({x:x1,y:y-1,w:x2-x1,h:2}); }
+        function vline(x,y1,y2){ lines.push({x:x-1,y:y1,w:2,h:y2-y1}); }
+        hline(300+30, 460-30, 20+30);
+        vline((330+430)/2, 20+60, 190);
+        hline(220, 540, 190);
+        [220,380,540].forEach(function(cx){ vline(cx, 190, 210); });
+        return lines;
+      },
+      onAllCorrect: function(){
+        showGated('mutationQuiz');
+        document.getElementById('mutationQuiz').innerHTML = renderSingleQuiz('p2q_explain',
+          'Neither parent has an F allele to give. How did Child 3 end up with free earlobes (Ff)?',
+          [
+            'One parent\'s genotype must have been recorded wrong.',
+            'A brand-new mutation created an F allele in that child.',
+            'Free earlobes just skipped a generation and reappeared.',
+            'This pedigree is impossible and could not really happen.'
+          ], 1,
+          'Exactly — a mutation created a new F allele that wasn\'t inherited from either parent. It\'s rare, but it happens in every generation, in every species.',
+          'Both parents are confirmed ff — there\'s no F allele anywhere for Child 3 to inherit. The only way a brand-new allele can appear is a mutation.'
+        );
+        showGated('p2bridge');
+      }
+    });
+  }
+
+  // ===================================================================
+  // PART 3: Jasmine's family (p53) pedigree
+  // ===================================================================
+  var P53_COLORS = { A:'var(--p53-A)', B:'var(--p53-B)' };
+
+  var people3 = [
+    { id:'gf', label:"Jasmine's grandfather", sex:'M', cx:410, row:1, shaded:false, deceased:false, given:['A','A'] },
+    { id:'gm', label:"Jasmine's grandmother", sex:'F', cx:570, row:1, shaded:true, deceased:true, valid:[['A','B'],['B','B']] },
+    { id:'aunt1', label:"Aunt/Uncle (not tested)", sex:'F', cx:90, row:2, shaded:null, deceased:false, valid:[['A','A'],['A','B']] },
+    { id:'aunt2', label:"Aunt/Uncle", sex:'F', cx:250, row:2, shaded:true, deceased:true, valid:[['A','B']] },
+    { id:'uncle1', label:"Aunt/Uncle", sex:'M', cx:410, row:2, shaded:true, deceased:true, valid:[['A','B']] },
+    { id:'aunt3', label:"Aunt/Uncle (not tested)", sex:'F', cx:570, row:2, shaded:null, deceased:false, valid:[['A','A'],['A','B']] },
+    { id:'father', label:"Jasmine's father", sex:'M', cx:730, row:2, shaded:true, deceased:true, valid:[['A','B']] },
+    { id:'mother', label:"Jasmine's mother", sex:'F', cx:890, row:2, shaded:false, deceased:false, given:['A','A'] },
+    { id:'lakita', label:"Jasmine", sex:'F', cx:810, row:3, shaded:true, deceased:false, valid:[['A','B']] }
+  ];
+
+  createPedigree('pedigree3Root', {
+    people: people3,
+    rowTop: {1:20, 2:210, 3:400},
+    colors: P53_COLORS,
+    affectedClass: 'affected',
+    checkBtnId: 'pedigree3CheckBtn',
+    statusId: 'pedigree3Status',
+    correctMsg: 'All correct! Great pedigree reasoning.',
+    connectorLines: function(){
+      var lines = [];
+      function hline(x1,x2,y){ lines.push({x:x1,y:y-1,w:x2-x1,h:2}); }
+      function vline(x,y1,y2){ lines.push({x:x-1,y:y1,w:2,h:y2-y1}); }
+      hline(410+30, 570-30, 20+30);
+      vline((440+540)/2, 20+60, 190);
+      hline(90, 730, 190);
+      [90,250,410,570,730].forEach(function(cx){ vline(cx, 190, 210); });
+      hline(730+30, 890-30, 210+30);
+      vline((760+860)/2, 210+30, 400);
+      return lines;
+    },
+    onAllCorrect: function(){
+      showGated('part3quizCard');
+      renderPart3Quiz();
+    }
+  });
+
+  var QUESTIONS3 = [
+    {
+      id:'mq1',
+      q:"How did Jasmine get the p53 allele that caused her cancer?",
+      options:[
+        "She inherited it from her mother.",
+        "She inherited it from her father.",
+        "It appeared spontaneously in Jasmine only, with no family source.",
+        "Both of her parents passed her a copy."
+      ],
+      correct:1,
+      good:"Right — Jasmine's mother is AA (tested clear), so the only place Jasmine's B allele could come from is her father, who is AB.",
+      bad:"Look at the genotypes: Jasmine's mother is AA (tested clear, no B allele to give). Jasmine's father is AB. The B allele had to come from him."
+    },
+    {
+      id:'mq2',
+      q:"Where did the B allele (does not correct mutations) first show up in this family tree?",
+      options:[
+        "Jasmine's grandfather",
+        "Jasmine's grandmother",
+        "Jasmine's mother",
+        "Jasmine herself, as a brand-new mutation"
+      ],
+      correct:1,
+      good:"Correct — the grandfather is AA and the mother is AA, so neither can be the source. The grandmother is the only person in this pedigree who must carry a B allele without having inherited it from someone shown here.",
+      bad:"Rule out the people who are AA (grandfather, mother) — they have no B to give. The B allele traces back to the grandmother, who must carry at least one B herself."
+    },
+    {
+      id:'mq3',
+      q:"Jasmine's dad had a B allele in every cell of his body, including his sperm cells. What does that tell us?",
+      options:[
+        "He was born with the mutation — he inherited it from his mother.",
+        "He must have developed the mutation later in life from cell division errors, unrelated to his family."
+      ],
+      correct:0,
+      good:"Right — a mutation you only accumulate during your lifetime wouldn't be present in your sperm or egg cells. Since Jasmine's dad passed the B allele to Jasmine through his sperm, he must have had it in his gametes, meaning he inherited it — most likely from his mother.",
+      bad:"Think about which cells pass genetic information to offspring. If the B allele were only a mutation dad picked up in body cells during his life, it wouldn't be in his sperm cells and couldn't be passed to Jasmine. Since Jasmine has it, dad's sperm carried it — meaning he inherited it at birth."
+    }
+  ];
+
+  function renderPart3Quiz(){
+    var html = '<p>Now that you\'ve built the pedigree, use it to answer these:</p>';
+    QUESTIONS3.forEach(function(qdef){
+      html += renderSingleQuiz(qdef.id, qdef.q, qdef.options, qdef.correct, qdef.good, qdef.bad);
+    });
+    document.getElementById('quizRoot3').innerHTML = html;
+  }
+
+  // ===================================================================
+  // rerender registry (so quiz clicks refresh whichever quiz containers exist)
+  // ===================================================================
+  rerenderCallbacks.push(function(){
+    if(document.getElementById('p1quizzes') && document.getElementById('p1quizzes').classList.contains('show')) render1Quizzes();
+    if(document.getElementById('p2quiz') && document.getElementById('p2quiz').classList.contains('show')){
+      document.getElementById('p2quiz').innerHTML = renderSingleQuiz('p1q_half',
+        'What fraction of offspring from Ff × ff are expected to have attached earlobes?',
+        ['1/4','1/2','3/4','1'], 1,
+        'Right — half the boxes are Ff (free) and half are ff (attached).',
+        'Two of the four boxes are Ff (free) and two are ff (attached) — that\'s 1/2.');
+    }
+    if(document.getElementById('p3quiz') && document.getElementById('p3quiz').classList.contains('show')){
+      document.getElementById('p3quiz').innerHTML = renderSingleQuiz('p2q_predict',
+        'Based on this Punnett square, what percent of Family B\'s children should have FREE earlobes?',
+        ['0%','25%','50%','100%'], 0,
+        'Right — ff × ff can only ever produce ff offspring. 0% should have free earlobes.',
+        'Every box is ff. Neither parent has an F to give, so 0% should have free earlobes.');
+    }
+    if(document.getElementById('mutationQuiz') && document.getElementById('mutationQuiz').classList.contains('show')){
+      document.getElementById('mutationQuiz').innerHTML = renderSingleQuiz('p2q_explain',
+        'Neither parent has an F allele to give. How did Child 3 end up with free earlobes (Ff)?',
+        [
+          'One parent\'s genotype must have been recorded wrong.',
+          'A brand-new mutation created an F allele in that child.',
+          'Free earlobes just skipped a generation and reappeared.',
+          'This pedigree is impossible and could not really happen.'
+        ], 1,
+        'Exactly — a mutation created a new F allele that wasn\'t inherited from either parent. It\'s rare, but it happens in every generation, in every species.',
+        'Both parents are confirmed ff — there\'s no F allele anywhere for Child 3 to inherit. The only way a brand-new allele can appear is a mutation.'
+      );
+    }
+    if(document.getElementById('quizRoot3') && document.getElementById('part3quizCard').classList.contains('show')){
+      renderPart3Quiz();
+    }
+  });
+
+})();
+</script>
+</body>
+</html>

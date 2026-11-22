@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Follow the chain from CO2 to warming, melting land ice, and rising seas, then find how many people in four coastal places would have to move. Includes a Units Lab on dimensional analysis. English and Spanish.">
+<title>Rising Seas: Who Has to Move?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root {
+  --bg: #eef2f5; --surface: #ffffff; --sunk: #f6f8fa; --ink: #15202b; --muted: #566473; --line: #d3dbe2;
+  --accent: #1c3956; --accent-ink: #ffffff; --ok: #1f7a4d; --okbg: #e5f5ec; --bad: #b3261e; --badbg: #fdecea;
+  --warm: #cf4f22; --cold: #2f6fd6; --ocean: #2d6cb5; --bay: #b9d6f2; --flood: #3f86d8; --gas: #6b4fa8; --ice: #d6f1f3; --ice-edge: #7cc6cc;
+  --warnbg: #fff4dc; --warnink: #6b4a00;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #0e141a; --surface: #161f28; --sunk: #111920; --ink: #e4ebf1; --muted: #93a2b0; --line: #2a3744;
+  --accent: #9cc3ea; --accent-ink: #0e141a; --ok: #5fd39a; --okbg: #12301f; --bad: #ff8a80; --badbg: #3a1714;
+  --warm: #f2885b; --cold: #6fa3ff; --ocean: #2a5c96; --bay: #34506e; --flood: #4d92e0; --gas: #b79af0; --ice: #24474d; --ice-edge: #4fb5bc;
+  --warnbg: #3a2e12; --warnink: #f3d58e; color-scheme: dark } }
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.45 }
+.backlink { display: inline-flex; gap: 6px; align-items: center; padding: 6px 12px; border: 1.5px solid var(--line); border-radius: 99px; background: var(--surface); color: var(--accent); font-weight: 700; font-size: 14px; text-decoration: none; justify-self: start }
+.backlink:hover { border-color: var(--accent) }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 18px 16px 48px; display: grid; gap: 16px }
+header { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; justify-content: space-between }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700 }
+h1 { margin: 2px 0 0; font-size: clamp(26px, 4vw, 34px); line-height: 1.1 }
+h2 { margin: 0 0 6px; font-size: 20px }
+h3 { margin: 0 0 4px; font-size: 16px }
+p { margin: 0 0 8px }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface) }
+.seg button { font: inherit; font-size: 14px; border: 0; background: transparent; color: var(--ink); padding: 7px 14px; cursor: pointer; min-height: 36px }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700 }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--cold); outline-offset: 2px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; min-width: 0 }
+.steps { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0 }
+.steps button { font: inherit; font-size: 13.5px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 12px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center }
+.steps button[aria-current="step"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700 }
+.steps button:disabled { opacity: .45; cursor: not-allowed }
+.steps .tick { color: var(--ok); font-weight: 700 }
+.steps button[aria-current="step"] .tick { color: inherit }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; align-items: start }
+@media (max-width: 860px) { .grid2 { grid-template-columns: 1fr } }
+.btn { font: inherit; font-weight: 700; border-radius: 8px; padding: 9px 16px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); min-height: 42px }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line) }
+.btn:disabled { opacity: .45; cursor: not-allowed }
+.q { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--surface); display: grid; gap: 8px }
+.q.active { border: 2px solid var(--accent) }
+.q.done { background: var(--okbg); border-color: var(--ok) }
+.q .num { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; color: var(--muted) }
+.q .prompt { font-weight: 700; font-size: 17px }
+.q .help { font-size: 14.5px; color: var(--muted) }
+.q .formula { font-family: var(--f-mono); font-size: 14.5px; background: var(--sunk); border-radius: 6px; padding: 6px 10px; overflow-x: auto }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+.row input[type=text] { font: inherit; font-family: var(--f-mono); font-size: 18px; padding: 8px 10px; width: 11ch; border: 2px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink) }
+.unit { font-weight: 700 }
+.fb { border-radius: 8px; padding: 8px 12px; font-size: 15px }
+.fb.bad { background: var(--badbg); color: var(--bad) }
+.fb.ok { color: var(--ok); font-weight: 700; padding: 0 }
+.opts { display: grid; gap: 6px }
+.opts button { font: inherit; text-align: left; border: 2px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 9px 12px; cursor: pointer }
+.opts button:hover:not(:disabled) { border-color: var(--accent) }
+.opts button.picked-ok { border-color: var(--ok); background: var(--okbg); font-weight: 700 }
+.opts button.picked-bad { border-color: var(--bad); background: var(--badbg); text-decoration: line-through }
+.qlist { display: grid; gap: 10px }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 8px 0 }
+.fact { background: var(--sunk); border-radius: 8px; padding: 8px 10px }
+.fact span { display: block; font-size: 12.5px; font-weight: 700; color: var(--muted) }
+.fact b { font-family: var(--f-mono); font-size: 17px }
+.note { background: var(--warnbg); color: var(--warnink); border-radius: 8px; padding: 8px 12px; font-size: 14.5px }
+.small { font-size: 13.5px; color: var(--muted) }
+svg text { font-family: var(--f-body) }
+.chain svg, .map svg { width: 100%; height: auto; display: block }
+.sliderrow { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-top: 10px }
+.sliderrow input[type=range] { flex: 1 1 220px; accent-color: var(--gas) }
+.sliderrow output { font-family: var(--f-mono); font-weight: 700; min-width: 8ch }
+.chips { display: flex; gap: 6px; flex-wrap: wrap }
+.chips button { font: inherit; font-size: 14px; border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; background: var(--sunk); color: var(--ink); cursor: pointer }
+table { border-collapse: collapse; width: 100%; font-size: 15px; font-variant-numeric: tabular-nums }
+th, td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: center }
+th { background: var(--sunk); font-size: 13px }
+td.l, th.l { text-align: left }
+td.m { font-family: var(--f-mono) } td.m .small { font-family: var(--f-body); white-space: nowrap }
+.tablebox { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; margin-top: 8px }
+.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; border: 1px solid rgba(0,0,0,.2) }
+.big { font-family: var(--f-mono); font-size: clamp(28px, 5vw, 40px); font-weight: 700 }
+.code { font-family: var(--f-mono); font-size: clamp(30px, 6vw, 46px); font-weight: 700; letter-spacing: .08em; background: var(--sunk); border: 2px dashed var(--accent); border-radius: 10px; padding: 10px 18px; display: inline-block }
+.chainline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-weight: 700 }
+.chainline span { background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px }
+footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px }
+footer button { font: inherit; font-size: 13px; background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 0; justify-self: start }
+.frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 3px; font-family: var(--f-mono); line-height: 1.25 }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 5px 2px }
+.frac > span:last-child { padding: 2px 5px 0 }
+.x { text-decoration: line-through; text-decoration-color: var(--bad); text-decoration-thickness: 3px }
+.mathline { font-family: var(--f-mono); font-size: 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; background: var(--sunk); border-radius: 8px; padding: 8px 10px }
+.tiles { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center }
+.tiles button { font: inherit; font-size: 16px; border: 2px dashed var(--accent); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 6px 8px; cursor: pointer }
+.tiles button:hover:not(:disabled) { background: var(--okbg) }
+.tiles button.picked-bad { border: 2px solid var(--bad); background: var(--badbg); opacity: .7 }
+.info { background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--gas); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px }
+.info p { margin: 0 }
+.info ol { margin: 0; padding-left: 22px; display: grid; gap: 4px }
+.eqcards { display: flex; flex-wrap: wrap; gap: 8px }
+.eqcards div { background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; font-family: var(--f-mono); font-weight: 700 }
+.opts .frac { font-size: 16px }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="backlink" href="/"><span aria-hidden="true">&larr;</span> <span data-i="backAll">All simulators</span></a>
+  <header>
+    <div>
+      <div class="eyebrow" data-i="eyebrow">Climate Simulator</div>
+      <h1 data-i="title">Rising Seas: Who Has to Move?</h1>
+    </div>
+    <div class="seg" role="group" aria-label="Language / Idioma">
+      <button id="lang-en" aria-pressed="true">English</button><button id="lang-es" aria-pressed="false">Español</button>
+    </div>
+  </header>
+  <nav aria-label="Progress"><ul class="steps" id="steps"></ul></nav>
+  <main id="main"></main>
+  <footer>
+    <div data-i="footNote"></div>
+    <button id="teacherBtn" data-i="teacherBtn">Teacher: check a completion code</button>
+    <div id="teacherBox" hidden class="card" style="max-width:520px">
+      <div class="row"><input type="text" id="teacherName" style="width:22ch;font-family:var(--f-body);font-size:16px" aria-label="Student name"><button class="btn ghost" id="teacherGo" data-i="teacherGo">Show code</button><b id="teacherOut" class="m"></b></div>
+    </div>
+  </footer>
+</div>
+
+<script>
+// =====================================================================
+// MODEL
+// CO2 -> temperature: each doubling of CO2 eventually warms Earth about 3 °C (IPCC best estimate).
+// Temperature -> sea level (long-term "commitment", Levermann et al. 2013, PNAS): about 2.3 m per °C,
+//   split here as ~0.4 m/°C from warm water expanding + ~690,000 km³ of meltwater per °C (≈1.9 m) from land ice.
+// Meltwater -> sea level: volume ÷ ocean area (361,900,000 km²) × 1,000 = metres (same method as the paper worksheet).
+// =====================================================================
+const OCEAN_AREA = 361900000, MELT_PER_C = 690000, EXPAND_PER_C = 0.4, LAND_ICE_TOTAL = 23800000;
+const SCEN = [420, 560, 840];
+const dT = ppm => Math.max(0, Math.round(3 * Math.log2(ppm / 280) * 10) / 10);
+const melt = ppm => Math.round(MELT_PER_C * dT(ppm) / 1000) * 1000;
+const iceRise = ppm => melt(ppm) / OCEAN_AREA * 1000;
+const expand = ppm => Math.round(EXPAND_PER_C * dT(ppm) * 100) / 100;
+const totalSL = ppm => iceRise(ppm) + expand(ppm);
+
+// Maps: '.' ocean, 'w' river/bay water, digits/letters = land height in metres (base 36), 'H' = high ground (20 m+).
+// Each map's land squares × square size = the land area in the facts box.
+const PLACES = [
+  { id: 'terrebonne', cell: 50, pop: 109580, area: 3200, scen: 420, map: [
+    "566655456665", "455444445554", "34w4333w4434", "232w2212w232", "121w1w11w121", "w11w01w1w01w", "0.1w0w..w..0", "............"] },
+  { id: 'saintlouis', cell: 1, pop: 254000, area: 64, scen: 560, map: [
+    "...w3445678", "...w2345679", ".12w1344578", ".2ww2234568", ".1w12234567", ".2w1w233456", ".1ww2134457", ".2ww22344A8"] },
+  { id: 'miami', cell: 1, pop: 442000, area: 93, areaMi2: 36.0, scen: 560, map: [
+    "9887654321w...", "9987654321w...", "9A87654322w...", "AB98765432ww..", "9A87765432w1..", "9987654321ww..", "9887654321w...", "99876543221w..", "99876543221w.."] },
+  { id: 'freetown', cell: 1, pop: 1056000, area: 82, scen: 840, map: [
+    "..112w2.......", "..1236w64321..", ".1359BCB976431", "38BHHHHHHHHB96", "CHHHHHHHHHHHHC", "HHHHHHHHHHHHHH", "HHHHHHHHHHHHHH"] },
+];
+const elev = c => (c === '.' || c === 'w') ? null : (c === 'H' ? 20 : parseInt(c, 36));
+const density = p => p.pop / p.area;
+function floodCount(p, level) { let n = 0; for (const r of p.map) for (const c of r) { const e = elev(c); if (e !== null && e < level) n++; } return n; }
+function landCount(p) { let n = 0; for (const r of p.map) for (const c of r) if (elev(c) !== null) n++; return n; }
+const movers = (p, level) => floodCount(p, level) * p.cell * density(p);
+const MI2_TO_KM2 = 2.59;
+
+// =====================================================================
+// LANGUAGE
+// =====================================================================
+const fmtN = (x, d = 0) => Number(x).toLocaleString(lang === 'es' ? 'es-MX' : 'en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const STR = {
+  en: {
+    eyebrow: 'Climate Simulator', title: 'Rising Seas: Who Has to Move?', backAll: 'All simulators',
+    footNote: 'Numbers are rounded and simplified for learning. Sea level numbers are long-term: what happens if CO₂ stays at that level while the ice has time to melt (hundreds to thousands of years). Population: U.S. Census 2020 (Terrebonne, Miami), Senegal census 2023 (Saint-Louis), Sierra Leone census 2015 (Freetown).',
+    teacherBtn: 'Teacher: check a completion code', teacherGo: 'Show code',
+    st_start: 'Start', st_units: 'Units Lab', st_climate: 'Climate Lab',
+    unitsH: 'Units Lab: changing units with fractions',
+    unitsP: 'Scientists change units all the time: dozens to eggs, kilometers to meters, square miles to square kilometers. This trick is called <b>dimensional analysis</b>. You will use it in every step of this simulator.',
+    i_eq: '<h3>1. Equivalences: two ways to say the same amount</h3>',
+    i_eq2: 'Each card says the same amount in two different units.',
+    i_one: '<h3>2. A fraction can equal 1</h3>', i_one1: 'When the top and the bottom of a fraction are the <b>same amount</b>, the fraction equals 1:',
+    i_one2: '12 eggs and 1 dozen are the same amount, so this fraction also equals 1:', i_one3: 'You can flip it. It still equals 1.',
+    u1: 'Which fraction equals 1?', u1h: 'Are the top and the bottom the same amount? Look at the cards: 1 pair = 2 shoes.',
+    u2: 'Which fraction ALSO equals 1?', u2h: 'A flipped fraction still equals 1 if the top and bottom are the same amount.',
+    i_ex: '<h3>3. Example: How many eggs are in 3 dozen?</h3>',
+    i_exP: 'Multiplying by 1 does not change the amount. It only changes the units.',
+    i_exS: ['Write what you have: <b>3 dozen</b>.', 'Multiply by a fraction that equals 1. Put <b>dozen on the bottom</b>.', 'Cross out a unit that is on the top AND the bottom. It cancels.', 'Multiply the numbers: 3 × 12 = <b>36 eggs</b>. The unit that is left is the answer’s unit.'],
+    tileTip: 'Step 1: click the fraction that makes the units cancel. Step 2: type the answer.',
+    u3: 'How many shoes are in 5 pairs?', u4: 'How many dozen is 48 eggs?', u4h: 'Now you start with <b>eggs</b>. So put <b>eggs on the bottom</b>.',
+    u5: 'How many minutes are in 3 hours?',
+    i_met: '<h3>4. Metric units work the same way</h3>', i_metP: '<b>Kilo</b> means 1,000. So 1 kilometer = 1,000 meters.',
+    u6: 'A glacier is 4 km long. How many meters is that?', u7: 'The sea rose 0.005 km. How many meters is that?',
+    i_area: '<h3>5. Area units are squared</h3>', i_areaP: 'km² means km × km. A square that is 1 km on each side is 1,000 m on each side. To change area units, use the length factor <b>two times</b>:',
+    u8: 'How many m² are in 1 km²?', u8h: '1,000 × 1,000 = ?',
+    u9: '1 mile = 1.61 km. How many km² are in 1 square mile (mi²)? You will need this in Miami.', u9h: 'Area: use the factor two times. 1.61 × 1.61 = ?',
+    i_div: '<h3>6. Units cancel when you divide, too</h3>', i_divP: 'km³ means km × km × km. Volume ÷ area = height. You will use this to find how high the sea rises.',
+    u10: 'What is km³ ÷ km²?', u10h: 'Write km³ as km × km × km and km² as km × km. Cross out matching units.',
+    ex_u8: 'Each 1,000 m / 1 km fraction equals 1, so the amount does not change. Area has two km, so you need the fraction two times to cancel both.',
+    ex_u9: 'Two mi on the bottom of the area cancel with two fractions. The answer gives a new fraction that equals 1. You will use it in Miami:',
+    ex_u10: 'km/km is like 5/5: the top and bottom are the same, so it equals 1. Two of them cancel and one km is left.',
+    ex_u11: 'Any number can be written over 1 (km² = km²/1). Now km² is on the top and the bottom, so it cancels like 5/5 = 1.',
+    howH: 'How it works with equivalent fractions:',
+    u11: 'What is (people / km²) × km²?', u11h: 'km² is on the bottom and on the top. It cancels.',
+    unitsDone: 'Units Lab complete! Next: use these tools in the Climate Lab.',
+    tileWrong: u => `Not yet. <b>${u}</b> did not cancel: now it is on the top two times. Flip the fraction so <b>${u}</b> is on the bottom.`,
+    tileWrongOther: 'Not yet. This fraction does not use the unit you have. Find the one with that unit on the bottom.',
+    h_mi_len: 'That fraction changes miles (length). You have square miles (area). Use the km² per mi² fraction.',
+    h_div_mult: 'When the unit is on the bottom of the fraction, you divide by that number.',
+    q_km: 'Spread the meltwater over all of Earth’s oceans. How thick is the new layer of water, in km?',
+    help_km: 'km³ ÷ km² = km. The answer is a very small number. Keep 5 decimal places (example: 0.00512).',
+    f_km1: m => `${m} km³ ÷ 361,900,000 km² = ____ km`, f_km2: '____ km³ ÷ ____ km² = ____ km',
+    h_already_m: 'That looks like meters. Keep this answer in km. The next step changes it to meters.',
+    h_digits: 'Close. Keep more digits (5 decimal places).',
+    q_m: 'Change your answer to meters.',
+    q_miconv: 'The U.S. Census gives Miami’s land area in square miles. Change it to km².',
+    miNote: 'U.S. Census: 36.0 square miles of land', f_densMi: p => `${p} people ÷ (your km² answer) = ____ people per km²`,
+ st_compare: 'Compare', st_finish: 'Finish',
+    pl_terrebonne: 'Terrebonne, USA', pl_saintlouis: 'Saint-Louis, Senegal', pl_miami: 'Miami, USA', pl_freetown: 'Freetown, Sierra Leone',
+    full_terrebonne: 'Terrebonne Parish, Louisiana, USA', full_saintlouis: 'Saint-Louis, Senegal', full_miami: 'Miami, Florida, USA', full_freetown: 'Freetown, Sierra Leone',
+    desc_terrebonne: 'Bayou land on the Gulf of Mexico. Most of the land is only a few meters above the sea, and the coast is already losing land to the water.',
+    desc_saintlouis: 'A historic city where the Senegal River meets the Atlantic Ocean. Parts of the city sit on an island in the river and on a thin strip of sand between the river and the ocean.',
+    desc_miami: 'A big city on Biscayne Bay. The land is flat and low: on average only about 2 m above the sea. The highest ground is on the west side, away from the bay.',
+    desc_freetown: 'The capital city sits on a narrow strip of coast with steep hills right behind it. Many neighborhoods are built at the water’s edge.',
+    // start
+    startH: 'Your mission', startP1: 'Sea level is rising. In this simulator you will follow the chain from CO₂ all the way to people who have to move:',
+    chain: ['CO₂ goes up ↑', 'Temperature goes up ↑', 'Land ice melts', 'Sea level goes up ↑', 'People have to move'],
+    startP2: 'First, in the <b>Units Lab</b>, you will learn a trick for changing units. Then, in the <b>Climate Lab</b>, you will calculate how much the sea rises for 3 amounts of CO₂. Then you will visit <b>4 coastal places</b>. In each place you will find how many people live in each km², flood the map, and calculate how many people would have to move.',
+    startP3: 'Every answer is checked. You move on when your answer is right. If it is wrong, read the hint and try again. Your progress saves on this device. At the end you will type your name to get a completion code.',
+    nameLab: 'Your first and last name', begin: 'Begin', needName: 'Type your name first.',
+    // climate
+    climH: 'Climate Lab: from CO₂ to sea level',
+    climP: 'Move the CO₂ slider. Watch what happens to the temperature and the ice. The ocean panel shows the sea level once you have calculated it.',
+    co2Lab: 'CO₂ in the air', co2Note: 'Before factories and cars (the year 1800): 280 ppm. Today: about 425 ppm.',
+    panCO2: 'CO₂ in the air', panT: 'Warming', panIce: 'Land ice melts', panSea: 'Sea level',
+    meltLab: 'meltwater', ofIce: 'of all land ice', unknown: '?', calcFirst: 'calculate first',
+    q_dir: 'Slide the CO₂ up and down. When CO₂ goes up, what happens to the temperature?',
+    o_up: 'The temperature goes up ↑', o_down: 'The temperature goes down ↓', o_same: 'The temperature stays the same',
+    h_dir: 'Look at the thermometer while you move the slider to the right.',
+    setTo: ppm => `Set CO₂ to ${ppm} ppm`, isSet: ppm => `CO₂ is set to ${ppm} ppm.`, setFirst: 'Press the button to set the CO₂ first.',
+    scenName: { 420: 'Today', 560: '2× pre-industrial (double)', 840: '3× pre-industrial (triple)' },
+    q_T: ppm => `At ${ppm} ppm, how much does Earth warm? Read the thermometer.`,
+    q_ice: ppm => `How much does the sea rise from the melted ice?`,
+    help_ice: 'Spread the meltwater over all of Earth’s oceans. The answer is in km, so multiply by 1,000 to get meters. Round to 2 decimal places.',
+    q_tot: ppm => `Warm ocean water also expands (gets bigger). What is the total sea level rise?`,
+    help_tot: 'Total rise = rise from melted ice + rise from warm water expanding.',
+    f_ice1: m => `${m} km³ ÷ 361,900,000 km² × 1,000 = ____ m`,
+    f_ice2: m => `____ km³ ÷ ____ km² × 1,000 = ____ m`,
+    f_tot: (a, b) => `${a} m (ice) + ${b} m (expanding water) = ____ m`,
+    f_tot2: 'rise from ice + rise from expanding water = ____ m',
+    expandLab: 'Warm water expands', oceanLab: 'Area of all of Earth’s oceans', meltReadLab: 'Meltwater from land ice',
+    sumH: 'My Climate Lab results', thPpm: 'CO₂ (ppm)', thT: 'Warming (°C)', thMelt: 'Meltwater (km³)', thIce: 'Rise from ice (m)', thExp: 'Rise from expanding water (m)', thTot: 'Total sea level rise (m)',
+    climDone: 'Climate Lab complete. You can keep exploring with the slider. Next: visit the coast.',
+    next: 'Next', goTo: s => `Go to ${s}`,
+    // place
+    placeIntro: 'Your job: find out how many people in this place would have to move.',
+    fPop: 'People who live here', fArea: 'Land area', fCell: 'Each square on the map', fScen: 'CO₂ for this mission',
+    scenLine: (ppm, sl) => `CO₂ = <b>${ppm} ppm</b> → from your Climate Lab, the sea rises about <b>${sl} m</b>.`,
+    q_dens: 'How many people live in each km² (population density)?',
+    help_dens: 'Population density = number of people ÷ land area. Round to a whole number.',
+    f_dens: (p, a) => `${p} people ÷ ${a} km² = ____ people per km²`,
+    raise: sl => `Raise the sea ${sl} m`, raised: sl => `The sea is up ${sl} m. Blue striped squares are flooded land.`, raiseFirst: 'Press the button to raise the sea first.',
+    q_count: 'Count the flooded land squares (blue with stripes). How many are there?',
+    help_count: 'Do not count the ocean or the river. Count row by row.',
+    q_farea: 'How much land is flooded?',
+    f_farea: (c) => `${c > 0 ? c : '____'} squares × ____ km² per square = ____ km²`,
+    q_move: 'How many people would have to move?',
+    help_move: 'People who must move = flooded area × population density. Round to the nearest whole person.',
+    f_move: 'flooded km² × people per km² = ____ people',
+    placeDone: (n, pct) => `About <b>${n}</b> people would have to move. That is <b>${pct}%</b> of the people who live here.`,
+    exploreH: 'Explore: try other sea levels', exploreP: 'Drag the slider to see how the flooding changes.',
+    seaLab: 'Sea level rise', floodedLab: 'Flooded', peopleLab: 'People who must move',
+    showH: 'Show land heights (m)', north: 'N', rowCountsNote: 'Hint: the number at the end of each row is how many flooded squares are in that row.',
+    lg_ocean: 'Ocean', lg_water: 'River / bay', lg_flood: 'Flooded land', lg_land: 'Land: darker = higher',
+    // compare
+    cmpH: 'Compare all 4 places', cmpP: 'The simulator ran every place at every CO₂ level. Each box shows how many people would have to move.',
+    thPlace: 'Place', thDens: 'People per km²',
+    c1: 'At 840 ppm, which place has the MOST people who must move?',
+    c2: 'Freetown floods a smaller part of its land than Miami. So why do so many people in Freetown still have to move?',
+    c2o: ['Many people live in each km² (high population density)', 'The sea rises more in Freetown', 'Freetown has more ice', 'Freetown is colder'],
+    c2h: 'Look at the “People per km²” column.',
+    c3: 'In Miami, how many FEWER people must move if CO₂ stays at 420 ppm instead of 560 ppm?',
+    help_c3: 'Find both numbers for Miami in the table. Subtract.',
+    c4: 'In our model, people are spread out evenly over the land. Real people are not. What does that mean for our answers?',
+    c4o: ['Our answers are estimates, not exact numbers', 'Our answers are exactly right', 'No one will really have to move'],
+    c4h: 'A model is a simple version of the real world.',
+    c5: 'Which chain is in the right order?',
+    c5o: ['CO₂ ↑ → temperature ↑ → land ice melts → sea level ↑ → people move', 'Sea level ↑ → land ice melts → CO₂ ↑ → people move', 'Temperature ↑ → CO₂ ↓ → sea ice melts → sea level ↑'],
+    c5h: 'Start with what is in the air.',
+    cmpDone: 'All correct. Go to Finish to get your completion code.',
+    // finish
+    finH: 'Mission complete!', finName: 'Type your name to get your completion code.', getCode: 'Get my code', finP: name => `Great work, ${name}. Type this code into the Schoology assignment to show you finished.`,
+    finSum: 'My results', copySum: 'Copy my results', copied: 'Copied',
+    resetAll: 'Start over (erases progress)', resetSure: 'Press again to erase everything.',
+    // feedback
+    correct: 'Correct!', tryAgain: 'Not yet. Try again.', notNum: 'Type a number.',
+    h_km: 'Your answer looks like it is in km. Multiply by 1,000 to change km to meters.',
+    h_flip: 'It looks like you divided the other way. Put the first number on top.',
+    h_mult: 'Divide here, do not multiply.',
+    h_dens_flip: 'Divide the people by the area (people ÷ km²), not the area by the people.',
+    h_move_squares: 'Use the flooded AREA in km², not the number of squares.',
+    h_move_all: 'Not everyone has to move. Only the people on the flooded land.',
+    h_close: 'Close! Check your rounding.', h_show: 'Here is the work:',
+    h_count_low: 'Too few. Look again for flooded squares near the river and the coast.', h_count_high: 'Too many. Do not count ocean or river squares.',
+    h_tempread: 'Read the number under the thermometer.',
+    h_add: 'Add the two rises together.',
+  },
+  es: {
+    eyebrow: 'Simulador del clima', backAll: 'Todos los simuladores', title: 'Mares que suben: ¿quién tiene que mudarse?',
+    footNote: 'Los números están redondeados y simplificados para aprender. Los números del nivel del mar son a largo plazo: lo que pasa si el CO₂ se queda en ese nivel mientras el hielo tiene tiempo de derretirse (cientos o miles de años). Población: Censo de EE. UU. 2020 (Terrebonne, Miami), censo de Senegal 2023 (Saint-Louis), censo de Sierra Leona 2015 (Freetown).',
+    teacherBtn: 'Maestro: revisar un código de finalización', teacherGo: 'Mostrar código',
+    st_start: 'Inicio', st_units: 'Laboratorio de unidades', st_climate: 'Laboratorio del clima',
+    unitsH: 'Laboratorio de unidades: cambiar unidades con fracciones',
+    unitsP: 'Los científicos cambian unidades todo el tiempo: de docenas a huevos, de kilómetros a metros, de millas cuadradas a kilómetros cuadrados. Este truco se llama <b>análisis dimensional</b>. Lo vas a usar en cada paso de este simulador.',
+    i_eq: '<h3>1. Equivalencias: dos formas de decir la misma cantidad</h3>',
+    i_eq2: 'Cada tarjeta dice la misma cantidad en dos unidades diferentes.',
+    i_one: '<h3>2. Una fracción puede ser igual a 1</h3>', i_one1: 'Cuando la parte de arriba y la de abajo de una fracción son la <b>misma cantidad</b>, la fracción es igual a 1:',
+    i_one2: '12 huevos y 1 docena son la misma cantidad, así que esta fracción también es igual a 1:', i_one3: 'Puedes voltearla. Sigue siendo igual a 1.',
+    u1: '¿Qué fracción es igual a 1?', u1h: '¿La parte de arriba y la de abajo son la misma cantidad? Mira las tarjetas: 1 par = 2 zapatos.',
+    u2: '¿Qué fracción TAMBIÉN es igual a 1?', u2h: 'Una fracción volteada sigue siendo igual a 1 si arriba y abajo son la misma cantidad.',
+    i_ex: '<h3>3. Ejemplo: ¿Cuántos huevos hay en 3 docenas?</h3>',
+    i_exP: 'Multiplicar por 1 no cambia la cantidad. Solo cambia las unidades.',
+    i_exS: ['Escribe lo que tienes: <b>3 docenas</b>.', 'Multiplica por una fracción que es igual a 1. Pon <b>docenas abajo</b>.', 'Tacha una unidad que está arriba Y abajo. Se cancela.', 'Multiplica los números: 3 × 12 = <b>36 huevos</b>. La unidad que queda es la unidad de la respuesta.'],
+    tileTip: 'Paso 1: haz clic en la fracción que hace que las unidades se cancelen. Paso 2: escribe la respuesta.',
+    u3: '¿Cuántos zapatos hay en 5 pares?', u4: '¿Cuántas docenas son 48 huevos?', u4h: 'Ahora empiezas con <b>huevos</b>. Entonces pon <b>huevos abajo</b>.',
+    u5: '¿Cuántos minutos hay en 3 horas?',
+    i_met: '<h3>4. Las unidades métricas funcionan igual</h3>', i_metP: '<b>Kilo</b> significa 1,000. Entonces 1 kilómetro = 1,000 metros.',
+    u6: 'Un glaciar mide 4 km de largo. ¿Cuántos metros son?', u7: 'El mar subió 0.005 km. ¿Cuántos metros son?',
+    i_area: '<h3>5. Las unidades de área están al cuadrado</h3>', i_areaP: 'km² significa km × km. Un cuadrado de 1 km por lado mide 1,000 m por lado. Para cambiar unidades de área, usa el factor de longitud <b>dos veces</b>:',
+    u8: '¿Cuántos m² hay en 1 km²?', u8h: '1,000 × 1,000 = ?',
+    u9: '1 milla = 1.61 km. ¿Cuántos km² hay en 1 milla cuadrada (mi²)? Lo vas a necesitar en Miami.', u9h: 'Área: usa el factor dos veces. 1.61 × 1.61 = ?',
+    i_div: '<h3>6. Las unidades también se cancelan al dividir</h3>', i_divP: 'km³ significa km × km × km. Volumen ÷ área = altura. Lo vas a usar para saber cuánto sube el mar.',
+    u10: '¿Cuánto es km³ ÷ km²?', u10h: 'Escribe km³ como km × km × km y km² como km × km. Tacha las unidades iguales.',
+    ex_u8: 'Cada fracción 1,000 m / 1 km es igual a 1, así que la cantidad no cambia. El área tiene dos km, así que necesitas la fracción dos veces para cancelar los dos.',
+    ex_u9: 'Los dos mi de abajo del área se cancelan con dos fracciones. La respuesta da una nueva fracción que es igual a 1. La vas a usar en Miami:',
+    ex_u10: 'km/km es como 5/5: arriba y abajo son iguales, así que es igual a 1. Dos se cancelan y queda un km.',
+    ex_u11: 'Cualquier número se puede escribir sobre 1 (km² = km²/1). Ahora km² está arriba y abajo, así que se cancela como 5/5 = 1.',
+    howH: 'Cómo funciona con fracciones equivalentes:',
+    u11: '¿Cuánto es (personas / km²) × km²?', u11h: 'km² está abajo y arriba. Se cancela.',
+    unitsDone: '¡Terminaste el Laboratorio de unidades! Ahora: usa estas herramientas en el Laboratorio del clima.',
+    tileWrong: u => `Todavía no. <b>${u}</b> no se canceló: ahora está arriba dos veces. Voltea la fracción para que <b>${u}</b> quede abajo.`,
+    tileWrongOther: 'Todavía no. Esta fracción no usa la unidad que tienes. Busca la que tiene esa unidad abajo.',
+    h_mi_len: 'Esa fracción cambia millas (longitud). Tú tienes millas cuadradas (área). Usa la fracción de km² por mi².',
+    h_div_mult: 'Cuando la unidad está abajo en la fracción, divides entre ese número.',
+    q_km: 'Reparte el agua derretida sobre todos los océanos de la Tierra. ¿Qué tan gruesa es la nueva capa de agua, en km?',
+    help_km: 'km³ ÷ km² = km. La respuesta es un número muy pequeño. Usa 5 decimales (ejemplo: 0.00512).',
+    f_km1: m => `${m} km³ ÷ 361,900,000 km² = ____ km`, f_km2: '____ km³ ÷ ____ km² = ____ km',
+    h_already_m: 'Eso parece estar en metros. Deja esta respuesta en km. El siguiente paso la cambia a metros.',
+    h_digits: 'Casi. Usa más dígitos (5 decimales).',
+    q_m: 'Cambia tu respuesta a metros.',
+    q_miconv: 'El Censo de EE. UU. da el área de tierra de Miami en millas cuadradas. Cámbiala a km².',
+    miNote: 'Censo de EE. UU.: 36.0 millas cuadradas de tierra', f_densMi: p => `${p} personas ÷ (tu respuesta en km²) = ____ personas por km²`,
+ st_compare: 'Comparar', st_finish: 'Final',
+    pl_terrebonne: 'Terrebonne, EE. UU.', pl_saintlouis: 'Saint-Louis, Senegal', pl_miami: 'Miami, EE. UU.', pl_freetown: 'Freetown, Sierra Leona',
+    full_terrebonne: 'Parroquia de Terrebonne, Luisiana, EE. UU.', full_saintlouis: 'Saint-Louis, Senegal', full_miami: 'Miami, Florida, EE. UU.', full_freetown: 'Freetown, Sierra Leona',
+    desc_terrebonne: 'Tierra de pantanos (bayous) junto al Golfo de México. Casi toda la tierra está solo unos metros sobre el mar, y la costa ya está perdiendo tierra.',
+    desc_saintlouis: 'Una ciudad histórica donde el río Senegal llega al océano Atlántico. Partes de la ciudad están en una isla del río y en una franja delgada de arena entre el río y el océano.',
+    desc_miami: 'Una ciudad grande junto a la bahía Biscayne. La tierra es plana y baja: en promedio solo unos 2 m sobre el mar. La tierra más alta está en el oeste, lejos de la bahía.',
+    desc_freetown: 'La capital está en una franja angosta de costa con cerros empinados justo detrás. Muchos barrios están construidos a la orilla del agua.',
+    startH: 'Tu misión', startP1: 'El nivel del mar está subiendo. En este simulador vas a seguir la cadena desde el CO₂ hasta las personas que tienen que mudarse:',
+    chain: ['El CO₂ sube ↑', 'La temperatura sube ↑', 'El hielo terrestre se derrite', 'El nivel del mar sube ↑', 'Las personas tienen que mudarse'],
+    startP2: 'Primero, en el <b>Laboratorio de unidades</b>, vas a aprender un truco para cambiar unidades. Luego, en el <b>Laboratorio del clima</b>, vas a calcular cuánto sube el mar con 3 cantidades de CO₂. Luego vas a visitar <b>4 lugares en la costa</b>. En cada lugar vas a calcular cuántas personas viven en cada km², inundar el mapa y calcular cuántas personas tendrían que mudarse.',
+    startP3: 'Cada respuesta se revisa. Avanzas cuando tu respuesta es correcta. Si no es correcta, lee la pista e inténtalo otra vez. Tu progreso se guarda en este aparato. Al final vas a escribir tu nombre para recibir un código de finalización.',
+    nameLab: 'Tu nombre y apellido', begin: 'Empezar', needName: 'Primero escribe tu nombre.',
+    climH: 'Laboratorio del clima: del CO₂ al nivel del mar',
+    climP: 'Mueve el control del CO₂. Observa lo que pasa con la temperatura y el hielo. El panel del océano muestra el nivel del mar cuando ya lo calculaste.',
+    co2Lab: 'CO₂ en el aire', co2Note: 'Antes de las fábricas y los carros (el año 1800): 280 ppm. Hoy: unos 425 ppm.',
+    panCO2: 'CO₂ en el aire', panT: 'Calentamiento', panIce: 'El hielo terrestre se derrite', panSea: 'Nivel del mar',
+    meltLab: 'agua derretida', ofIce: 'de todo el hielo terrestre', unknown: '?', calcFirst: 'calcula primero',
+    q_dir: 'Mueve el CO₂ hacia arriba y hacia abajo. Cuando el CO₂ sube, ¿qué pasa con la temperatura?',
+    o_up: 'La temperatura sube ↑', o_down: 'La temperatura baja ↓', o_same: 'La temperatura no cambia',
+    h_dir: 'Mira el termómetro mientras mueves el control hacia la derecha.',
+    setTo: ppm => `Poner el CO₂ en ${ppm} ppm`, isSet: ppm => `El CO₂ está en ${ppm} ppm.`, setFirst: 'Primero presiona el botón para poner el CO₂.',
+    scenName: { 420: 'Hoy', 560: '2× antes de las fábricas (el doble)', 840: '3× antes de las fábricas (el triple)' },
+    q_T: ppm => `Con ${ppm} ppm, ¿cuánto se calienta la Tierra? Lee el termómetro.`,
+    q_ice: ppm => `¿Cuánto sube el mar por el hielo derretido?`,
+    help_ice: 'Reparte el agua derretida sobre todos los océanos de la Tierra. La respuesta está en km, así que multiplica por 1,000 para tenerla en metros. Redondea a 2 decimales.',
+    q_tot: ppm => `El agua caliente del océano también se expande (se hace más grande). ¿Cuál es el aumento total del nivel del mar?`,
+    help_tot: 'Aumento total = aumento por el hielo derretido + aumento por el agua caliente que se expande.',
+    f_ice1: m => `${m} km³ ÷ 361,900,000 km² × 1,000 = ____ m`,
+    f_ice2: m => `____ km³ ÷ ____ km² × 1,000 = ____ m`,
+    f_tot: (a, b) => `${a} m (hielo) + ${b} m (agua que se expande) = ____ m`,
+    f_tot2: 'aumento por el hielo + aumento por el agua que se expande = ____ m',
+    expandLab: 'El agua caliente se expande', oceanLab: 'Área de todos los océanos de la Tierra', meltReadLab: 'Agua derretida del hielo terrestre',
+    sumH: 'Mis resultados del Laboratorio del clima', thPpm: 'CO₂ (ppm)', thT: 'Calentamiento (°C)', thMelt: 'Agua derretida (km³)', thIce: 'Aumento por el hielo (m)', thExp: 'Aumento por el agua que se expande (m)', thTot: 'Aumento total del nivel del mar (m)',
+    climDone: 'Terminaste el Laboratorio del clima. Puedes seguir explorando con el control. Ahora: visita la costa.',
+    next: 'Siguiente', goTo: s => `Ir a ${s}`,
+    placeIntro: 'Tu trabajo: calcular cuántas personas de este lugar tendrían que mudarse.',
+    fPop: 'Personas que viven aquí', fArea: 'Área de tierra', fCell: 'Cada cuadro del mapa', fScen: 'CO₂ para esta misión',
+    scenLine: (ppm, sl) => `CO₂ = <b>${ppm} ppm</b> → según tu Laboratorio del clima, el mar sube unos <b>${sl} m</b>.`,
+    q_dens: '¿Cuántas personas viven en cada km² (densidad de población)?',
+    help_dens: 'Densidad de población = número de personas ÷ área de tierra. Redondea a un número entero.',
+    f_dens: (p, a) => `${p} personas ÷ ${a} km² = ____ personas por km²`,
+    raise: sl => `Subir el mar ${sl} m`, raised: sl => `El mar subió ${sl} m. Los cuadros azules con rayas son tierra inundada.`, raiseFirst: 'Primero presiona el botón para subir el mar.',
+    q_count: 'Cuenta los cuadros de tierra inundada (azules con rayas). ¿Cuántos hay?',
+    help_count: 'No cuentes el océano ni el río. Cuenta fila por fila.',
+    q_farea: '¿Cuánta tierra se inunda?',
+    f_farea: (c) => `${c > 0 ? c : '____'} cuadros × ____ km² por cuadro = ____ km²`,
+    q_move: '¿Cuántas personas tendrían que mudarse?',
+    help_move: 'Personas que deben mudarse = área inundada × densidad de población. Redondea a la persona entera más cercana.',
+    f_move: 'km² inundados × personas por km² = ____ personas',
+    placeDone: (n, pct) => `Unas <b>${n}</b> personas tendrían que mudarse. Eso es el <b>${pct}%</b> de las personas que viven aquí.`,
+    exploreH: 'Explora: prueba otros niveles del mar', exploreP: 'Mueve el control para ver cómo cambia la inundación.',
+    seaLab: 'Aumento del nivel del mar', floodedLab: 'Inundado', peopleLab: 'Personas que deben mudarse',
+    showH: 'Mostrar la altura de la tierra (m)', north: 'N', rowCountsNote: 'Pista: el número al final de cada fila es cuántos cuadros inundados hay en esa fila.',
+    lg_ocean: 'Océano', lg_water: 'Río / bahía', lg_flood: 'Tierra inundada', lg_land: 'Tierra: más oscuro = más alto',
+    cmpH: 'Compara los 4 lugares', cmpP: 'El simulador probó cada lugar con cada nivel de CO₂. Cada casilla muestra cuántas personas tendrían que mudarse.',
+    thPlace: 'Lugar', thDens: 'Personas por km²',
+    c1: 'Con 840 ppm, ¿qué lugar tiene MÁS personas que deben mudarse?',
+    c2: 'Freetown inunda una parte más pequeña de su tierra que Miami. Entonces, ¿por qué tantas personas en Freetown tienen que mudarse?',
+    c2o: ['Viven muchas personas en cada km² (alta densidad de población)', 'El mar sube más en Freetown', 'Freetown tiene más hielo', 'Freetown es más frío'],
+    c2h: 'Mira la columna “Personas por km²”.',
+    c3: 'En Miami, ¿cuántas personas MENOS deben mudarse si el CO₂ se queda en 420 ppm en vez de 560 ppm?',
+    help_c3: 'Busca los dos números de Miami en la tabla. Resta.',
+    c4: 'En nuestro modelo, las personas están repartidas de forma igual sobre la tierra. Las personas reales no. ¿Qué significa eso para nuestras respuestas?',
+    c4o: ['Nuestras respuestas son estimaciones, no números exactos', 'Nuestras respuestas son exactas', 'En realidad nadie tendrá que mudarse'],
+    c4h: 'Un modelo es una versión sencilla del mundo real.',
+    c5: '¿Qué cadena está en el orden correcto?',
+    c5o: ['CO₂ ↑ → temperatura ↑ → el hielo terrestre se derrite → nivel del mar ↑ → las personas se mudan', 'Nivel del mar ↑ → el hielo terrestre se derrite → CO₂ ↑ → las personas se mudan', 'Temperatura ↑ → CO₂ ↓ → el hielo marino se derrite → nivel del mar ↑'],
+    c5h: 'Empieza con lo que hay en el aire.',
+    cmpDone: 'Todo correcto. Ve a Final para recibir tu código de finalización.',
+    finH: '¡Misión cumplida!', finName: 'Escribe tu nombre para recibir tu código de finalización.', getCode: 'Recibir mi código', finP: name => `Excelente trabajo, ${name}. Escribe este código en la tarea de Schoology para mostrar que terminaste.`,
+    finSum: 'Mis resultados', copySum: 'Copiar mis resultados', copied: 'Copiado',
+    resetAll: 'Empezar de nuevo (borra el progreso)', resetSure: 'Presiona otra vez para borrar todo.',
+    correct: '¡Correcto!', tryAgain: 'Todavía no. Inténtalo otra vez.', notNum: 'Escribe un número.',
+    h_km: 'Tu respuesta parece estar en km. Multiplica por 1,000 para cambiar km a metros.',
+    h_flip: 'Parece que dividiste al revés. Pon el primer número arriba.',
+    h_mult: 'Aquí se divide, no se multiplica.',
+    h_dens_flip: 'Divide las personas entre el área (personas ÷ km²), no el área entre las personas.',
+    h_move_squares: 'Usa el ÁREA inundada en km², no el número de cuadros.',
+    h_move_all: 'No todos tienen que mudarse. Solo las personas en la tierra inundada.',
+    h_close: '¡Casi! Revisa cómo redondeaste.', h_show: 'Así se hace:',
+    h_count_low: 'Muy pocos. Busca otra vez cuadros inundados cerca del río y de la costa.', h_count_high: 'Demasiados. No cuentes los cuadros del océano ni del río.',
+    h_tempread: 'Lee el número debajo del termómetro.',
+    h_add: 'Suma los dos aumentos.',
+  },
+};
+let lang = 'en';
+const t = (k, ...a) => { const v = STR[lang][k]; return typeof v === 'function' ? v(...a) : v; };
+// ---------- units and fractions ----------
+const UN = {
+  egg: { en: ['egg', 'eggs'], es: ['huevo', 'huevos'] }, dozen: { en: ['dozen', 'dozen'], es: ['docena', 'docenas'] },
+  shoe: { en: ['shoe', 'shoes'], es: ['zapato', 'zapatos'] }, pair: { en: ['pair', 'pairs'], es: ['par', 'pares'] },
+  hour: { en: ['hour', 'hours'], es: ['hora', 'horas'] }, min: { en: ['minute', 'minutes'], es: ['minuto', 'minutos'] },
+  square: { en: ['square', 'squares'], es: ['cuadro', 'cuadros'] }, people: { en: ['people', 'people'], es: ['personas', 'personas'] },
+  km: 'km', m: 'm', km2: 'km²', km3: 'km³', m2: 'm²', mi: 'mi', mi2: 'mi²' };
+const uL = (k, n = 2) => { const u = UN[k]; return typeof u === 'string' ? u : u[lang][n === 1 ? 0 : 1]; };
+const fq = n => Number(n).toLocaleString(lang === 'es' ? 'es-MX' : 'en-US', { maximumFractionDigits: 5 });
+const qty = (n, k, x = false) => `${n === null ? '' : fq(n) + ' '}<span class="${x ? 'x' : ''}">${uL(k, n)}</span>`;
+const frac = (tn, tu, bn, bu, xt = false, xb = false) => `<span class="frac"><span>${qty(tn, tu, xt)}</span><span>${qty(bn, bu, xb)}</span></span>`;
+const F = o => frac(o.tn, o.tu, o.bn, o.bu, o.xt, o.xb);
+
+// =====================================================================
+// STATE (saved on this device)
+// =====================================================================
+const KEY = 'risingSeasSim_v2';
+const blank = () => ({ started: false, name: '', stage: 0, maxStage: 0, ans: {}, actions: {}, ppm: 420, rowHelp: {} });
+let S = blank();
+try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(blank(), JSON.parse(raw)); if (localStorage.getItem('risingSeasLang') === 'es') lang = 'es'; } catch (e) {}
+if (location.hash === '#es') lang = 'es'; else if (location.hash === '#en') lang = 'en';
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+const STAGES = ['start', 'units', 'climate', ...PLACES.map(p => p.id), 'compare', 'finish'];
+const stageName = id => id === 'start' ? t('st_start') : id === 'units' ? t('st_units') : id === 'climate' ? t('st_climate') : id === 'compare' ? t('st_compare') : id === 'finish' ? t('st_finish') : t('pl_' + id);
+
+// =====================================================================
+// NUMBER PARSING — accepts 1,234.5  1.234,5  1 234  3,4 (Spanish decimal comma)
+// =====================================================================
+function candidates(str) {
+  let s = String(str).trim().replace(/\s/g, '');
+  if (!s || !/^-?[\d.,]+$/.test(s)) return [];
+  const out = new Set();
+  const plain = v => { const n = Number(v); if (isFinite(n)) out.add(n); };
+  plain(s.replace(/,/g, ''));                     // 1,234.5 (comma = thousands)
+  plain(s.replace(/\./g, '').replace(',', '.'));  // 1.234,5 (dot = thousands, comma = decimal)
+  if (/^-?\d+,\d+$/.test(s)) plain(s.replace(',', '.')); // 3,4 → 3.4
+  return [...out];
+}
+const near = (a, b, tol) => Math.abs(a - b) <= tol;
+const rel = (a, b, r) => Math.abs(a - b) <= Math.abs(b) * r;
+
+// =====================================================================
+// QUESTIONS
+// Each: { id, kind: 'num'|'mc'|'action', prompt, help, formula, unit, check(vals) -> {ok, hint}, work }
+// =====================================================================
+function unitsQs() {
+  const fac = (id, prompt, start, tiles, right, unit, ans, extra = {}) => ({ id, kind: 'factor', prompt, start, tiles, right, unit,
+    check: v => {
+      if (v.some(x => near(x, ans, Math.max(1e-9, Math.abs(ans) * 0.005)))) return { ok: true };
+      const T = tiles[right];
+      if (T.bn !== 1 && v.some(x => near(x, start.n * T.bn / T.tn, 1e-6))) return { ok: false, hint: t('h_div_mult') };
+      return { ok: false, hint: null };
+    }, work: `${fq(start.n)} × ${fq(tiles[right].tn)} ÷ ${fq(tiles[right].bn)} = ${fq(ans)} ${uL(unit)}`, ...extra });
+  const eq = (a, b) => `<div>${a} = ${b}</div>`;
+  return [
+    { id: 'ui1', kind: 'info', html: () => `${t('i_eq')}<div class="eqcards">${eq(qty(1, 'dozen'), qty(12, 'egg'))}${eq(qty(1, 'pair'), qty(2, 'shoe'))}${eq(qty(1, 'hour'), qty(60, 'min'))}${eq('1 km', '1,000 m')}</div><p class="small">${t('i_eq2')}</p>` },
+    { id: 'ui2', kind: 'info', html: () => `${t('i_one')}<p>${t('i_one1')}</p><div class="mathline"><span class="frac"><span>2</span><span>2</span></span> = 1 &nbsp;&nbsp; <span class="frac"><span>5</span><span>5</span></span> = 1</div><p>${t('i_one2')}</p><div class="mathline">${frac(12, 'egg', 1, 'dozen')} = 1 &nbsp;&nbsp; ${frac(1, 'dozen', 12, 'egg')} = 1</div><p class="small">${t('i_one3')}</p>` },
+    { id: 'u1', kind: 'mc', prompt: t('u1'), opts: [frac(2, 'shoe', 2, 'pair'), frac(1, 'hour', 1, 'min'), frac(2, 'shoe', 1, 'pair')], right: 2, hint: t('u1h') },
+    { id: 'u2', kind: 'mc', prompt: t('u2'), opts: [frac(1, 'dozen', 12, 'egg'), frac(1, 'dozen', 1, 'egg'), frac(1, 'hour', 6, 'min')], right: 0, hint: t('u2h') },
+    { id: 'ui3', kind: 'info', html: () => `${t('i_ex')}<p>${t('i_exP')}</p><ol>${t('i_exS').map(x => `<li>${x}</li>`).join('')}</ol><div class="mathline">${qty(3, 'dozen', true)} × ${frac(12, 'egg', 1, 'dozen', false, true)} = <b>${qty(36, 'egg')}</b></div>${cartonsSVG()}` },
+    fac('u3', t('u3'), { n: 5, u: 'pair' }, [{ tn: 2, tu: 'shoe', bn: 1, bu: 'pair' }, { tn: 1, tu: 'pair', bn: 2, bu: 'shoe' }], 0, 'shoe', 10, { help: t('tileTip') }),
+    fac('u4', t('u4'), { n: 48, u: 'egg' }, [{ tn: 12, tu: 'egg', bn: 1, bu: 'dozen' }, { tn: 1, tu: 'dozen', bn: 12, bu: 'egg' }], 1, 'dozen', 4, { help: t('u4h') }),
+    fac('u5', t('u5'), { n: 3, u: 'hour' }, [{ tn: 1, tu: 'hour', bn: 60, bu: 'min' }, { tn: 60, tu: 'min', bn: 1, bu: 'hour' }], 1, 'min', 180),
+    { id: 'ui4', kind: 'info', html: () => `${t('i_met')}<p>${t('i_metP')}</p><div class="mathline">${frac(1000, 'm', 1, 'km')} = 1 &nbsp;&nbsp; ${frac(1, 'km', 1000, 'm')} = 1</div>` },
+    fac('u6', t('u6'), { n: 4, u: 'km' }, [{ tn: 1000, tu: 'm', bn: 1, bu: 'km' }, { tn: 1, tu: 'km', bn: 1000, bu: 'm' }], 0, 'm', 4000),
+    fac('u7', t('u7'), { n: 0.005, u: 'km' }, [{ tn: 1, tu: 'km', bn: 1000, bu: 'm' }, { tn: 1000, tu: 'm', bn: 1, bu: 'km' }], 1, 'm', 5),
+    { id: 'ui5', kind: 'info', html: () => `${t('i_area')}<p>${t('i_areaP')}</p>${areaSVG()}<div class="mathline">1 <span class="x">km</span> × <span class="x">km</span> × ${frac(1000, 'm', 1, 'km', false, true)} × ${frac(1000, 'm', 1, 'km', false, true)} = <b>1,000,000 m²</b></div>` },
+    { id: 'u8', kind: 'mc', prompt: t('u8'), opts: ['1,000 m²', '2,000 m²', '1,000,000 m²'], right: 2, hint: t('u8h'),
+      explain: () => `<div class="mathline">1 <span class="x">km</span> × <span class="x">km</span> × ${frac(1000, 'm', 1, 'km', false, true)} × ${frac(1000, 'm', 1, 'km', false, true)} = 1,000 × 1,000 m × m = <b>1,000,000 m²</b></div><p class="small">${t('ex_u8')}</p>` },
+    { id: 'u9', kind: 'mc', prompt: t('u9'), opts: ['1.61 km²', '3.22 km²', '2.59 km²'], right: 2, hint: t('u9h'),
+      explain: () => `<div class="mathline">1 <span class="x">mi</span> × <span class="x">mi</span> × ${frac(1.61, 'km', 1, 'mi', false, true)} × ${frac(1.61, 'km', 1, 'mi', false, true)} = 1.61 × 1.61 km × km = <b>2.59 km²</b></div><p class="small">${t('ex_u9')}</p><div class="mathline">${frac(2.59, 'km2', 1, 'mi2')} = 1 &nbsp;&nbsp; ${frac(1, 'mi2', 2.59, 'km2')} = 1</div>` },
+    { id: 'ui6', kind: 'info', html: () => `${t('i_div')}<p>${t('i_divP')}</p><div class="mathline"><span class="frac"><span><span class="x">km</span> × <span class="x">km</span> × km</span><span><span class="x">km</span> × <span class="x">km</span></span></span> = km</div>` },
+    { id: 'u10', kind: 'mc', prompt: t('u10'), opts: ['km⁵', 'km', 'km²'], right: 1, hint: t('u10h'),
+      explain: () => `<div class="mathline"><span class="frac"><span>km³</span><span>km²</span></span> = <span class="frac"><span><span class="x">km</span> × <span class="x">km</span> × km</span><span><span class="x">km</span> × <span class="x">km</span></span></span> = ${frac(null, 'km', null, 'km')} × ${frac(null, 'km', null, 'km')} × km = 1 × 1 × km = <b>km</b></div><p class="small">${t('ex_u10')}</p>` },
+    { id: 'u11', kind: 'mc', prompt: t('u11'), opts: [uL('people') + ' / km⁴', 'km²', uL('people')], right: 2, hint: t('u11h'),
+      explain: () => `<div class="mathline">${frac(null, 'people', null, 'km2', false, true)} × <span class="frac"><span><span class="x">km²</span></span><span>1</span></span> = <span class="frac"><span>${uL('people')}</span><span>1</span></span> = <b>${uL('people')}</b></div><p class="small">${t('ex_u11')}</p>` },
+  ];
+}
+function cartonsSVG() {
+  const css = getComputedStyle(document.documentElement), C = k => css.getPropertyValue('--' + k).trim();
+  let g = '';
+  for (let c = 0; c < 3; c++) {
+    const x0 = 10 + c * 150;
+    g += `<rect x="${x0}" y="10" width="136" height="54" rx="8" fill="${C('sunk')}" stroke="${C('muted')}" stroke-width="2"/>`;
+    for (let i = 0; i < 12; i++) g += `<ellipse cx="${x0 + 14 + (i % 6) * 21.6}" cy="${26 + Math.floor(i / 6) * 22}" rx="8" ry="9.5" fill="#f4ead8" stroke="#b9a27c"/>`;
+    g += `<text x="${x0 + 68}" y="84" text-anchor="middle" font-size="14" font-weight="700" fill="${C('ink')}">1 ${uL('dozen', 1)} = 12</text>`;
+  }
+  return `<svg viewBox="0 0 460 92" style="max-width:460px;width:100%" role="img" aria-label="3 × 12 = 36">${g}</svg>`;
+}
+function areaSVG() {
+  const css = getComputedStyle(document.documentElement), C = k => css.getPropertyValue('--' + k).trim();
+  let g = `<rect x="70" y="10" width="150" height="150" fill="${C('sunk')}" stroke="${C('ink')}" stroke-width="2"/>`;
+  for (let i = 1; i < 10; i++) g += `<path d="M${70 + i * 15} 10 V160 M70 ${10 + i * 15} H220" stroke="${C('line')}"/>`;
+  g += `<text x="145" y="180" text-anchor="middle" font-size="14" font-weight="700" fill="${C('ink')}">1 km = 1,000 m</text>`;
+  g += `<text x="60" y="88" text-anchor="end" font-size="14" font-weight="700" fill="${C('ink')}">1 km</text><text x="60" y="105" text-anchor="end" font-size="13" fill="${C('muted')}">1,000 m</text>`;
+  g += `<text x="145" y="82" text-anchor="middle" font-size="16" font-weight="700" fill="${C('ink')}">1 km²</text><text x="145" y="102" text-anchor="middle" font-size="13" fill="${C('ink')}">1,000,000 m²</text>`;
+  return `<svg viewBox="0 0 300 190" style="max-width:300px;width:100%" role="img" aria-label="1 km² = 1,000,000 m²">${g}</svg>`;
+}
+function climateQs() {
+  const qs = [{ id: 'c_dir', kind: 'mc', prompt: t('q_dir'), opts: [t('o_down'), t('o_same'), t('o_up')], right: 2, hint: t('h_dir') }];
+  SCEN.forEach((ppm, i) => {
+    const T = dT(ppm), M = melt(ppm), I = iceRise(ppm), E = expand(ppm), TOT = totalSL(ppm);
+    qs.push({ id: 'set_' + ppm, kind: 'action', label: t('setTo', ppm), doneText: t('isSet', ppm), head: `${ppm} ppm · ${t('scenName')[ppm]}`, run: () => { S.ppm = ppm; updateChain(); } });
+    qs.push({ id: 'T_' + ppm, kind: 'num', prompt: t('q_T', ppm), unit: '°C',
+      check: v => v.some(x => near(x, T, 0.051)) ? { ok: true } : { ok: false, hint: t('h_tempread') }, work: `+${fmtN(T, 1)} °C` });
+    const K = M / OCEAN_AREA, K5 = Math.round(K * 1e5) / 1e5;
+    qs.push({ id: 'K_' + ppm, kind: 'num', prompt: t('q_km'), help: t('help_km'),
+      formula: i === 0 ? t('f_km1', fmtN(M)) : i === 1 ? t('f_km2') : '', given: `${t('meltReadLab')}: <b>${fmtN(M)} km³</b><br>${t('oceanLab')}: <b>361,900,000 km²</b>`, unit: 'km',
+      check: v => {
+        if (v.some(x => rel(x, K, 0.02))) return { ok: true };
+        const x = v[0];
+        if (rel(x, I, 0.03)) return { ok: false, hint: t('h_already_m') };
+        if (rel(x, OCEAN_AREA / M, 0.03)) return { ok: false, hint: t('h_flip') };
+        if (x > 1e6) return { ok: false, hint: t('h_mult') };
+        if (rel(x, K, 0.2)) return { ok: false, hint: t('h_digits') };
+        return { ok: false, hint: null };
+      }, work: `${fmtN(M)} ÷ 361,900,000 = ${fq(K5)} km` });
+    qs.push({ id: 'I_' + ppm, kind: 'factor', prompt: t('q_m'), start: { n: K5, u: 'km' }, unit: 'm',
+      tiles: [{ tn: 1, tu: 'km', bn: 1000, bu: 'm' }, { tn: 1000, tu: 'm', bn: 1, bu: 'km' }], right: 1,
+      check: v => {
+        if (v.some(x => near(x, I, 0.06))) return { ok: true };
+        if (v.some(x => near(x, K5 / 1000, 1e-6))) return { ok: false, hint: t('h_div_mult') };
+        return { ok: false, hint: null };
+      }, work: `${fq(K5)} × 1,000 = ${fmtN(I, 2)} m` });
+    qs.push({ id: 'S_' + ppm, kind: 'num', prompt: t('q_tot', ppm), help: t('help_tot'),
+      formula: i < 2 ? t('f_tot', fmtN(I, 2), fmtN(E, 2)) : t('f_tot2'), given: `${t('expandLab')}: <b>+${fmtN(E, 2)} m</b>`, unit: 'm',
+      check: v => {
+        if (v.some(x => near(x, TOT, 0.1))) return { ok: true };
+        const x = v[0];
+        if (near(x, I, 0.1)) return { ok: false, hint: t('h_add') };
+        return { ok: false, hint: t('h_add') };
+      }, work: `${fmtN(I, 2)} + ${fmtN(E, 2)} = ${fmtN(TOT, 2)} m` });
+  });
+  return qs;
+}
+function placeQs(p) {
+  const D = density(p), SL = totalSL(p.scen), F = floodCount(p, SL), FA = F * p.cell, MV = FA * D;
+  const slTxt = fmtN(SL, 1);
+  const conv = p.areaMi2 ? [{ id: p.id + '_conv', kind: 'factor', prompt: t('q_miconv'), start: { n: p.areaMi2, u: 'mi2' }, unit: 'km2',
+      tiles: [{ tn: 1, tu: 'mi2', bn: MI2_TO_KM2, bu: 'km2' }, { tn: 1.61, tu: 'km', bn: 1, bu: 'mi' }, { tn: MI2_TO_KM2, tu: 'km2', bn: 1, bu: 'mi2' }], right: 2,
+      tileHints: { 1: t('h_mi_len') },
+      check: v => {
+        if (v.some(x => near(x, p.areaMi2 * MI2_TO_KM2, 0.5))) return { ok: true };
+        if (v.some(x => near(x, p.areaMi2 * 1.61, 0.5))) return { ok: false, hint: t('h_mi_len') };
+        if (v.some(x => near(x, p.areaMi2 / MI2_TO_KM2, 0.2))) return { ok: false, hint: t('h_div_mult') };
+        return { ok: false, hint: null };
+      }, work: `${fq(p.areaMi2)} × 2.59 = ${fmtN(p.areaMi2 * MI2_TO_KM2, 1)} km²` }] : [];
+  return [...conv,
+    { id: p.id + '_dens', kind: 'num', prompt: t('q_dens'), help: t('help_dens'), formula: p.areaMi2 ? t('f_densMi', fmtN(p.pop)) : t('f_dens', fmtN(p.pop), fmtN(p.area)), unit: lang === 'es' ? 'personas/km²' : 'people/km²',
+      check: v => {
+        if (v.some(x => near(x, D, Math.max(1, D * 0.01)) || (p.areaMi2 && near(x, p.pop / (p.areaMi2 * MI2_TO_KM2), Math.max(1, D * 0.01))))) return { ok: true };
+        const x = v[0];
+        if (near(x, p.area / p.pop, 0.01)) return { ok: false, hint: t('h_dens_flip') };
+        if (rel(x, D, 0.05)) return { ok: false, hint: t('h_close') };
+        return { ok: false, hint: null };
+      }, work: `${fmtN(p.pop)} ÷ ${fmtN(p.area)} = ${fmtN(D, 1)} ≈ ${fmtN(Math.round(D))}` },
+    { id: p.id + '_raise', kind: 'action', label: t('raise', slTxt), doneText: t('raised', slTxt), run: () => animateSea(p, SL) },
+    { id: p.id + '_count', kind: 'num', prompt: t('q_count'), help: t('help_count'), unit: lang === 'es' ? 'cuadros' : 'squares',
+      check: v => {
+        if (v.some(x => x === F)) return { ok: true };
+        return { ok: false, hint: v[0] < F ? t('h_count_low') : t('h_count_high') };
+      }, onWrong: tries => { if (tries >= 2) { S.rowHelp[p.id] = true; save(); drawMap(p); } }, work: `${F}` },
+    { id: p.id + '_farea', kind: 'factor', prompt: t('q_farea'), start: { n: F, u: 'square' }, unit: 'km2',
+      tiles: [{ tn: 1, tu: 'square', bn: p.cell, bu: 'km2' }, { tn: p.cell, tu: 'km2', bn: 1, bu: 'square' }], right: 1,
+      check: v => v.some(x => near(x, FA, 0.01)) ? { ok: true } : { ok: false, hint: null }, work: `${F} × ${p.cell} = ${fmtN(FA)} km²` },
+    { id: p.id + '_move', kind: 'num', prompt: t('q_move'), help: t('help_move'), formula: moveFormula(), unit: lang === 'es' ? 'personas' : 'people',
+      check: v => {
+        if (v.some(x => rel(x, MV, 0.02))) return { ok: true };
+        const x = v[0];
+        if (p.cell !== 1 && rel(x, F * D, 0.03)) return { ok: false, hint: t('h_move_squares') };
+        if (rel(x, p.pop, 0.02)) return { ok: false, hint: t('h_move_all') };
+        if (rel(x, MV, 0.06)) return { ok: false, hint: t('h_close') };
+        return { ok: false, hint: null };
+      }, work: `${fmtN(FA)} km² × ${fmtN(Math.round(D))} ≈ ${fmtN(Math.round(MV))}` },
+  ];
+}
+function moveFormula() {
+  return `<span class="frac"><span>${uL('people')}</span><span class="x">km²</span></span> × <span class="x">km²</span> = ${uL('people')}`;
+}
+function compareQs() {
+  const miami = PLACES.find(p => p.id === 'miami');
+  const diff = movers(miami, totalSL(560)) - movers(miami, totalSL(420));
+  const at840 = PLACES.map(p => movers(p, totalSL(840)));
+  const best = at840.indexOf(Math.max(...at840));
+  return [
+    { id: 'k1', kind: 'mc', prompt: t('c1'), opts: PLACES.map(p => t('pl_' + p.id)), right: best, hint: null },
+    { id: 'k2', kind: 'mc', prompt: t('c2'), opts: t('c2o'), right: 0, hint: t('c2h') },
+    { id: 'k3', kind: 'num', prompt: t('c3'), help: t('help_c3'), unit: lang === 'es' ? 'personas' : 'people',
+      check: v => v.some(x => rel(x, diff, 0.02)) ? { ok: true } : { ok: false, hint: null }, work: `${fmtN(Math.round(movers(miami, totalSL(560))))} − ${fmtN(Math.round(movers(miami, totalSL(420))))} ≈ ${fmtN(Math.round(diff))}` },
+    { id: 'k4', kind: 'mc', prompt: t('c4'), opts: t('c4o'), right: 0, hint: t('c4h') },
+    { id: 'k5', kind: 'mc', prompt: t('c5'), opts: t('c5o'), right: 0, hint: t('c5h') },
+  ];
+}
+const isDone = q => q.kind === 'info' ? true : q.kind === 'action' ? !!S.actions[q.id] : !!(S.ans[q.id] && S.ans[q.id].ok);
+const allDone = qs => qs.every(isDone);
+function stageComplete(id) {
+  if (id === 'start') return !!S.started;
+  if (id === 'units') return allDone(unitsQs());
+  if (id === 'climate') return allDone(climateQs());
+  if (id === 'compare') return allDone(compareQs());
+  if (id === 'finish') return false;
+  return allDone(placeQs(PLACES.find(p => p.id === id)));
+}
+
+// =====================================================================
+// RENDER: question list
+// =====================================================================
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let QS = [];
+function renderQs(qs, boxId) {
+  QS = qs;
+  const box = $(boxId); let html = ''; let n = 0;
+  for (const q of qs) {
+    const done = isDone(q);
+    if (q.head) html += `<h3 style="margin-top:6px">${q.head}</h3>`;
+    if (q.kind === 'info') { html += `<div class="info">${q.html()}</div>`; continue; }
+    if (q.kind === 'action') {
+      html += done ? `<div class="small">✓ ${q.doneText}</div>` : `<div><button class="btn" data-act="${q.id}">${q.label}</button></div>`;
+    } else {
+      n++;
+      const a = S.ans[q.id] || {};
+      html += `<div class="q ${done ? 'done' : 'active'}" id="q_${q.id}"><div class="num">${lang === 'es' ? 'Pregunta' : 'Question'} ${n}</div>
+        <div class="prompt">${q.prompt}</div>${q.given ? `<div>${q.given}</div>` : ''}${q.help ? `<div class="help">${q.help}</div>` : ''}${q.formula && !done ? `<div class="formula">${q.formula}</div>` : ''}`;
+      if (q.kind === 'factor') {
+        const st = q.start, T = q.tiles[q.right];
+        if (!a.tile) {
+          html += `<div class="mathline">${qty(st.n, st.u)} × <span class="tiles">${q.tiles.map((x, i) => `<button data-tile="${q.id}" data-o="${i}" class="${(a.tbad || []).includes(i) ? 'picked-bad' : ''}" aria-label="${esc(F(x).replace(/<[^>]+>/g, ' '))}">${F(x)}</button>`).join('')}</span> = ?</div>`;
+          if (a.tfb) html += `<div class="fb bad" role="status">${a.tfb}</div>`;
+        } else {
+          html += `<div class="mathline">${qty(st.n, st.u, true)} × ${frac(T.tn, T.tu, T.bn, T.bu, T.tu === st.u, T.bu === st.u)} = ${done ? `<b>${esc(a.value)} ${uL(q.unit)}</b>` : `____ ${uL(q.unit)}`}</div>`;
+          if (!done) html += `<div class="row"><input type="text" inputmode="decimal" autocomplete="off" id="in_${q.id}" value="${esc(a.value || '')}" aria-label="${esc(q.prompt.replace(/<[^>]+>/g, ''))}"><span class="unit">${uL(q.unit)}</span><button class="btn" data-check="${q.id}">${lang === 'es' ? 'Revisar' : 'Check'}</button></div>`;
+        }
+      } else if (q.kind === 'num') {
+        if (done) html += `<div class="fb ok">✓ ${esc(a.value)} ${q.unit || ''}</div>`;
+        else html += `<div class="row"><input type="text" inputmode="decimal" autocomplete="off" id="in_${q.id}" value="${esc(a.value || '')}" aria-label="${esc(q.prompt.replace(/<[^>]+>/g, ''))}"><span class="unit">${q.unit || ''}</span><button class="btn" data-check="${q.id}">${lang === 'es' ? 'Revisar' : 'Check'}</button></div>`;
+      } else {
+        html += `<div class="opts">${q.opts.map((o, i) => {
+          const cls = done && i === q.right ? 'picked-ok' : (a.bad || []).includes(i) ? 'picked-bad' : '';
+          return `<button data-mc="${q.id}" data-o="${i}" class="${cls}" ${done ? 'disabled' : ''}>${o}</button>`; }).join('')}</div>`;
+      }
+      if (!done && a.fb) html += `<div class="fb bad" role="status">${a.fb}</div>`;
+      if (q.explain && (done || (a.tries || 0) >= 2)) html += `<div class="info" style="border-left-color:var(--ok)"><b>${t('howH')}</b>${q.explain()}</div>`;
+      html += `</div>`;
+    }
+    if (!done) break;
+  }
+  box.innerHTML = html;
+}
+function feedback(q, tries, hint) {
+  let fb = t('tryAgain');
+  if (hint) fb += ' ' + hint;
+  if (tries >= 3 && q.work) fb += `<br><b>${t('h_show')}</b> <span style="font-family:var(--f-mono)">${q.work}</span>`;
+  return fb;
+}
+document.addEventListener('click', e => {
+  const act = e.target.closest('[data-act]'), chk = e.target.closest('[data-check]'), mc = e.target.closest('[data-mc]');
+  if (act) { const q = QS.find(x => x.id === act.dataset.act); S.actions[q.id] = true; save(); q.run && q.run(); afterAnswer(); }
+  if (chk) checkNum(chk.dataset.check);
+  const tile = e.target.closest('[data-tile]');
+  if (tile) {
+    const q = QS.find(x => x.id === tile.dataset.tile), i = +tile.dataset.o, a = S.ans[q.id] || { tries: 0, tbad: [] };
+    if (i === q.right) { a.tile = true; a.tfb = ''; }
+    else {
+      a.tbad = [...new Set([...(a.tbad || []), i])];
+      const x = q.tiles[i];
+      a.tfb = (q.tileHints && q.tileHints[i]) || (x.tu === q.start.u ? t('tileWrong', uL(q.start.u)) : t('tileWrongOther'));
+    }
+    S.ans[q.id] = a; save(); afterAnswer();
+  }
+  if (mc) {
+    const q = QS.find(x => x.id === mc.dataset.mc), i = +mc.dataset.o, a = S.ans[q.id] || { tries: 0, bad: [] };
+    a.tries++;
+    if (i === q.right) { a.ok = true; a.fb = ''; } else { a.bad = [...new Set([...(a.bad || []), i])]; a.fb = t('tryAgain') + (q.hint ? ' ' + q.hint : ''); }
+    S.ans[q.id] = a; save(); afterAnswer();
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'name') { $('nameBtn').click(); return; } if (e.key === 'Enter' && e.target.id && e.target.id.startsWith('in_')) checkNum(e.target.id.slice(3)); });
+function checkNum(id) {
+  const q = QS.find(x => x.id === id), raw = $('in_' + id).value, a = S.ans[id] || { tries: 0 };
+  a.value = raw;
+  const v = candidates(raw);
+  if (!v.length) { a.fb = t('notNum'); S.ans[id] = a; save(); afterAnswer(id); return; }
+  const r = q.check(v);
+  a.tries++;
+  if (r.ok) { a.ok = true; a.fb = ''; } else { a.fb = feedback(q, a.tries, r.hint); q.onWrong && q.onWrong(a.tries); }
+  S.ans[id] = a; save(); afterAnswer(id);
+}
+function afterAnswer(focusId) {
+  render();
+  // focus the next open input
+  const next = document.querySelector('.q.active input[type=text]');
+  if (next) next.focus({ preventScroll: false });
+}
+
+// =====================================================================
+// CLIMATE CHAIN DRAWING
+// =====================================================================
+const DOTS = (() => { let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647; return Array.from({ length: 60 }, () => [r(), r()]); })();
+function revealed(ppm) { return S.ans['S_' + ppm] && S.ans['S_' + ppm].ok || allDone(climateQs()); }
+function chainSVG(ppm) {
+  const T = dT(ppm), M = melt(ppm), SL = totalSL(ppm), show = revealed(ppm);
+  const css = getComputedStyle(document.documentElement), C = k => css.getPropertyValue('--' + k).trim();
+  const PW = 200, PH = 210, Y0 = 34, xs = [10, 250, 490, 730];
+  let g = '';
+  const panel = (x, title) => `<rect x="${x}" y="${Y0}" width="${PW}" height="${PH}" rx="10" fill="${C('sunk')}" stroke="${C('line')}"/><text x="${x + PW / 2}" y="22" text-anchor="middle" font-size="17" font-weight="700" fill="${C('ink')}">${title}</text>`;
+  const arrow = x => `<path d="M${x + 6} ${Y0 + PH / 2} h26" stroke="${C('muted')}" stroke-width="3"/><path d="M${x + 34} ${Y0 + PH / 2} l-9 -7 v14 z" fill="${C('muted')}"/>`;
+  // CO2
+  g += panel(xs[0], t('panCO2'));
+  const nd = Math.round(ppm / 20);
+  for (let i = 0; i < nd && i < 60; i++) { const [a, b] = DOTS[i]; const cx = xs[0] + 18 + a * (PW - 36), cy = Y0 + 16 + b * (PH - 70); g += `<g><circle cx="${cx - 6}" cy="${cy}" r="4.2" fill="${C('muted')}"/><circle cx="${cx}" cy="${cy}" r="5" fill="${C('gas')}"/><circle cx="${cx + 6}" cy="${cy}" r="4.2" fill="${C('muted')}"/></g>`; }
+  g += `<text x="${xs[0] + PW / 2}" y="${Y0 + PH - 16}" text-anchor="middle" font-size="22" font-weight="700" fill="${C('gas')}" font-family="JetBrains Mono, monospace">${ppm} ppm</text>`;
+  g += arrow(xs[0] + PW);
+  // thermometer
+  g += panel(xs[1], t('panT'));
+  const tx = xs[1] + 70, tTop = Y0 + 18, tBot = Y0 + 140, frac = Math.min(1, T / 6);
+  g += `<rect x="${tx - 9}" y="${tTop}" width="18" height="${tBot - tTop}" rx="9" fill="${C('surface')}" stroke="${C('muted')}" stroke-width="2"/>`;
+  g += `<rect x="${tx - 5}" y="${tBot - (tBot - tTop - 6) * frac}" width="10" height="${(tBot - tTop - 6) * frac + 4}" fill="${C('warm')}"/><circle cx="${tx}" cy="${tBot + 10}" r="15" fill="${C('warm')}" stroke="${C('muted')}" stroke-width="2"/>`;
+  for (let k = 0; k <= 6; k += 1) { const yy = tBot - (tBot - tTop - 6) * k / 6; g += `<path d="M${tx + 12} ${yy} h8" stroke="${C('muted')}"/><text x="${tx + 24}" y="${yy + 4}" font-size="12" fill="${C('muted')}">${k}</text>`; }
+  g += `<text x="${xs[1] + PW / 2}" y="${Y0 + PH - 16}" text-anchor="middle" font-size="22" font-weight="700" fill="${C('warm')}" font-family="JetBrains Mono, monospace">+${fmtN(T, 1)} °C</text>`;
+  g += arrow(xs[1] + PW);
+  // ice
+  g += panel(xs[2], t('panIce'));
+  const fr = Math.min(1, M / LAND_ICE_TOTAL), iw = 150, ih = 96, ix = xs[2] + 25, iy = Y0 + 22;
+  g += `<rect x="${ix}" y="${iy}" width="${iw}" height="${ih}" rx="4" fill="${C('ice')}" stroke="${C('ice-edge')}" stroke-width="2"/>`;
+  g += `<rect x="${ix}" y="${iy}" width="${iw}" height="${ih * fr}" fill="${C('flood')}" opacity=".85"/>`;
+  g += `<text x="${ix + iw / 2}" y="${iy + ih + 22}" text-anchor="middle" font-size="13" fill="${C('ink')}">${fmtN(fr * 100, 0)}% ${t('ofIce')}</text>`;
+  g += `<text x="${xs[2] + PW / 2}" y="${Y0 + PH - 34}" text-anchor="middle" font-size="16" font-weight="700" fill="${C('ink')}" font-family="JetBrains Mono, monospace">${fmtN(M)} km³</text><text x="${xs[2] + PW / 2}" y="${Y0 + PH - 14}" text-anchor="middle" font-size="13" fill="${C('muted')}">${t('meltLab')}</text>`;
+  g += arrow(xs[2] + PW);
+  // sea
+  g += panel(xs[3], t('panSea'));
+  const sx = xs[3], base = Y0 + 160, scale = 11; // px per m, 0..12 m
+  const lvl = show ? SL : 0;
+  g += `<path d="M${sx + 8} ${base - lvl * scale} H${sx + 110} L${sx + 192} ${base - 13 * scale} V${base + 6} H${sx + 8} Z" fill="${C('ocean')}" opacity="${show ? .9 : .5}"/>`;
+  g += `<path d="M${sx + 60} ${base + 6} L${sx + 192} ${base - 14 * scale} V${base + 6} Z" fill="#b5a27a"/>`;
+  for (const hm of [2, 6, 11]) { const hx = sx + 60 + (hm + 0.6) / 14 * 132, hy = base - (hm + 0.6) * scale; g += `<path d="M${hx - 7} ${hy} v-9 l7 -6 l7 6 v9 z" fill="${hm < lvl ? C('muted') : C('surface')}" stroke="${C('ink')}" stroke-width="1.2"/>`; }
+  g += `<path d="M${sx + 8} ${base} H${sx + 70}" stroke="${C('ink')}" stroke-dasharray="4 3"/><text x="${sx + 12}" y="${base + 20}" font-size="11.5" fill="${C('muted')}">0 m</text>`;
+  if (show) g += `<text x="${sx + PW / 2}" y="${Y0 + PH - 16}" text-anchor="middle" font-size="22" font-weight="700" fill="${C('ocean')}" font-family="JetBrains Mono, monospace">+${fmtN(SL, 1)} m</text>`;
+  else g += `<text x="${sx + PW / 2}" y="${base - 60}" text-anchor="middle" font-size="46" font-weight="700" fill="${C('ink')}">?</text><text x="${sx + PW / 2}" y="${Y0 + PH - 16}" text-anchor="middle" font-size="14" fill="${C('muted')}">${t('calcFirst')}</text>`;
+  return `<svg viewBox="0 0 940 ${Y0 + PH + 6}" role="img" aria-label="CO2 ${ppm} ppm, +${fmtN(T, 1)} °C">${g}</svg>`;
+}
+function updateChain() {
+  const el = $('chain'); if (el) el.innerHTML = chainSVG(S.ppm);
+  const r = $('ppm'); if (r) { r.value = S.ppm; $('ppmOut').textContent = S.ppm + ' ppm'; }
+}
+
+// =====================================================================
+// MAP DRAWING
+// =====================================================================
+const LAND = ['#d4ebb3', '#bcdc95', '#e6dca6', '#dcc387', '#c9a06a', '#ad845b', '#8c6f53'];
+const landColor = e => LAND[e <= 1 ? 0 : e <= 3 ? 1 : e <= 5 ? 2 : e <= 8 ? 3 : e <= 12 ? 4 : e < 20 ? 5 : 6];
+let seaLevel = {}; // current drawn level per place
+let showHeights = true;
+function mapSVG(p, level, rowHelp) {
+  const css = getComputedStyle(document.documentElement), C = k => css.getPropertyValue('--' + k).trim();
+  const rows = p.map.length, cols = p.map[0].length, cs = 40, extra = rowHelp ? 46 : 0, top = 26;
+  let g = `<defs><pattern id="fl" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="${C('flood')}"/><rect width="4" height="10" fill="#ffffff" opacity=".7"/></pattern></defs>`;
+  g += `<text x="2" y="18" font-size="14" font-weight="700" fill="${C('ink')}">${t('north')} ↑</text><text x="${cols * cs}" y="18" font-size="13" text-anchor="end" fill="${C('muted')}">1 □ = ${fmtN(p.cell)} km²</text>`;
+  p.map.forEach((r, y) => {
+    let rowN = 0;
+    [...r].forEach((c, x) => {
+      const e = elev(c), X = x * cs, Y = top + y * cs;
+      let fill, txt = '', tcol = '#1a1a1a';
+      if (c === '.') fill = C('ocean');
+      else if (c === 'w') fill = C('bay');
+      else if (e < level) { fill = 'url(#fl)'; rowN++; tcol = '#ffffff'; }
+      else fill = landColor(e);
+      if (e !== null && showHeights) txt = e >= 20 ? '20+' : String(e);
+      g += `<rect x="${X}" y="${Y}" width="${cs}" height="${cs}" fill="${fill}" stroke="rgba(0,0,0,.25)" stroke-width="1"/>`;
+      if (txt) g += `<text x="${X + cs / 2}" y="${Y + cs / 2 + 5}" text-anchor="middle" font-size="14" font-weight="700" fill="${tcol}" ${e < level ? 'stroke="#1c3956" stroke-width="2.5" paint-order="stroke"' : ''}>${txt}</text>`;
+    });
+    if (rowHelp) g += `<text x="${cols * cs + 10}" y="${top + y * cs + cs / 2 + 5}" font-size="15" font-weight="700" fill="${C('flood')}" font-family="JetBrains Mono, monospace">${rowN}</text>`;
+  });
+  return `<svg viewBox="0 0 ${cols * cs + extra} ${top + rows * cs + 2}" role="img" aria-label="${t('full_' + p.id)} map">${g}</svg>`;
+}
+function drawMap(p) {
+  const el = $('map'); if (!el) return;
+  const lvl = seaLevel[p.id] ?? 0;
+  el.innerHTML = mapSVG(p, lvl, S.rowHelp[p.id] && !S.ans[p.id + '_count']?.ok);
+  const ex = $('exOut');
+  if (ex) { const f = floodCount(p, lvl); ex.innerHTML = `${t('seaLab')}: <b>${fmtN(lvl, 1)} m</b> · ${t('floodedLab')}: <b>${fmtN(f * p.cell)} km²</b> (${fmtN(f / landCount(p) * 100)}%) · ${t('peopleLab')}: <b>${fmtN(Math.round(movers(p, lvl) / 100) * 100)}</b>`; }
+}
+let anim = null;
+function animateSea(p, target) {
+  if (anim) cancelAnimationFrame(anim);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) { seaLevel[p.id] = target; drawMap(p); return; }
+  const t0 = performance.now(), dur = 2200;
+  const stepF = now => { const k = Math.min(1, (now - t0) / dur); seaLevel[p.id] = target * k; drawMap(p); if (k < 1) anim = requestAnimationFrame(stepF); };
+  anim = requestAnimationFrame(stepF);
+}
+
+// =====================================================================
+// STAGE VIEWS
+// =====================================================================
+function viewStart() {
+  return `<section class="card" style="max-width:820px"><h2>${t('startH')}</h2><p>${t('startP1')}</p>
+    <div class="chainline" style="margin:8px 0 12px">${t('chain').map((c, i) => `${i ? '→' : ''}<span>${c}</span>`).join(' ')}</div>
+    <p>${t('startP2')}</p><p>${t('startP3')}</p>
+    <div class="row" style="margin-top:10px"><button class="btn" id="beginBtn">${t('begin')} →</button></div></section>`;
+}
+function climateTable() {
+  return `<div class="tablebox"><table><thead><tr><th>${t('thPpm')}</th><th>${t('thT')}</th><th>${t('thMelt')}</th><th>${t('thIce')}</th><th>${t('thExp')}</th><th>${t('thTot')}</th></tr></thead><tbody>${SCEN.map(ppm => {
+    const ok = id => S.ans[id] && S.ans[id].ok;
+    return `<tr><td class="m">${ppm}</td><td class="m">${ok('T_' + ppm) ? fmtN(dT(ppm), 1) : ''}</td><td class="m">${S.actions['set_' + ppm] ? fmtN(melt(ppm)) : ''}</td><td class="m">${ok('I_' + ppm) ? fmtN(iceRise(ppm), 2) : ''}</td><td class="m">${ok('I_' + ppm) ? fmtN(expand(ppm), 2) : ''}</td><td class="m"><b>${ok('S_' + ppm) ? fmtN(totalSL(ppm), 1) : ''}</b></td></tr>`; }).join('')}</tbody></table></div>`;
+}
+function viewUnits() {
+  const done = allDone(unitsQs());
+  return `<section class="qlist" style="max-width:860px"><div class="card"><h2>${t('unitsH')}</h2><p style="margin:0">${t('unitsP')}</p></div>
+    <div class="qlist" id="qs"></div>${done ? `<div class="note">${t('unitsDone')}</div><div><button class="btn" data-go="${STAGES.indexOf('climate')}">${t('goTo', t('st_climate'))} →</button></div>` : ''}</section>`;
+}
+function viewClimate() {
+  const done = allDone(climateQs());
+  return `<div class="grid2"><section class="card"><h2>${t('climH')}</h2><p>${t('climP')}</p>
+      <div class="chain" id="chain"></div>
+      <div class="sliderrow"><label for="ppm" style="font-weight:700">${t('co2Lab')}</label><input type="range" id="ppm" min="280" max="1120" step="10" value="${S.ppm}"><output id="ppmOut">${S.ppm} ppm</output></div>
+      <p class="small" style="margin-top:6px">${t('co2Note')}</p>
+      <h3 style="margin-top:12px">${t('sumH')}</h3>${climateTable()}
+    </section>
+    <section class="qlist"><div class="qlist" id="qs"></div>${done ? `<div class="note">${t('climDone')}</div><div><button class="btn" data-go="${STAGES.indexOf('climate') + 1}">${t('goTo', stageName(STAGES[STAGES.indexOf('climate') + 1]))} →</button></div>` : ''}</section></div>`;
+}
+function viewPlace(p) {
+  const qs = placeQs(p), done = allDone(qs), SL = totalSL(p.scen);
+  const D = density(p), MV = movers(p, SL);
+  return `<div class="grid2"><section class="card"><h2>${t('full_' + p.id)}</h2><p>${t('desc_' + p.id)}</p>
+      <div class="map" id="map"></div>
+      <div class="legend"><span><i style="background:var(--ocean)"></i>${t('lg_ocean')}</span><span><i style="background:var(--bay)"></i>${t('lg_water')}</span><span><i style="background:repeating-linear-gradient(45deg,var(--flood) 0 4px,#9fc3ee 4px 7px)"></i>${t('lg_flood')}</span><span><i style="background:linear-gradient(90deg,${LAND[0]},${LAND[3]},${LAND[6]})"></i>${t('lg_land')}</span></div>
+      ${S.rowHelp[p.id] && !S.ans[p.id + '_count']?.ok ? `<p class="note" style="margin-top:8px">${t('rowCountsNote')}</p>` : ''}
+      ${done ? `<div style="margin-top:12px"><h3>${t('exploreH')}</h3><p class="small">${t('exploreP')}</p>
+        <div class="sliderrow" style="margin-top:0"><input type="range" id="seaR" min="0" max="12" step="0.1" value="${(seaLevel[p.id] ?? SL).toFixed(1)}" aria-label="${t('seaLab')}"><div class="chips">${SCEN.map(s => `<button data-sea="${totalSL(s).toFixed(2)}">${s} ppm</button>`).join('')}</div></div>
+        <p id="exOut" style="margin-top:8px"></p></div>` : ''}
+    </section>
+    <section class="qlist"><div class="card"><p style="margin:0">${t('placeIntro')}</p>
+      <div class="facts"><div class="fact"><span>${t('fPop')}</span><b>${fmtN(p.pop)}</b></div><div class="fact"><span>${t('fArea')}</span><b>${p.areaMi2 ? fq(p.areaMi2) + ' mi²' : fmtN(p.area) + ' km²'}</b></div><div class="fact"><span>${t('fCell')}</span><b>${fmtN(p.cell)} km²</b></div></div>
+      <p style="margin:0">${t('scenLine', p.scen, fmtN(SL, 1))}</p></div>
+      <div class="qlist" id="qs"></div>
+      ${done ? `<div class="card"><p style="margin:0;font-size:18px">${t('placeDone', fmtN(Math.round(MV / 100) * 100), fmtN(MV / p.pop * 100))}</p></div><div><button class="btn" data-go="${STAGES.indexOf(p.id) + 1}">${t('goTo', stageName(STAGES[STAGES.indexOf(p.id) + 1]))} →</button></div>` : ''}
+    </section></div>`;
+}
+function compareTable() {
+  return `<div class="tablebox"><table><thead><tr><th class="l">${t('thPlace')}</th><th>${t('thDens')}</th>${SCEN.map(s => `<th>${s} ppm<br>(+${fmtN(totalSL(s), 1)} m)</th>`).join('')}</tr></thead><tbody>${PLACES.map(p => `<tr><td class="l"><b>${t('pl_' + p.id)}</b></td><td class="m">${fmtN(Math.round(density(p)))}</td>${SCEN.map(s => {
+      const m = movers(p, totalSL(s)), pct = floodCount(p, totalSL(s)) / landCount(p) * 100;
+      return `<td class="m">${fmtN(Math.round(m / 100) * 100)}<br><span class="small">${fmtN(pct)}% ${lang === 'es' ? 'de la tierra' : 'of land'}</span></td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+function viewCompare() {
+  const done = allDone(compareQs());
+  return `<div class="grid2"><section class="card"><h2>${t('cmpH')}</h2><p>${t('cmpP')}</p>${compareTable()}</section>
+    <section class="qlist"><div class="qlist" id="qs"></div>${done ? `<div class="note">${t('cmpDone')}</div><div><button class="btn" data-go="${STAGES.indexOf('finish')}">${t('goTo', t('st_finish'))} →</button></div>` : ''}</section></div>`;
+}
+function normName(n) { return n.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' '); }
+function codeFor(name) {
+  let h = 2166136261; for (const ch of normName(name) + '|rising-seas-1') { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+  const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s = '', x = h >>> 0;
+  for (let i = 0; i < 5; i++) { s += A[x % A.length]; x = Math.floor(x / A.length); }
+  return 'SEAS-' + s;
+}
+function summaryText() {
+  const L = [`${t('title')}${S.name ? ' — ' + S.name : ''}`, `${t('finSum')}:`];
+  SCEN.forEach(s => L.push(`${s} ppm → +${fmtN(dT(s), 1)} °C → +${fmtN(totalSL(s), 1)} m`));
+  PLACES.forEach(p => { const sl = totalSL(p.scen); L.push(`${t('pl_' + p.id)} (${p.scen} ppm): ${fmtN(Math.round(density(p)))} / km², ${fmtN(floodCount(p, sl) * p.cell)} km² → ${fmtN(Math.round(movers(p, sl)))}`); });
+  L.push(codeFor(S.name));
+  return L.join('\n');
+}
+function viewFinish() {
+  const has = S.name.trim().length >= 2;
+  const pre = `<pre style="white-space:pre-wrap;background:var(--sunk);padding:10px;border-radius:8px;font-family:var(--f-mono);font-size:14px">${esc(summaryText())}</pre>`;
+  return `<section class="card" style="max-width:820px"><h2>${t('finH')}</h2><p>${t('finName')}</p>
+    <label for="name" style="font-weight:700;display:block">${t('nameLab')}</label>
+    <div class="row" style="margin:6px 0 12px"><input type="text" id="name" style="width:26ch;font-family:var(--f-body)" value="${esc(S.name)}" autocomplete="name"><button class="btn" id="nameBtn">${t('getCode')}</button></div>
+    <div id="nameFb"></div>
+    ${has ? `<p>${t('finP', esc(S.name))}</p><div class="code" id="code">${codeFor(S.name)}</div><h3 style="margin-top:16px">${t('finSum')}</h3>${pre}<div class="row"><button class="btn ghost" id="copySum">${t('copySum')}</button></div>` : ''}
+    <div class="row" style="margin-top:12px"><button class="btn ghost" id="resetBtn">${t('resetAll')}</button></div></section>`;
+}
+
+// =====================================================================
+// MAIN RENDER
+// =====================================================================
+function canEnter(i) { for (let k = 0; k < i; k++) if (!stageComplete(STAGES[k])) return false; return true; }
+function renderSteps() {
+  $('steps').innerHTML = STAGES.map((id, i) => `<li><button data-go="${i}" ${i === S.stage ? 'aria-current="step"' : ''} ${canEnter(i) ? '' : 'disabled'}>${stageComplete(id) ? '<span class="tick">✓</span>' : ''}${stageName(id)}</button></li>`).join('');
+}
+function render() {
+  if (!canEnter(S.stage)) S.stage = 0;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i]').forEach(el => { const v = STR[lang][el.dataset.i]; if (typeof v === 'string') el.innerHTML = v; });
+  $('lang-en').setAttribute('aria-pressed', lang === 'en'); $('lang-es').setAttribute('aria-pressed', lang === 'es');
+  renderSteps();
+  const id = STAGES[S.stage], main = $('main');
+  if (id === 'start') main.innerHTML = viewStart();
+  else if (id === 'units') { main.innerHTML = viewUnits(); renderQs(unitsQs(), 'qs'); }
+  else if (id === 'climate') { main.innerHTML = viewClimate(); renderQs(climateQs(), 'qs'); updateChain(); }
+  else if (id === 'compare') { main.innerHTML = viewCompare(); renderQs(compareQs(), 'qs'); }
+  else if (id === 'finish') main.innerHTML = viewFinish();
+  else {
+    const p = PLACES.find(x => x.id === id), qs = placeQs(p);
+    if (seaLevel[p.id] === undefined) seaLevel[p.id] = S.actions[p.id + '_raise'] ? totalSL(p.scen) : 0;
+    main.innerHTML = viewPlace(p); renderQs(qs, 'qs'); drawMap(p);
+  }
+}
+document.addEventListener('click', e => {
+  const go = e.target.closest('[data-go]');
+  if (go && !go.disabled) { const i = +go.dataset.go; if (canEnter(i)) { S.stage = i; S.maxStage = Math.max(S.maxStage, i); save(); render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
+  if (e.target.id === 'beginBtn') {
+    S.started = true; S.stage = 1; save(); render();
+  }
+  if (e.target.id === 'nameBtn') {
+    const n = $('name').value.trim();
+    if (n.length < 2) { $('nameFb').innerHTML = `<div class="fb bad" style="margin-bottom:8px">${t('needName')}</div>`; return; }
+    S.name = n; save(); render();
+  }
+  const sea = e.target.closest('[data-sea]');
+  if (sea) { const p = PLACES.find(x => x.id === STAGES[S.stage]); animateSea(p, +sea.dataset.sea); $('seaR').value = (+sea.dataset.sea).toFixed(1); }
+  if (e.target.id === 'copySum') { const txt = summaryText(); navigator.clipboard?.writeText(txt).then(() => { e.target.textContent = t('copied'); setTimeout(() => e.target.textContent = t('copySum'), 1500); }).catch(() => {}); }
+  if (e.target.id === 'resetBtn') {
+    if (e.target.dataset.sure) { S = blank(); seaLevel = {}; save(); render(); }
+    else { e.target.dataset.sure = '1'; e.target.textContent = t('resetSure'); }
+  }
+});
+document.addEventListener('input', e => {
+  if (e.target.id === 'ppm') { S.ppm = +e.target.value; save(); updateChain(); }
+  if (e.target.id === 'seaR') { const p = PLACES.find(x => x.id === STAGES[S.stage]); if (anim) cancelAnimationFrame(anim); seaLevel[p.id] = +e.target.value; drawMap(p); }
+});
+$('lang-en').addEventListener('click', () => { lang = 'en'; try { localStorage.setItem('risingSeasLang', 'en'); } catch (e) {} render(); });
+$('lang-es').addEventListener('click', () => { lang = 'es'; try { localStorage.setItem('risingSeasLang', 'es'); } catch (e) {} render(); });
+$('teacherBtn').addEventListener('click', () => { $('teacherBox').hidden = !$('teacherBox').hidden; });
+$('teacherGo').addEventListener('click', () => { const n = $('teacherName').value; $('teacherOut').textContent = n.trim() ? codeFor(n) : ''; });
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', render);
+render();
+</script>
+</body>
+</html>

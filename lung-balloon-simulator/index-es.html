@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Modelo del pulmón con globos: sano vs. con tumor</title>
+<style>
+:root{
+  --ink:#1d1d1f; --muted:#5f6368; --line:#d6d6d6; --bg:#f6f6f4; --card:#fff;
+  --lung:#f3b6ae; --lungB:#c47a70; --bottle:#e8f1f5; --bottleB:#8aa4b0;
+  --sheet:#d9a03f; --sheetB:#8a6100; --tumor:#5b2a86; --tumorB:#2d0f4a; --air:#1a73e8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:Calibri,Carlito,"Segoe UI",system-ui,-apple-system,sans-serif;font-size:17px;line-height:1.45}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 40px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border-bottom:3px solid var(--ink);padding-bottom:10px;margin-bottom:16px}
+.kicker{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{margin:2px 0 0;font-size:28px;line-height:1.15}
+.lang{flex:none;border:1.5px solid var(--ink);border-radius:999px;padding:5px 14px;color:var(--ink);text-decoration:none;font-weight:700;font-size:15px}
+.lang:hover{background:var(--ink);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+h2{font-size:19px;margin:0 0 8px}
+.intro{font-size:18px;margin:0}
+.top{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+table.parts{border-collapse:collapse;width:100%;font-size:16px}
+table.parts td{padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+table.parts td:first-child{font-weight:700;white-space:nowrap}
+ol{margin:0;padding-left:22px}
+ol li{margin-bottom:5px}
+.controls{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:12px;background:var(--ink);color:#fff;border-radius:10px;padding:10px 14px;margin-bottom:14px}
+.controls label{font-weight:700}
+.controls input[type=range]{flex:1;min-width:160px;accent-color:#fff;height:28px}
+button{font:inherit;font-weight:700;border-radius:8px;padding:9px 16px;cursor:pointer;border:2px solid #fff;background:#fff;color:var(--ink)}
+button.alt{background:transparent;color:#fff}
+.status{font-weight:700;min-width:9em}
+.bottles{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.bottle h2{margin-bottom:4px}
+.bottle svg{display:block;width:100%;max-width:340px;height:auto;margin:0 auto}
+.seg{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 8px;font-size:15px}
+.seg button{border:1.5px solid var(--ink);background:#fff;color:var(--ink);padding:5px 12px;font-size:15px}
+.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+.seg .lbl{color:var(--muted);font-weight:700}
+.readout{max-width:340px;margin:8px auto 0}
+.rlabel{font-size:15px;color:var(--muted)}
+.rval{font-size:30px;font-weight:700;line-height:1.1}
+.bar{height:16px;border:1.5px solid var(--ink);border-radius:8px;overflow:hidden;margin:6px 0 4px;background:#fff;position:relative}
+.bar span{display:block;height:100%;background:var(--air)}
+.bar i{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink);left:100%}
+.scale{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.note{font-size:14px;color:var(--muted);margin:6px 0 0}
+details{margin-top:4px}
+summary{cursor:pointer;font-weight:700}
+footer{font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px;margin-top:6px}
+@media (max-width:820px){.top,.bottles{grid-template-columns:1fr}}
+@media (max-width:480px){h1{font-size:23px}.intro{font-size:17px}}
+@media (prefers-reduced-motion:reduce){.bar span{transition:none}}
+</style>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2LYLBJ9L8Y"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-2LYLBJ9L8Y');
+</script>
+<!-- Microsoft Clarity -->
+<script type="text/javascript">
+  (function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "wwvhuvt2g0");
+</script>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <div class="kicker">Biología · Unidad de cáncer · Lección 2</div>
+    <h1>Modelo del pulmón con globos: sano vs. con tumor</h1>
+  </div>
+  <a class="lang" href="index.html" hreflang="en">English</a>
+</header>
+
+<div class="card"><p class="intro">Este es un modelo del pecho hecho con una botella y globos. Jale el diafragma hacia abajo en los dos modelos al mismo tiempo y compare cuánto aire toma cada par de pulmones.</p></div>
+
+<div class="top">
+  <div class="card">
+    <h2>Qué representa cada parte</h2>
+    <table class="parts"><tr><td>Botella</td><td>Pecho</td></tr><tr><td>Popote</td><td>Tráquea</td></tr><tr><td>Globos</td><td>Pulmones</td></tr><tr><td>Hoja de hule</td><td>Diafragma (el músculo debajo de los pulmones)</td></tr><tr><td>Parche morado</td><td>Tumor: tejido rígido que no se puede estirar</td></tr></table>
+  </div>
+  <div class="card">
+    <h2>Cómo funciona la respiración</h2>
+    <ol><li>Cuando usted inhala, el diafragma baja.</li><li>Eso deja más espacio dentro del pecho.</li><li>El aire entra por la tráquea y los pulmones se estiran para llenar el espacio extra.</li><li>Cuando el diafragma vuelve a subir, el aire sale.</li><li>Un tumor es rígido, así que la parte del pulmón con el tumor no se puede estirar. Con el mismo jalón, entra menos aire.</li></ol>
+  </div>
+</div>
+
+<div class="controls">
+  <label for="pull">Jale el diafragma hacia abajo:</label>
+  <input type="range" id="pull" min="0" max="100" value="0">
+  <button id="breathe">Inhalar y exhalar</button>
+  <span class="status" id="status" aria-live="polite">Sin movimiento</span>
+</div>
+
+<div class="bottles">
+  <section class="card bottle">
+    <h2>Pulmones sanos</h2>
+    <div class="seg"><span class="lbl">Tumor:</span> <span>Sin tumor</span></div>
+    <svg id="svg-H" viewBox="0 0 320 380" role="img"></svg>
+    <div class="readout" id="read-H"></div>
+  </section>
+  <section class="card bottle">
+    <h2>Pulmones con un tumor</h2>
+    <div class="seg" role="group" aria-label="Tumor:">
+      <span class="lbl">Tumor:</span>
+      <button data-size="0" aria-pressed="false">Sin tumor</button>
+      <button data-size="1" aria-pressed="true">Pequeño</button>
+      <button data-size="2" aria-pressed="false">Grande</button>
+    </div>
+    <svg id="svg-T" viewBox="0 0 320 380" role="img"></svg>
+    <div class="readout" id="read-T"></div>
+  </section>
+</div>
+
+<div class="card">
+  <details>
+    <summary>Constrúyalo con globos de verdad</summary>
+    <p style="margin:8px 0 6px">Puede hacer este modelo con materiales sencillos. Pregúntele a su maestro(a) antes de cortar algo.</p>
+    <ol><li>Corte la parte de abajo de una botella de plástico. Esto es el pecho.</li><li>Pase un popote o un tubo en forma de Y por la tapa de la botella. Pegue con cinta un globo pequeño en cada punta dentro de la botella. Estos son los pulmones.</li><li>Selle la tapa con plastilina o cinta para que el aire solo entre por el popote.</li><li>Estire un globo cortado o un guante de hule sobre la parte de abajo abierta y péguelo bien con cinta. Esto es el diafragma.</li><li>Jale la hoja de abajo y observe cómo se llenan los pulmones. Después cubra parte de un globo-pulmón con varias capas de cinta para hacer un tumor, y vuelva a intentarlo.</li></ol>
+  </details>
+</div>
+
+<footer>Este es un modelo simplificado. Los pulmones reales son esponjosos, no son globos, y una respiración sana en reposo es de unos 500 mL de aire. El efecto del tumor sobre el aire es un cálculo del modelo, no una medida de pacientes.</footer>
+</div>
+
+<script>
+window.STR = {"lblWindpipe":"tráquea","lblChest":"pecho","lblLung":"pulmón","lblDiaphragm":"diafragma","tumorTag":"tumor","airIn":"Aire que entró","fullNote":"Con el mismo jalón, entraron {d} mL menos de aire que en los pulmones sanos.","breathingIn":"Inhalando","breathingOut":"Exhalando","still":"Sin movimiento","breatheStart":"Inhalar y exhalar","breatheStop":"Dejar de respirar","svgAria":"Modelo del pecho con una botella. Aire que entró: {v} mL."};
+</script>
+<script>
+(function(){
+const S = window.STR;
+const FULL = 500;                 // mL a healthy pair of lungs takes in on a full pull (a normal breath)
+const STIFF = [0, 0.45, 0.85];    // how much of the right lung's stretch the tumor takes away
+let pull = 0, last = 0, size = 1, timer = null, phase = 0;
+const $ = id => document.getElementById(id);
+
+function volumes(stiff){
+  const p = pull / 100;
+  const left = p, right = p * (1 - stiff);
+  return {left, right, mL: Math.round(FULL / 2 * (left + right))};
+}
+
+function balloon(cx, cy, v){
+  return {rx: 22 + 24 * v, ry: 28 + 30 * v, cx, cy: cy + 8 * v};
+}
+
+function draw(id, stiff, labels){
+  const v = volumes(stiff);
+  const sag = 8 + 46 * pull / 100;
+  const L = balloon(112, 196, v.left), R = balloon(208, 196, v.right);
+  const moving = pull !== last;
+  const inflow = pull > last;
+  let s = '';
+  // bottle (chest)
+  s += '<path d="M40 300 L40 110 C40 80 120 70 136 50 L136 22 L184 22 L184 50 C200 70 280 80 280 110 L280 300" fill="var(--bottle)" stroke="var(--bottleB)" stroke-width="3"/>';
+  // diaphragm sheet
+  s += '<path d="M36 300 Q160 ' + (300 + 2 * sag) + ' 284 300" fill="var(--sheet)" stroke="var(--sheetB)" stroke-width="2.5"/>';
+  const knobY = 300 + sag;
+  s += '<line x1="160" y1="' + knobY + '" x2="160" y2="' + (knobY + 14) + '" stroke="var(--sheetB)" stroke-width="3"/>';
+  s += '<circle cx="160" cy="' + (knobY + 18) + '" r="6" fill="var(--sheet)" stroke="var(--sheetB)" stroke-width="2"/>';
+  // windpipe + Y
+  s += '<rect x="153" y="4" width="14" height="118" rx="4" fill="#fff" stroke="#9e9e9e" stroke-width="2"/>';
+  s += '<path d="M160 120 L' + L.cx + ' ' + (L.cy - L.ry + 2) + ' M160 120 L' + R.cx + ' ' + (R.cy - R.ry + 2) + '" stroke="#9e9e9e" stroke-width="9" stroke-linecap="round" fill="none"/>';
+  // lungs
+  s += '<ellipse cx="' + L.cx + '" cy="' + L.cy + '" rx="' + L.rx + '" ry="' + L.ry + '" fill="var(--lung)" stroke="var(--lungB)" stroke-width="2.5"/>';
+  s += '<ellipse cx="' + R.cx + '" cy="' + R.cy + '" rx="' + R.rx + '" ry="' + R.ry + '" fill="var(--lung)" stroke="var(--lungB)" stroke-width="2.5"/>';
+  // tumor patch: fixed size, rides on the outer lower edge of the right lung
+  if (stiff > 0){
+    const r = stiff > 0.6 ? 20 : 12;
+    const a = 0.55;
+    const px = R.cx + Math.cos(a) * (R.rx - r * 0.45), py = R.cy + Math.sin(a) * (R.ry - r * 0.45);
+    s += '<defs><pattern id="hatch-' + id + '" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--tumor)"/><line x1="0" y1="0" x2="0" y2="6" stroke="#9c7cc2" stroke-width="2"/></pattern></defs>';
+    s += '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + r + '" fill="url(#hatch-' + id + ')" stroke="var(--tumorB)" stroke-width="2"/>';
+    s += '<text x="' + Math.min(312, px + r + 4).toFixed(0) + '" y="' + (py + r + 16).toFixed(0) + '" font-size="13" text-anchor="end" fill="var(--tumorB)" font-weight="700">' + S.tumorTag + '</text>';
+  }
+  // air arrow at the top of the windpipe
+  if (moving){
+    const op = Math.min(1, 0.35 + Math.abs(pull - last) / 6);
+    s += inflow
+      ? '<path d="M160 -2 L160 16 M152 9 L160 18 L168 9" transform="translate(-30 4)" stroke="var(--air)" stroke-width="3.5" fill="none" stroke-linecap="round" opacity="' + op + '"/>' +
+        '<path d="M160 -2 L160 16 M152 9 L160 18 L168 9" transform="translate(30 4)" stroke="var(--air)" stroke-width="3.5" fill="none" stroke-linecap="round" opacity="' + op + '"/>'
+      : '<path d="M160 18 L160 0 M152 7 L160 -2 L168 7" transform="translate(-30 4)" stroke="var(--air)" stroke-width="3.5" fill="none" stroke-linecap="round" opacity="' + op + '"/>' +
+        '<path d="M160 18 L160 0 M152 7 L160 -2 L168 7" transform="translate(30 4)" stroke="var(--air)" stroke-width="3.5" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
+  }
+  // part labels (healthy bottle only, to keep the other one clean)
+  if (labels){
+    const t = (x, y, txt, anchor) => '<text x="' + x + '" y="' + y + '" font-size="13" fill="#3c4043" text-anchor="' + (anchor || "start") + '">' + txt + '</text>';
+    s += t(196, 54, S.lblWindpipe);
+    s += t(272, 140, S.lblChest, "end");
+    s += t(112, 196 + 4, S.lblLung, "middle");
+    s += t(208, 196 + 4, S.lblLung, "middle");
+    s += t(176, knobY + 22, S.lblDiaphragm);
+  }
+  const svg = $("svg-" + id);
+  svg.setAttribute("viewBox", "0 -6 320 386");
+  svg.innerHTML = s;
+  svg.setAttribute("aria-label", S.svgAria.replace("{v}", v.mL));
+  // readout
+  $("read-" + id).innerHTML =
+    '<div class="rlabel">' + S.airIn + '</div>' +
+    '<div class="rval">' + v.mL + ' mL</div>' +
+    '<div class="bar"><span style="width:' + (100 * v.mL / FULL) + '%"></span></div>' +
+    '<div class="scale"><span>0 mL</span><span>' + FULL + ' mL</span></div>' +
+    (id === "T" && pull === 100 ? '<p class="note">' + S.fullNote.replace("{d}", FULL - v.mL) + '</p>' : '') ;
+  return v;
+}
+
+function render(){
+  draw("H", 0, true);
+  draw("T", STIFF[size], false);
+  $("pull").value = pull;
+  $("status").textContent = pull > last ? S.breathingIn : pull < last ? S.breathingOut : S.still;
+}
+
+function setPull(p){ last = pull; pull = Math.max(0, Math.min(100, p)); render(); }
+
+$("pull").addEventListener("input", e => { stop(); setPull(+e.target.value); });
+document.querySelectorAll("[data-size]").forEach(b => b.addEventListener("click", () => {
+  size = +b.dataset.size;
+  document.querySelectorAll("[data-size]").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+  last = pull; render();
+}));
+function stop(){ if (timer){ clearInterval(timer); timer = null; $("breathe").textContent = S.breatheStart; } }
+$("breathe").addEventListener("click", () => {
+  if (timer){ stop(); last = pull; render(); return; }
+  $("breathe").textContent = S.breatheStop;
+  phase = Math.acos(Math.max(-1, Math.min(1, 1 - pull / 50)));
+  timer = setInterval(() => { phase += 0.07; setPull(Math.round(50 - 50 * Math.cos(phase))); }, 50);
+});
+render();
+
+window.LBM = { setPull, volumes, setSize(n){ const b = document.querySelector('[data-size="' + n + '"]'); if (b) b.click(); }, STIFF, FULL };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Yeast &amp; UV Investigation Simulator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:wght@600;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: lab bench. Setup controls beside the two petri dishes, then class data table + graph, then checklist and questions. */
+:root{
+  --bg:#f1f0ea; --panel:#ffffff; --ink:#1b2420; --muted:#58645d; --line:#cfd3c8;
+  --uv:#6a3fb5; --uv-soft:#e9e1f7; --agar:#e8d59a; --agar-edge:#b79f55; --colony:#fffaf0; --colony-edge:#8a7a4a;
+  --a:#a8452f; --a-soft:#f4e1db; --b:#2f6f5e; --b-soft:#dcebe6; --good:#1f7a4d; --good-soft:#d9efe3;
+  --display:"Bricolage Grotesque","Trebuchet MS",sans-serif;
+  --body:"Atkinson Hyperlegible",Verdana,sans-serif;
+  --mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#141815; --panel:#1c221e; --ink:#e8ede9; --muted:#a3b0a8; --line:#37413a;
+  --uv:#b497f0; --uv-soft:#2e2447; --agar:#8f7f4a; --agar-edge:#5e5330; --colony:#fff6dd; --colony-edge:#3d361f;
+  --a:#f08a70; --a-soft:#47241b; --b:#6cc7ae; --b-soft:#1b3a32; --good:#5fd09a; --good-soft:#173a2a; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#141815; --panel:#1c221e; --ink:#e8ede9; --muted:#a3b0a8; --line:#37413a;
+  --uv:#b497f0; --uv-soft:#2e2447; --agar:#8f7f4a; --agar-edge:#5e5330; --colony:#fff6dd; --colony-edge:#3d361f;
+  --a:#f08a70; --a-soft:#47241b; --b:#6cc7ae; --b-soft:#1b3a32; --good:#5fd09a; --good-soft:#173a2a; color-scheme:dark }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:24px 48px;display:flex;flex-direction:column;gap:20px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(1.7rem,4vw,2.4rem);line-height:1.1;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:600;font-size:1.2rem;margin:0;text-wrap:balance}
+p{margin:0}
+.es{font-style:italic;color:var(--muted);font-size:.92em}
+.lead{max-width:68ch;display:flex;flex-direction:column;gap:4px}
+.toprow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.langlink{font-size:.85rem;font-weight:700;color:var(--uv)}
+.eyebrow{font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--uv)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:20px}
+.grid.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media (max-width:760px){.grid,.grid.even{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.strains{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.strains{grid-template-columns:1fr}}
+.strain{border-left:5px solid var(--line);padding:2px 0 2px 12px;display:flex;flex-direction:column;gap:4px}
+.strain.a{border-left-color:var(--a)} .strain.b{border-left-color:var(--b)}
+.tagA,.tagB{font-family:var(--mono);font-weight:700;padding:1px 7px;border-radius:4px}
+.tagA{background:var(--a-soft);color:var(--a)} .tagB{background:var(--b-soft);color:var(--b)}
+label{font-weight:700;display:block;margin-bottom:4px}
+select{width:100%;font:inherit;color:var(--ink);background:var(--panel);border:1.5px solid var(--ink);border-radius:4px;padding:8px 10px}
+button{font:inherit;font-weight:700;color:var(--ink);background:var(--panel);border:1.5px solid var(--ink);border-radius:4px;padding:8px 12px;cursor:pointer}
+button:hover{background:var(--uv-soft)}
+button:disabled{opacity:.55;cursor:wait}
+button:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--uv);outline-offset:2px}
+#run{background:var(--ink);color:var(--panel)}
+#run:hover:not(:disabled){background:var(--uv);border-color:var(--uv)}
+#msg{min-height:3em;color:var(--muted);font-size:.95rem}
+.steps{margin:0;padding-left:1.2em;font-size:.92rem;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.dishes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dish{display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;min-width:0}
+.dish svg{width:100%;max-width:230px;height:auto;display:block}
+.dish .count{font-family:var(--mono);font-weight:700;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.dish small{color:var(--muted);font-size:.85rem}
+.rim{fill:none;stroke:var(--line);stroke-width:5}
+.agar{fill:var(--agar);stroke:var(--agar-edge);stroke-width:1.5}
+.colony{fill:var(--colony);stroke:var(--colony-edge);stroke-width:.5}
+.lbl{font-family:var(--mono);font-size:13px;font-weight:700;fill:var(--ink)}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td.n{font-family:var(--mono)}
+td button{padding:2px 8px;border-color:var(--line);font-weight:400}
+.empty{color:var(--muted)}
+#chart svg{width:100%;height:auto;display:block}
+#chart text{font-family:var(--mono);font-size:10px;fill:var(--muted)}
+#chart .barA{fill:var(--a)} #chart .barB{fill:var(--b)}
+#chart .axis{stroke:var(--line);stroke-width:1}
+ul.tasks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+ul.tasks li{display:flex;gap:12px;align-items:flex-start}
+.pill{flex:none;font-size:.75rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);min-width:5.5em;text-align:center}
+.pill.done{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+ol.q{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:10px;max-width:72ch}
+textarea{display:block;width:100%;min-height:70px;margin-top:8px;border:1px dashed var(--uv);border-radius:6px;background:var(--bg);color:var(--ink);padding:10px 12px;font:inherit;font-size:.95rem;resize:vertical}
+.note{font-size:.88rem;color:var(--muted);max-width:72ch}
+footer{text-align:center;color:var(--muted);font-size:.8rem}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+</style>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2LYLBJ9L8Y"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-2LYLBJ9L8Y');
+</script>
+<!-- Microsoft Clarity -->
+<script type="text/javascript">
+  (function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "wwvhuvt2g0");
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="lead">
+    <div class="toprow">
+      <div class="eyebrow">Biology · Yeast investigation</div>
+      <a class="langlink" href="index-es.html" lang="es">Ver en español →</a>
+    </div>
+    <h1>Can UV light damage living cells? Can anything protect them?</h1>
+    <p>Spread yeast on two petri dishes, choose a cover and a time in the sun, then incubate the dishes and count what grew.</p>
+  </header>
+
+  <section class="panel" aria-label="The two yeast strains">
+    <h2>Your two kinds of yeast</h2>
+    <div class="strains">
+      <div class="strain a">
+        <p><span class="tagA">A</span> <b>UV-sensitive yeast</b></p>
+        <p>Scientists removed (“knocked out”) the gene that repairs DNA damage from UV. This is like a human cell with no working p53.</p>
+      </div>
+      <div class="strain b">
+        <p><span class="tagB">B</span> <b>Wild-type yeast</b></p>
+        <p>Normal yeast, like the kind found in nature. Its DNA repair works, like a human cell with working p53.</p>
+      </div>
+    </div>
+    <p class="note">Yeast has only one cell, so it cannot form a tumor. If UV damages its DNA and the cell cannot repair it, the cell dies. Each dot (colony) on a dish grew from one cell that survived.</p>
+  </section>
+
+  <div class="grid">
+    <section class="panel" aria-label="Set up a trial">
+      <h2>Set up a trial</h2>
+      <div>
+        <label for="cover">What covers the dishes?</label>
+        <select id="cover"></select>
+      </div>
+      <div>
+        <label for="time">Time in midday sun</label>
+        <select id="time"></select>
+      </div>
+      <div>
+        <label for="pred">Your prediction for dish A</label>
+        <select id="pred">
+          <option value="">Choose…</option>
+          <option value="lots">Lots of growth</option>
+          <option value="some">Some growth</option>
+          <option value="none">Almost no growth</option>
+        </select>
+      </div>
+      <button id="run">Run this trial</button>
+      <p id="msg" aria-live="polite">Choose a cover, a time, and a prediction. Then run the trial.</p>
+      <ol class="steps">
+        <li>Spread 0.25 mL of yeast on each dish with glass beads.</li>
+        <li>Cover the dishes and put them in the sun.</li>
+        <li>Incubate upside down in the dark for 3 days.</li>
+      </ol>
+    </section>
+
+    <section class="panel" aria-label="Petri dishes">
+      <h2>Your dishes after 3 days</h2>
+      <div class="dishes">
+        <div class="dish">
+          <svg id="dishA" viewBox="0 0 220 220" role="img" aria-label="Petri dish A, UV-sensitive yeast"></svg>
+          <span class="count" id="countA">–</span>
+          <small><span class="tagA">A</span> UV-sensitive</small>
+          <small id="growA">&nbsp;</small>
+        </div>
+        <div class="dish">
+          <svg id="dishB" viewBox="0 0 220 220" role="img" aria-label="Petri dish B, wild-type yeast"></svg>
+          <span class="count" id="countB">–</span>
+          <small><span class="tagB">B</span> Wild-type</small>
+          <small id="growB">&nbsp;</small>
+        </div>
+      </div>
+      <p class="note" id="trialNote">The number under each dish is how many colonies grew.</p>
+    </section>
+  </div>
+
+  <div class="grid even">
+    <section class="panel">
+      <h2>Class data</h2>
+      <div class="tablebox">
+        <table>
+          <thead><tr><th>Trial</th><th>Cover</th><th>Sun (min)</th><th>A</th><th>B</th><th>Prediction for A</th><th></th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="note">In the real lab, each group tests one condition and the class shares the data. Here, you run every group’s trial.</p>
+    </section>
+    <section class="panel">
+      <h2>Colonies per dish</h2>
+      <div id="chart"></div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>Make it a fair test</h2>
+    <ul class="tasks">
+      <li><span class="pill" id="c1">Not yet</span><p>Run a control with no UV: cover the dishes in aluminum foil, or use 0 minutes of sun.</p></li>
+      <li><span class="pill" id="c2">Not yet</span><p>Run a control with no protection: no cover (or plastic wrap only) for 15 minutes or more.</p></li>
+      <li><span class="pill" id="c3">Not yet</span><p>Change only one variable. Test 3 or more covers with the same time, or 3 or more times with the same cover.</p></li>
+    </ul>
+  </section>
+
+  <footer>Colony counts come from a computer model of this lab, not from real dishes.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var T = {"covers":["No cover (lid off)","Plastic wrap only","Plastic wrap + SPF 15 sunscreen","Plastic wrap + SPF 18 sunscreen","Plastic wrap + SPF 20 sunscreen","Plastic wrap + SPF 30 sunscreen","Plastic wrap + SPF 50 sunscreen","Thin white cotton fabric","Dark denim fabric","Aluminum foil"],"cat":{"lots":"Lots of growth","some":"Some growth","none":"Almost no growth"},"empty":"No trials yet.","matched":"✓ matched","missed":"✗ did not match","remove":"Remove trial","chartAria":"Bar chart of colonies on dish A and dish B for each trial","chartEmpty":"Run a trial to see bars","trial":"Trial","done":"Done","notYet":"Not yet","sunNote":"min of sun.","finished":"Done. Count the colonies and compare dish A with dish B.","needPred":"First choose your prediction for dish A.","s1":"Step 1: Spreading the yeast with glass beads…","s2":"Step 2:","s2b":"minutes in the sun…","s3":"Step 3: Incubating upside down in the dark for 3 days…"};
+
+  // ---------- Model ----------
+  // t = fraction of UV that reaches the yeast. Sunscreen sits on plastic wrap (as in the classroom version of this lab),
+  // so SPF covers use wrap transmission divided by the SPF number.
+  var WRAP = 0.9;
+  var COVERS = [
+    {id:"none",t:1},{id:"wrap",t:WRAP},{id:"spf15",t:WRAP/15},{id:"spf18",t:WRAP/18},{id:"spf20",t:WRAP/20},
+    {id:"spf30",t:WRAP/30},{id:"spf50",t:WRAP/50},{id:"cotton",t:0.2},{id:"denim",t:0.001},{id:"foil",t:0}
+  ];
+  COVERS.forEach(function(c,i){ c.name = T.covers[i]; });
+  var TIMES = [0,5,10,15,20,30];
+  // Minutes of unprotected midday sun that cut survival to about 37% (1/e).
+  var TAU = {A:3.5, B:60};
+  var PLATED = 200; // average number of living cells spread on each dish
+
+  function coverOf(id){ return COVERS.filter(function(x){return x.id===id;})[0]; }
+  function survival(strain, coverId, minutes){
+    return Math.exp(-(minutes * coverOf(coverId).t) / TAU[strain]);
+  }
+  function colonies(strain, coverId, minutes, rnd){
+    rnd = rnd || Math.random;
+    var plated = PLATED - 20 + Math.floor(rnd()*41); // 180 to 220: pipetting is never exact
+    var s = survival(strain, coverId, minutes), n = 0;
+    for (var i=0;i<plated;i++) if (rnd() < s) n++;
+    return n;
+  }
+  function category(n){ return n >= 120 ? "lots" : n >= 15 ? "some" : "none"; }
+
+  // ---------- State ----------
+  var trials = [];      // {cover, time, a, b, pred}
+  var busy = false;
+  var reduce = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  var STEP_MS = (window.__YEAST_STEP_MS != null) ? window.__YEAST_STEP_MS : (reduce ? 0 : 900);
+
+  var $ = function(id){ return document.getElementById(id); };
+  var NS = "http://www.w3.org/2000/svg";
+  function el(name, attrs, text){
+    var e = document.createElementNS(NS, name);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  // ---------- Controls ----------
+  COVERS.forEach(function(c){
+    var o = document.createElement("option");
+    o.value = c.id; o.textContent = c.name;
+    $("cover").appendChild(o);
+  });
+  TIMES.forEach(function(t){
+    var o = document.createElement("option");
+    o.value = String(t); o.textContent = t + " min";
+    $("time").appendChild(o);
+  });
+  $("time").value = "15";
+
+  // ---------- Dish drawing ----------
+  function drawDish(svg, letter, n){
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.appendChild(el("circle",{cx:110,cy:110,r:104,"class":"rim"}));
+    svg.appendChild(el("circle",{cx:110,cy:110,r:96,"class":"agar"}));
+    if (n != null){
+      for (var i=0;i<n;i++){
+        var ang = Math.random()*Math.PI*2, rad = Math.sqrt(Math.random())*88;
+        svg.appendChild(el("circle",{cx:(110+Math.cos(ang)*rad).toFixed(1),cy:(110+Math.sin(ang)*rad).toFixed(1),r:(1.6+Math.random()*1.6).toFixed(1),"class":"colony"}));
+      }
+    }
+    svg.appendChild(el("text",{x:110,y:212,"text-anchor":"middle","class":"lbl"},letter));
+  }
+  function showDishes(t){
+    drawDish($("dishA"),"A", t ? t.a : null);
+    drawDish($("dishB"),"B", t ? t.b : null);
+    $("countA").textContent = t ? String(t.a) : "–";
+    $("countB").textContent = t ? String(t.b) : "–";
+    $("growA").textContent = t ? T.cat[category(t.a)] : "\u00a0";
+    $("growB").textContent = t ? T.cat[category(t.b)] : "\u00a0";
+  }
+
+  // ---------- Table ----------
+  function renderTable(){
+    var tb = $("rows");
+    while (tb.firstChild) tb.removeChild(tb.firstChild);
+    if (!trials.length){
+      var tr = document.createElement("tr"), td = document.createElement("td");
+      td.colSpan = 7; td.className = "empty";
+      td.textContent = T.empty;
+      tr.appendChild(td); tb.appendChild(tr); return;
+    }
+    trials.forEach(function(t, i){
+      var tr = document.createElement("tr");
+      var hit = category(t.a) === t.pred;
+      var cells = [
+        ["n", String(i+1)],
+        ["", coverOf(t.cover).name],
+        ["n", String(t.time)],
+        ["n", String(t.a)],
+        ["n", String(t.b)],
+        ["", T.cat[t.pred] + " " + (hit ? T.matched : T.missed)]
+      ];
+      cells.forEach(function(c){
+        var td = document.createElement("td");
+        if (c[0]) td.className = c[0];
+        td.textContent = c[1]; tr.appendChild(td);
+      });
+      var td = document.createElement("td"), b = document.createElement("button");
+      b.textContent = "✕"; b.setAttribute("aria-label", T.remove + " " + (i+1));
+      b.addEventListener("click", function(){ trials.splice(i,1); renderAll(); });
+      td.appendChild(b); tr.appendChild(td);
+      tb.appendChild(tr);
+    });
+  }
+
+  // ---------- Chart: grouped bars, one pair per trial ----------
+  function renderChart(){
+    var box = $("chart");
+    while (box.firstChild) box.removeChild(box.firstChild);
+    var W = 480, H = 260, L = 34, R = 8, Tp = 14, B = 34;
+    var svg = el("svg",{viewBox:"0 0 "+W+" "+H, role:"img", "aria-label":T.chartAria});
+    var max = 220, ph = H - Tp - B, pw = W - L - R;
+    [0,50,100,150,200].forEach(function(v){
+      var y = Tp + ph - (v/max)*ph;
+      svg.appendChild(el("line",{x1:L,x2:W-R,y1:y,y2:y,"class":"axis"}));
+      svg.appendChild(el("text",{x:L-5,y:y+3,"text-anchor":"end"},String(v)));
+    });
+    if (!trials.length){
+      svg.appendChild(el("text",{x:L+pw/2,y:Tp+ph/2,"text-anchor":"middle"},T.chartEmpty));
+    }
+    var slot = pw / Math.max(trials.length, 4), bw = Math.min(26, slot*0.36);
+    trials.forEach(function(t, i){
+      var cx = L + slot*i + slot/2;
+      [["A",t.a,"barA",cx-bw-1],["B",t.b,"barB",cx+1]].forEach(function(d){
+        var h = (d[1]/max)*ph;
+        svg.appendChild(el("rect",{x:d[3],y:Tp+ph-h,width:bw,height:Math.max(h,0.5),"class":d[2]}));
+        svg.appendChild(el("text",{x:d[3]+bw/2,y:Tp+ph-h-3,"text-anchor":"middle"},String(d[1])));
+        svg.appendChild(el("text",{x:d[3]+bw/2,y:Tp+ph+11,"text-anchor":"middle"},d[0]));
+      });
+      svg.appendChild(el("text",{x:cx,y:Tp+ph+24,"text-anchor":"middle"},T.trial+" "+(i+1)));
+    });
+    box.appendChild(svg);
+  }
+
+  // ---------- Fair-test checklist ----------
+  function checks(){
+    var c1 = trials.some(function(t){ return t.time === 0 || coverOf(t.cover).t === 0; });
+    var c2 = trials.some(function(t){ return (t.cover === "none" || t.cover === "wrap") && t.time >= 15; });
+    var byTime = {}, byCover = {};
+    trials.forEach(function(t){
+      if (t.time > 0){ (byTime[t.time] = byTime[t.time] || {})[t.cover] = 1; }
+      if (coverOf(t.cover).t > 0){ (byCover[t.cover] = byCover[t.cover] || {})[t.time] = 1; }
+    });
+    var c3 = Object.keys(byTime).some(function(k){ return Object.keys(byTime[k]).length >= 3; }) ||
+             Object.keys(byCover).some(function(k){ return Object.keys(byCover[k]).length >= 3; });
+    return [c1,c2,c3];
+  }
+  function renderChecks(){
+    checks().forEach(function(ok, i){
+      var p = $("c"+(i+1));
+      p.textContent = ok ? T.done : T.notYet;
+      p.className = "pill" + (ok ? " done" : "");
+    });
+  }
+
+  function renderAll(){ renderTable(); renderChart(); renderChecks(); }
+
+  // ---------- Run a trial ----------
+  function say(text){ $("msg").textContent = text; }
+  function finish(t){
+    trials.push(t);
+    showDishes(t);
+    $("trialNote").textContent = T.trial + " " + trials.length + ": " + coverOf(t.cover).name + ", " + t.time + " " + T.sunNote;
+    say(T.finished);
+    busy = false; $("run").disabled = false;
+    renderAll();
+  }
+  function run(){
+    if (busy) return;
+    var pred = $("pred").value;
+    if (!pred){ say(T.needPred); $("pred").focus(); return; }
+    var t = {cover:$("cover").value, time:Number($("time").value), pred:pred};
+    t.a = colonies("A", t.cover, t.time);
+    t.b = colonies("B", t.cover, t.time);
+    if (STEP_MS <= 0){ finish(t); return; }
+    busy = true; $("run").disabled = true;
+    showDishes(null);
+    say(T.s1);
+    setTimeout(function(){
+      say(T.s2 + " " + coverOf(t.cover).name + ". " + t.time + " " + T.s2b);
+      setTimeout(function(){
+        say(T.s3);
+        setTimeout(function(){ finish(t); }, STEP_MS);
+      }, STEP_MS);
+    }, STEP_MS);
+  }
+  $("run").addEventListener("click", run);
+
+  showDishes(null);
+  renderAll();
+
+  // Exposed for automated tests only.
+  window.__yeast = {survival:survival, colonies:colonies, category:category, checks:checks, trials:trials, COVERS:COVERS, TIMES:TIMES};
+})();
+</script>
+</body>
+</html>

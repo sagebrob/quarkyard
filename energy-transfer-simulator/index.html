@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Energy Transfer Investigation Simulator — Prototype</title>
+<style>
+:root {
+  --ink: #1a1a1a;
+  --ink-soft: #45484c;
+  --paper: #faf9f6;
+  --panel: #ffffff;
+  --line: #d8d6cf;
+  --line-soft: #eae8e2;
+  --good: #3f7d4f;
+  --warn: #b8892b;
+  --bad: #a8352a;
+  --warm: #c62828;
+  --warm-soft: #f8e1df;
+  --cool: #1f6fb2;
+  --cool-soft: #dbeaf3;
+  --mix: #7b3fa0;
+  --mix-soft: #ece0f3;
+  --open: #a35a00;
+  --closed: #2e6b3f;
+  --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  --sans: 'Segoe UI', 'Calibri', system-ui, -apple-system, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); }
+.app { max-width: 1120px; margin: 0 auto; padding: 0 0 60px; }
+
+.masthead { background: var(--ink); color: #fff; padding: 18px 24px 20px; }
+.kicker { font-size: 11px; letter-spacing: 1.6px; font-weight: 700; color: #c7c5bf; text-transform: uppercase; margin-bottom: 6px; }
+.masthead h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.2px; }
+.masthead p { margin: 6px 0 0; font-size: 13.5px; color: #d6d4ce; max-width: 720px; line-height: 1.55; }
+.masthead .solo-note { margin-top: 10px; display: inline-block; font-size: 12px; font-weight: 700; background: #2d2d2d; border: 1px solid #565656; border-radius: 20px; padding: 6px 14px; color: #f0efe9; }
+
+.strip { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: var(--panel); border-bottom: 1px solid var(--line); padding: 12px 24px; }
+.strip .iq { font-size: 13px; line-height: 1.5; flex: 1 1 320px; }
+.strip .iq b { text-transform: uppercase; font-size: 11px; letter-spacing: 0.6px; display: block; color: var(--ink-soft); }
+.btn.small.glossary-btn { background: #fff; color: var(--ink); }
+
+.section { margin: 20px 24px 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 18px 20px; }
+.section h2 { margin: 0 0 4px; font-size: 13px; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.section h2 .sq { width: 9px; height: 9px; background: var(--ink); flex: none; }
+.section .sub { font-size: 12.5px; color: var(--ink-soft); margin: 0 0 14px; line-height: 1.5; }
+@media (max-width: 560px) { .section { margin: 14px 12px 0; padding: 14px 12px 16px; } .masthead, .strip { padding-left: 16px; padding-right: 16px; } }
+
+.error-msg { font-size: 12.5px; color: #fff; background: var(--bad); border-radius: 4px; padding: 8px 12px; margin-top: 10px; font-weight: 600; display: none; }
+.error-msg.show { display: block; }
+
+/* ---------- Setup (one trial at a time) ---------- */
+.setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 620px) { .setup-grid { grid-template-columns: 1fr; } }
+.cup-card { border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px 8px; }
+.cup-card.warm { border-top: 4px solid var(--warm); }
+.cup-card.cool { border-top: 4px solid var(--cool); }
+.cup-card.missing { outline: 2px solid var(--bad); outline-offset: 2px; }
+.cup-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; margin: 0 0 8px; }
+.cup-card.warm .cup-label { color: var(--warm); }
+.cup-card.cool .cup-label { color: var(--cool); }
+.field-name { font-size: 12px; font-weight: 600; margin-bottom: 5px; }
+
+.chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.chip-btn { flex: 1; min-width: 90px; font-family: var(--sans); font-size: 13px; font-weight: 700; padding: 9px 4px; text-align: center; border: 1.5px solid var(--ink); border-radius: 4px; background: #fff; color: var(--ink); cursor: pointer; }
+.chip-btn small { display: block; font-family: var(--mono); font-weight: 400; font-size: 11px; margin-top: 1px; }
+.chip-btn:hover { background: var(--line-soft); }
+.chip-btn:disabled { cursor: default; opacity: 0.55; }
+.chip-btn.selected.warm-sel { background: var(--warm); border-color: var(--warm); color: #fff; opacity: 1; }
+.chip-btn.selected.cool-sel { background: var(--cool); border-color: var(--cool); color: #fff; opacity: 1; }
+
+.field-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; }
+.field-row label { font-weight: 600; }
+.field-row input[type=number] { width: 84px; font-family: var(--sans); font-size: 14px; border: 1px solid var(--line); border-radius: 4px; padding: 7px 8px; background: #fff; color: var(--ink); }
+.field-row .range-hint { color: var(--ink-soft); font-size: 11.5px; }
+
+.system-row { margin-top: 14px; }
+.system-row .field-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 620px) { .mode-grid { grid-template-columns: 1fr; } }
+.mode-btn { font-family: var(--sans); text-align: left; padding: 10px 12px; border: 1.5px solid var(--ink); border-radius: 5px; background: #fff; color: var(--ink); cursor: pointer; }
+.mode-btn b { display: block; font-size: 13.5px; }
+.mode-btn span { display: block; font-size: 11.5px; margin-top: 2px; line-height: 1.4; color: var(--ink-soft); }
+.mode-btn:hover { background: var(--line-soft); }
+.mode-btn:disabled { cursor: default; opacity: 0.55; }
+.mode-btn.selected { opacity: 1; color: #fff; }
+.mode-btn.selected span { color: #fff; }
+.mode-btn.selected[data-mode=open] { background: var(--open); border-color: var(--open); }
+.mode-btn.selected[data-mode=closed] { background: var(--closed); border-color: var(--closed); }
+td.sys-open { color: var(--open); font-weight: 700; font-family: var(--sans); }
+td.sys-closed { color: var(--closed); font-weight: 700; font-family: var(--sans); }
+
+.setup-note { margin-top: 12px; font-size: 11.5px; color: var(--ink-soft); background: var(--line-soft); border-radius: 4px; padding: 10px 12px; border-left: 3px solid var(--warn); line-height: 1.5; }
+
+.btn { font-family: var(--sans); font-size: 13px; font-weight: 600; padding: 10px 18px; border-radius: 4px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; letter-spacing: 0.2px; }
+.btn:hover { opacity: 0.88; }
+.btn:disabled { opacity: 0.35; cursor: default; }
+.btn.secondary { background: #fff; color: var(--ink); }
+.btn.small { padding: 6px 12px; font-size: 12px; }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+/* ---------- Stage: pour animation, graph, number line ---------- */
+.run-status { font-size: 13px; font-weight: 600; margin: 0 0 10px; min-height: 20px; }
+.stage-wrap { border: 1px solid var(--line); border-radius: 6px; background: #fffef9; padding: 8px 10px 10px; }
+.stage-wrap svg { display: block; width: 100%; max-width: 520px; height: auto; margin: 0 auto; }
+.stage-labels { display: flex; justify-content: center; gap: 8px 22px; flex-wrap: wrap; font-size: 12.5px; margin-top: 4px; }
+.stage-labels span { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 11px; height: 11px; border-radius: 50%; display: inline-block; flex: none; }
+
+.chart-wrap { margin-top: 12px; border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: #fffef9; }
+.chart-wrap canvas { display: block; width: 100%; height: 250px; }
+.fig-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); margin: 0 0 6px; }
+
+.area-wrap { margin-top: 12px; border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: #fffef9; }
+.area-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.area-head .fig-title { margin: 0; }
+#areaBody { margin-top: 10px; }
+#areaBody[hidden] { display: none; }
+.area-sub { font-size: 12px; color: var(--ink-soft); margin: 0 0 8px; line-height: 1.5; }
+.area-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 620px) { .area-grid { grid-template-columns: 1fr; } }
+.area-panel svg { display: block; width: 100%; max-width: 420px; height: auto; margin: 0 auto; }
+.area-cap { text-align: center; font-size: 12.5px; line-height: 1.5; margin-top: 4px; min-height: 38px; }
+.area-cap b { font-family: var(--mono); }
+.area-cap.warm b { color: var(--warm); }
+.area-cap.cool b { color: var(--cool); }
+.area-note { margin-top: 8px; font-size: 12.5px; font-weight: 600; text-align: center; line-height: 1.5; min-height: 19px; }
+
+.nl-wrap { margin-top: 12px; border: 1px solid var(--line); border-radius: 6px; padding: 10px 10px 6px; background: #fffef9; }
+.nl { position: relative; height: 124px; margin: 0 40px; }
+.nl-axis { position: absolute; left: -14px; right: -14px; top: 52px; height: 2px; background: var(--ink); }
+.nl-tick { position: absolute; top: 46px; width: 1px; height: 14px; background: var(--ink); transform: translateX(-0.5px); }
+.nl-tick.minor { top: 49px; height: 8px; background: var(--ink-soft); }
+.nl-num { position: absolute; top: 63px; transform: translateX(-50%); font-size: 11px; color: var(--ink-soft); font-family: var(--mono); }
+.nl-dot { position: absolute; top: 53px; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; transform: translate(-50%, -50%); box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+.nl-dot.warm { background: var(--warm); }
+.nl-dot.cool { background: var(--cool); }
+.nl-dot.mix { background: var(--mix); width: 20px; height: 20px; z-index: 2; }
+.nl-lab { position: absolute; transform: translateX(-50%); text-align: center; font-size: 11.5px; font-weight: 700; line-height: 1.25; white-space: nowrap; }
+.nl-lab.warm { top: 4px; color: var(--warm); }
+.nl-lab.cool { top: 4px; color: var(--cool); }
+.nl-lab.mix { top: 84px; color: var(--mix); }
+.nl-lab.mix::before { content: ''; position: absolute; left: 50%; top: -20px; height: 18px; border-left: 1.5px dashed var(--mix); }
+
+/* ---------- Log ---------- */
+.table-scroll { overflow-x: auto; }
+table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; font-family: var(--mono); min-width: 780px; }
+table.data-table th, table.data-table td { border: 1px solid var(--line); padding: 7px 8px; text-align: center; }
+table.data-table th { background: var(--line-soft); font-family: var(--sans); font-weight: 700; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.2px; }
+table.data-table td.empty { font-family: var(--sans); color: var(--ink-soft); padding: 14px; }
+td.col-warm { color: var(--warm); font-weight: 700; }
+td.col-cool { color: var(--cool); font-weight: 700; }
+td.col-mix { color: var(--mix); font-weight: 700; background: var(--mix-soft); }
+td.col-trial { font-family: var(--sans); font-weight: 700; }
+
+.glossary-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+.glossary-modal.open { display: flex; }
+.glossary-card { background: #fff; border-radius: 8px; max-width: 480px; width: 100%; max-height: 80vh; overflow-y: auto; padding: 20px; }
+.glossary-card h3 { margin: 0 0 12px; font-size: 15px; }
+.glossary-item { margin-bottom: 12px; }
+.glossary-item .g-term { font-weight: 700; font-size: 13px; }
+.glossary-item .g-def { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; line-height: 1.5; }
+
+@media print {
+  .masthead, .strip .btn, .btn-row, #glossaryModal, #areaToggle, .no-print { display: none !important; }
+  .section { border: none; padding: 0; margin: 0 0 18px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="masthead">
+    <div class="kicker">Chemistry — Prototype</div>
+    <h1>Energy Transfer Investigation Simulator</h1>
+    <p>The real version of this investigation uses hot, warm, cool, and cold water baths, foam cups with lids, a thermometer, and a digital scale, worked through with a lab group at a station. This simulator runs the same liquid-liquid investigation on your own device, so you can complete it by yourself, at your own pace, even if you missed the day your class ran it. You set up and run one trial at a time — the results depend on the choices you make.</p>
+    <div class="solo-note">Built for one person — no lab partner or group needed</div>
+  </div>
+
+  <div class="strip">
+    <div class="iq"><b>Investigation question</b>What affects how much energy transfers between warm and cool water when they are mixed together?</div>
+    <button class="btn small secondary glossary-btn" id="openGlossary">Glossary</button>
+  </div>
+
+  <!-- SECTION 1: Set up one trial -->
+  <div class="section">
+    <h2><span class="sq"></span>1. Set Up <span id="setupTrialName">Trial 1</span></h2>
+    <p class="sub">You're in charge of the setup. Choose a water bath and a mass of water for each cup, and choose an open or closed system. Then run the trial. When it finishes, change the setup and run the next one.</p>
+
+    <div class="setup-grid">
+      <div class="cup-card warm" id="warmCard">
+        <div class="cup-label">Warm cup</div>
+        <div class="field-name">Water bath</div>
+        <div class="chip-row" id="warmBath"></div>
+        <div class="field-row">
+          <label for="warmMass">Mass of water (g)</label>
+          <input type="number" min="20" max="250" step="5" value="100" id="warmMass" inputmode="numeric">
+          <span class="range-hint">20–250 g</span>
+        </div>
+      </div>
+      <div class="cup-card cool" id="coolCard">
+        <div class="cup-label">Cool cup</div>
+        <div class="field-name">Water bath</div>
+        <div class="chip-row" id="coolBath"></div>
+        <div class="field-row">
+          <label for="coolMass">Mass of water (g)</label>
+          <input type="number" min="20" max="250" step="5" value="100" id="coolMass" inputmode="numeric">
+          <span class="range-hint">20–250 g</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="system-row">
+      <div class="field-name">System</div>
+      <div class="mode-grid" id="systemMode">
+        <button type="button" class="mode-btn selected" data-mode="open" aria-pressed="true"><b>Open system</b><span>Like your real cups — heat leaks between the water and the room air the whole time.</span></button>
+        <button type="button" class="mode-btn" data-mode="closed" aria-pressed="false"><b>Closed system</b><span>A perfect enclosure — no energy can enter or leave, so the final temperature holds steady.</span></button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" id="runBtn">Run Trial 1</button>
+      <button class="btn secondary" id="skipBtn" disabled>Skip to Result</button>
+    </div>
+    <div class="error-msg" id="startError"></div>
+
+    <div class="setup-note">Real scientists usually change only <b>one</b> variable at a time between trials and keep everything else the same — that's what makes it possible to tell what actually caused a difference. Your last setup stays filled in, so you can change just one thing for the next trial — for example, run the same cups once in an open system and once in a closed system.</div>
+  </div>
+
+  <!-- SECTION 2: Watch the trial -->
+  <div class="section" id="stageSection">
+    <h2><span class="sq"></span>2. Watch <span id="stageTrialName">Trial 1</span></h2>
+    <p class="sub">The cool water is poured into the warm water. A thermometer then records the temperature each minute for 6 minutes.</p>
+    <div class="run-status" id="runStatus" aria-live="polite">Not started yet.</div>
+
+    <div class="stage-wrap">
+      <svg id="stage" viewBox="0 0 520 322" role="img" aria-label="Two beakers. The cool water is poured into the warm water.">
+        <defs>
+          <clipPath id="recvClip"><path d="M0,0 L0,122 Q0,130 8,130 L92,130 Q100,130 100,122 L100,0 Z" transform="translate(150 150)"/></clipPath>
+          <clipPath id="coolClip"><path id="coolClipShape" d="M0,0 L0,122 Q0,130 8,130 L92,130 Q100,130 100,122 L100,0 Z"/></clipPath>
+        </defs>
+        <line x1="20" y1="283" x2="500" y2="283" stroke="#d8d6cf" stroke-width="2"/>
+        <!-- system boundary -->
+        <rect id="sysBox" x="118" y="5" width="352" height="288" rx="10" fill="none" stroke-width="3"/>
+        <g id="sysArrows" fill="none" stroke="#a35a00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M142,190 q-8,-7 -16,0 t-16,0 t-16,0 M142,240 q-8,-7 -16,0 t-16,0 t-16,0"/>
+          <path id="arrowOut" d="M100,183 l-8,7 l8,7 M100,233 l-8,7 l8,7"/>
+          <path id="arrowIn" d="M136,183 l8,7 l-8,7 M136,233 l8,7 l-8,7" style="display:none"/>
+          <text x="62" y="150" font-size="11" font-weight="bold" text-anchor="middle" fill="#a35a00" stroke="none" font-family="sans-serif">heat leaks</text>
+          <text id="leakDir" x="62" y="163" font-size="11" font-weight="bold" text-anchor="middle" fill="#a35a00" stroke="none" font-family="sans-serif">out to the room</text>
+        </g>
+        <text id="sysLabel" x="294" y="313" font-size="12" font-weight="bold" text-anchor="middle" font-family="sans-serif" letter-spacing="0.6"></text>
+        <!-- warm (receiving) beaker -->
+        <rect id="recvWater" x="150" y="150" width="100" height="130" clip-path="url(#recvClip)" fill="#c62828" fill-opacity="0.75"/>
+        <path id="stream" d="" fill="none" stroke="#1f6fb2" stroke-opacity="0.8" stroke-width="5" stroke-linecap="round" style="display:none"/>
+        <g transform="translate(150 150)">
+          <path d="M0,0 L0,122 Q0,130 8,130 L92,130 Q100,130 100,122 L100,0" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M100,26 h-14 M100,52 h-22 M100,78 h-14 M100,104 h-22" stroke="#1a1a1a" stroke-width="1.2" opacity="0.55"/>
+        </g>
+        <!-- cool (pouring) beaker -->
+        <rect id="coolWater" x="0" y="0" width="520" height="300" clip-path="url(#coolClip)" fill="#1f6fb2" fill-opacity="0.75"/>
+        <g id="coolBeaker">
+          <path d="M0,0 L0,122 Q0,130 8,130 L92,130 Q100,130 100,122 L100,0" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M100,26 h-14 M100,52 h-22 M100,78 h-14 M100,104 h-22" stroke="#1a1a1a" stroke-width="1.2" opacity="0.55"/>
+        </g>
+      </svg>
+      <div class="stage-labels" id="stageLabels"></div>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="fig-title">Temperature over time</div>
+      <canvas id="chart" role="img" aria-label="Line graph of the warm and cool water temperatures meeting at the final temperature."></canvas>
+    </div>
+
+    <div class="nl-wrap">
+      <div class="fig-title">Temperature number line (°C)</div>
+      <div class="nl" id="numberLine"></div>
+    </div>
+
+    <div class="area-wrap">
+      <div class="area-head">
+        <div class="fig-title">Energy as area: mass &times; change in temperature</div>
+        <button type="button" class="btn small secondary" id="areaToggle" aria-expanded="false" aria-controls="areaBody">Show area graphs</button>
+      </div>
+      <div id="areaBody" hidden>
+      <p class="area-sub">Each graph plots one cup as a point: its mass across, its change in temperature (&Delta;T) up or down. The shaded rectangle from the axes to that point has an area of mass &times; &Delta;T. For water, that area is the energy the cup lost or gained, in calories.</p>
+      <div class="area-grid">
+        <div class="area-panel"><div id="areaWarm"></div><div class="area-cap warm" id="areaWarmCap"></div></div>
+        <div class="area-panel"><div id="areaCool"></div><div class="area-cap cool" id="areaCoolCap"></div></div>
+      </div>
+      <div class="area-note" id="areaNote"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: Running log -->
+  <div class="section">
+    <h2><span class="sq"></span>3. Trial Log</h2>
+    <p class="sub">Every trial you run is added here. &Delta;T is the change in temperature: final temperature minus starting temperature. Use this table to fill in your worksheet.</p>
+    <div class="table-scroll">
+      <table class="data-table" id="logTable">
+        <thead><tr><th>Trial</th><th>System</th><th>Warm cup start (&deg;C)</th><th>Warm mass (g)</th><th>Cool cup start (&deg;C)</th><th>Cool mass (g)</th><th>Final temp (&deg;C)</th><th>&Delta;T warm (&deg;C)</th><th>&Delta;T cool (&deg;C)</th></tr></thead>
+        <tbody id="logBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="glossary-modal" id="glossaryModal">
+  <div class="glossary-card">
+    <h3>Glossary</h3>
+    <div class="glossary-item"><div class="g-term">System</div><div class="g-def">The part of the world you're focused on studying — here, the warm water, cool water, and cup in one trial.</div></div>
+    <div class="glossary-item"><div class="g-term">Open system</div><div class="g-def">A system that can trade matter or energy with its surroundings. In this simulator, heat leaks between the water and the room air in the open system, like your real cups.</div></div>
+    <div class="glossary-item"><div class="g-term">Closed system</div><div class="g-def">A system where matter cannot get in or out, even though energy sometimes can (like a lidded cup or a sealed bottle).</div></div>
+    <div class="glossary-item"><div class="g-term">Conduction</div><div class="g-def">The transfer of energy through direct contact, as particles collide with one another.</div></div>
+    <div class="glossary-item"><div class="g-term">Equilibrium</div><div class="g-def">A stable state a system settles into — here, the single final temperature both water samples reach once energy stops flowing between them.</div></div>
+    <div class="glossary-item"><div class="g-term">Heat (Q)</div><div class="g-def">The name scientists give to energy that flows through conduction. Measured in calories in this investigation.</div></div>
+    <div class="glossary-item"><div class="g-term">Calorie</div><div class="g-def">A unit of energy. One calorie is roughly the energy needed to raise the temperature of 1 gram of water by 1 °C.</div></div>
+    <div class="glossary-item"><div class="g-term">Specific heat (c)</div><div class="g-def">How much energy it takes to change the temperature of 1 gram of a substance by 1 °C. Every substance has its own value; water's is about 1 cal/g&middot;&deg;C.</div></div>
+    <div class="glossary-item"><div class="g-term">Conservation of energy</div><div class="g-def">Energy flows between objects but is not created or destroyed — what one sample loses, another gains (accounting for any that escapes the system).</div></div>
+    <div class="glossary-item"><div class="g-term">Controlled variable</div><div class="g-def">Something you deliberately keep the same across every trial, so it can't explain any differences in your results.</div></div>
+    <div class="glossary-item"><div class="g-term">Independent / dependent variable</div><div class="g-def">Independent: the one thing you deliberately change on purpose. Dependent: what you measure, because you expect it to change as a result.</div></div>
+    <div class="btn-row"><button class="btn secondary small" id="closeGlossary">Close</button></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ---------- Water bath choices ----------
+  const BATHS = {
+    hot:  { label: 'Hot',  temp: 85 },
+    warm: { label: 'Warm', temp: 45 },
+    cool: { label: 'Cool', temp: 15 },
+    cold: { label: 'Cold', temp: 2  },
+  };
+  const WARM_BATHS = ['hot', 'warm'];
+  const COOL_BATHS = ['cool', 'cold'];
+  const AMBIENT = 22;
+  const MASS_MIN = 20, MASS_MAX = 250;
+
+  const RED = [198, 40, 40], BLUE = [31, 111, 178], PURPLE = [123, 63, 160];
+  const GREY = '#c9c7c0';
+  const css = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+  const mix = (a, b, t) => [0, 1, 2].map(i => Math.round(a[i] + (b[i] - a[i]) * t));
+
+  // The one setup the student edits. It stays filled in between trials.
+  const setup = { warmBath: null, coolBath: null, warmMass: 100, coolMass: 100, system: 'open' };
+  const SYSTEMS = {
+    open:   { label: 'Open',   color: '#a35a00', caption: 'OPEN SYSTEM — HEAT LEAKS' },
+    closed: { label: 'Closed', color: '#2e6b3f', caption: 'CLOSED SYSTEM — NO ENERGY ESCAPES' },
+  };
+  const log = [];          // completed trials, in order
+  let trialNo = 1;         // number of the trial being set up
+  let phase = 'idle';      // idle | pour | graph | done
+  let current = null;      // result being animated / shown
+  let dataRows = [];       // graph points for the current trial
+  let rafId = null, timer = null, stepIndex = 0;
+
+  const $ = id => document.getElementById(id);
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+  function safeScrollIntoView(el) { try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { /* non-critical */ } }
+  const reducedMotion = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+
+  // ---------- Physics model ----------
+  // Equilibrium temp for two water masses (same specific heat, so it cancels):
+  // Tf_ideal = (mw*Tw + mc*Tc) / (mw+mc)
+  // Closed system (perfect enclosure): no energy escapes, so Tf is the ideal value.
+  // Open system: heat leaks between the water and the room the whole time (Newton's law of cooling).
+  // Rate constant per minute = LEAK / total mass, so small or very hot samples drift the most.
+  const LEAK = 4;        // cal per minute per °C of difference from room temperature
+  const MIX_RATE = 1.2;  // how fast the two samples reach one shared temperature (per minute)
+  const T_END = 6;       // minutes recorded
+  const TIMES = [0, 1, 2, 3, 4, 5, 6];
+
+  function computeTrial(t) {
+    const Tw = BATHS[t.warmBath].temp;
+    const Tc = BATHS[t.coolBath].temp;
+    const mw = t.warmMass, mc = t.coolMass;
+    const TfIdeal = (mw * Tw + mc * Tc) / (mw + mc);
+    const kLeak = t.system === 'closed' ? 0 : LEAK / (mw + mc);
+    const r = { Tw, Tc, mw, mc, TfIdeal, kLeak, warmBath: t.warmBath, coolBath: t.coolBath, system: t.system };
+    r.Tf = Math.round(mixAt(r, T_END) * 10) / 10;
+    r.dTw = Math.round((r.Tf - Tw) * 10) / 10;
+    r.dTc = Math.round((r.Tf - Tc) * 10) / 10;
+    return r;
+  }
+  // Temperature of the fully mixed water at time t. Closed: constant. Open: drifts toward room temperature.
+  function mixAt(r, t) { return AMBIENT + (r.TfIdeal - AMBIENT) * Math.exp(-r.kLeak * t); }
+  function tempAt(r, which, t) {
+    const T0 = which === 'warm' ? r.Tw : r.Tc;
+    return Math.round((mixAt(r, t) + (T0 - r.TfIdeal) * Math.exp(-MIX_RATE * t)) * 10) / 10;
+  }
+  const signed = v => (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(1);
+
+  // ---------- Setup controls ----------
+  function buildChips(rowId, keys, which) {
+    $(rowId).innerHTML = keys.map(k =>
+      `<button type="button" class="chip-btn" data-k="${k}" aria-pressed="false">${BATHS[k].label}<small>${BATHS[k].temp} °C</small></button>`).join('');
+    $(rowId).querySelectorAll('.chip-btn').forEach(chip => {
+      chip.addEventListener('click', () => {
+        setup[which + 'Bath'] = chip.dataset.k;
+        $(rowId).querySelectorAll('.chip-btn').forEach(c => {
+          const on = c === chip;
+          c.classList.toggle('selected', on);
+          c.classList.toggle(which + '-sel', on);
+          c.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        $(which + 'Card').classList.remove('missing');
+        onSetupChange();
+      });
+    });
+  }
+  function bindMass(which) {
+    const input = $(which + 'Mass');
+    input.addEventListener('input', () => {
+      const v = Number(input.value);
+      if (v >= MASS_MIN && v <= MASS_MAX) { setup[which + 'Mass'] = v; onSetupChange(); }
+    });
+    input.addEventListener('change', () => {
+      setup[which + 'Mass'] = clamp(Math.round(Number(input.value)) || MASS_MIN, MASS_MIN, MASS_MAX);
+      input.value = setup[which + 'Mass'];
+      onSetupChange();
+    });
+  }
+  function bindSystem() {
+    document.querySelectorAll('#systemMode .mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        setup.system = btn.dataset.mode;
+        document.querySelectorAll('#systemMode .mode-btn').forEach(b => {
+          b.classList.toggle('selected', b === btn);
+          b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+        });
+        onSetupChange();
+      });
+    });
+  }
+  function drawSystem(system, leakIn) {
+    const sys = SYSTEMS[system];
+    const box = $('sysBox');
+    box.setAttribute('stroke', sys.color);
+    box.setAttribute('stroke-dasharray', system === 'open' ? '9 7' : '');
+    $('sysArrows').style.display = system === 'open' ? '' : 'none';
+    $('arrowOut').style.display = leakIn ? 'none' : '';
+    $('arrowIn').style.display = leakIn ? '' : 'none';
+    $('leakDir').textContent = leakIn ? 'in from the room' : 'out to the room';
+    $('sysLabel').textContent = sys.caption;
+    $('sysLabel').setAttribute('fill', sys.color);
+  }
+  function setControlsDisabled(disabled) {
+    document.querySelectorAll('.chip-btn, .mode-btn').forEach(c => c.disabled = disabled);
+    $('warmMass').disabled = disabled;
+    $('coolMass').disabled = disabled;
+  }
+
+  // Any change to the setup clears the last result off the stage and previews the next trial.
+  function onSetupChange() {
+    if (phase === 'pour' || phase === 'graph') return;
+    phase = 'idle';
+    current = null;
+    dataRows = [];
+    $('startError').classList.remove('show');
+    renderIdle();
+  }
+
+  // ---------- Stage: beakers ----------
+  const BW = 100, BH = 130, CAPACITY = 500;         // beaker size (SVG units) and grams when full
+  const RECV = { x: 150, y: 150 };                   // warm beaker top-left
+  const HOME = { x: 330, y: 150 };                   // cool beaker resting top-left
+  const POUR = { x: 235, y: 115 };                   // cool beaker spout position while pouring
+  const fracOf = g => clamp(g / CAPACITY, 0, 1);
+
+  // Area of water left in a beaker tipped by theta (radians) about its spout, surface level with the lip.
+  function remainingArea(theta) {
+    if (theta >= Math.PI / 2) return 0;
+    const t = Math.tan(theta);
+    return (BW * t <= BH) ? BW * BH - 0.5 * BW * BW * t : 0.5 * BH * BH / t;
+  }
+  function tiltForArea(area) {
+    let lo = 0, hi = Math.PI / 2;
+    for (let i = 0; i < 30; i++) { const mid = (lo + hi) / 2; if (remainingArea(mid) > area) lo = mid; else hi = mid; }
+    return (lo + hi) / 2;
+  }
+
+  // s: { x, y, ang (deg), surfOff, p (0-1 poured), pouring, coolEmpty, warmFrac, coolFrac, warmSel, coolSel }
+  function drawStage(s) {
+    const tf = `translate(${s.x.toFixed(2)} ${s.y.toFixed(2)}) rotate(${(-s.ang).toFixed(2)})`;
+    $('coolBeaker').setAttribute('transform', tf);
+    $('coolClipShape').setAttribute('transform', tf);
+    const cw = $('coolWater');
+    if (s.coolEmpty) { cw.style.display = 'none'; }
+    else {
+      cw.style.display = '';
+      cw.setAttribute('y', (s.y + s.surfOff).toFixed(2));
+      cw.setAttribute('fill', s.coolSel ? css(BLUE) : GREY);
+    }
+    const frac = s.warmFrac + s.coolFrac * s.p;
+    const surfY = RECV.y + BH * (1 - frac);
+    const rw = $('recvWater');
+    rw.setAttribute('y', surfY.toFixed(2));
+    rw.setAttribute('height', (BH * frac + 2).toFixed(2));
+    rw.setAttribute('fill', s.warmSel ? css(mix(RED, PURPLE, s.p)) : GREY);
+    const st = $('stream');
+    if (s.pouring) {
+      st.style.display = '';
+      st.setAttribute('d', `M${POUR.x} ${POUR.y} Q ${POUR.x - 7} ${POUR.y + 8} ${POUR.x - 7} ${Math.max(surfY, POUR.y + 12).toFixed(1)}`);
+    } else { st.style.display = 'none'; }
+  }
+
+  function stageBase(src) {
+    return {
+      warmFrac: fracOf(src.mw), coolFrac: fracOf(src.mc),
+      warmSel: src.warmSel, coolSel: src.coolSel,
+    };
+  }
+  function restState(src) {
+    const b = stageBase(src);
+    return Object.assign(b, { x: HOME.x, y: HOME.y, ang: 0, surfOff: BH * (1 - b.coolFrac), p: 0, pouring: false, coolEmpty: false });
+  }
+  function endState(src) {
+    return Object.assign(stageBase(src), { x: HOME.x, y: HOME.y, ang: 0, surfOff: 0, p: 1, pouring: false, coolEmpty: true });
+  }
+
+  const T_LIFT = 900, T_POUR = 1900, T_BACK = 700;
+  function animatePour(src, done) {
+    const base = stageBase(src);
+    const area = BW * BH * base.coolFrac;
+    const theta0 = tiltForArea(area);
+    const deg = r => r * 180 / Math.PI;
+    let start = null;
+    function frame(now) {
+      if (start === null) start = now;
+      const el = now - start;
+      let s;
+      if (el < T_LIFT) {
+        const e = ease(el / T_LIFT);
+        s = { x: lerp(HOME.x, POUR.x, e), y: lerp(HOME.y, POUR.y, e), ang: deg(theta0) * e, surfOff: BH * (1 - base.coolFrac) * (1 - e), p: 0, pouring: false, coolEmpty: false };
+      } else if (el < T_LIFT + T_POUR) {
+        const u = (el - T_LIFT) / T_POUR;
+        s = { x: POUR.x, y: POUR.y, ang: deg(tiltForArea(area * (1 - u))), surfOff: 0, p: u, pouring: u < 0.985, coolEmpty: false };
+      } else if (el < T_LIFT + T_POUR + T_BACK) {
+        const e = ease((el - T_LIFT - T_POUR) / T_BACK);
+        s = { x: lerp(POUR.x, HOME.x, e), y: lerp(POUR.y, HOME.y, e), ang: 90 * (1 - e), surfOff: 0, p: 1, pouring: false, coolEmpty: true };
+      } else {
+        drawStage(endState(src));
+        rafId = null;
+        done();
+        return;
+      }
+      drawStage(Object.assign(s, base));
+      rafId = requestAnimationFrame(frame);
+    }
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function renderStageLabels(warmTxt, coolTxt, mixTxt) {
+    $('stageLabels').innerHTML =
+      `<span><span class="swatch" style="background:var(--warm)"></span><b>Warm cup:</b> ${warmTxt}</span>` +
+      `<span><span class="swatch" style="background:var(--cool)"></span><b>Cool cup:</b> ${coolTxt}</span>` +
+      (mixTxt ? `<span><span class="swatch" style="background:var(--mix)"></span><b>Mixed:</b> ${mixTxt}</span>` : '');
+  }
+  function cupText(bath, mass) {
+    return bath ? `${BATHS[bath].label} bath, ${BATHS[bath].temp} °C, ${mass} g` : `choose a bath, ${mass} g`;
+  }
+
+  // ---------- Graph ----------
+  const canvas = $('chart');
+  const ctx = canvas.getContext('2d');
+  function drawChart() {
+    try {
+      const dpr = window.devicePixelRatio || 1;
+      const W = canvas.clientWidth || 600, H = canvas.clientHeight || 250;
+      canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+      const padL = 50, padR = 18, padT = 12, padB = 40;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      const X = t => padL + (t / 6) * plotW;
+      const Y = temp => padT + plotH - (temp / 100) * plotH;
+
+      ctx.font = '12px sans-serif';
+      ctx.lineWidth = 1;
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'right';
+      for (let temp = 0; temp <= 100; temp += 20) {
+        ctx.strokeStyle = temp === 0 ? '#1a1a1a' : '#eae8e2';
+        ctx.beginPath(); ctx.moveTo(padL, Y(temp)); ctx.lineTo(W - padR, Y(temp)); ctx.stroke();
+        ctx.fillStyle = '#45484c';
+        ctx.fillText(temp + '°', padL - 8, Y(temp));
+      }
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      TIMES.forEach(t => ctx.fillText(String(t), X(t), H - padB + 16));
+      ctx.fillText('Time (minutes)', padL + plotW / 2, H - 6);
+      ctx.save();
+      ctx.translate(12, padT + plotH / 2); ctx.rotate(-Math.PI / 2);
+      ctx.fillText('Temperature (°C)', 0, 0);
+      ctx.restore();
+
+      if (!dataRows.length || !current) return;
+
+      [['warm', css(RED), []], ['cool', css(BLUE), [7, 5]]].forEach(([which, color, dash]) => {
+        ctx.strokeStyle = color; ctx.fillStyle = color;
+        ctx.lineWidth = 2.5; ctx.setLineDash(dash);
+        ctx.beginPath();
+        dataRows.forEach((r, i) => { if (i === 0) ctx.moveTo(X(r.t), Y(r[which])); else ctx.lineTo(X(r.t), Y(r[which])); });
+        ctx.stroke();
+        ctx.setLineDash([]);
+        dataRows.forEach(r => { ctx.beginPath(); ctx.arc(X(r.t), Y(r[which]), 3.5, 0, Math.PI * 2); ctx.fill(); });
+      });
+
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.lineJoin = 'round';
+      const label = (txt, x, y, color) => { ctx.strokeStyle = '#fffef9'; ctx.lineWidth = 4; ctx.strokeText(txt, x, y); ctx.fillStyle = color; ctx.fillText(txt, x, y); };
+      label(`Warm water ${current.Tw} °C`, X(0) + 10, Math.max(Y(current.Tw) - 8, padT + 10), css(RED));
+      label(`Cool water ${current.Tc} °C`, X(0) + 10, Math.min(Y(current.Tc) + 18, padT + plotH - 6), css(BLUE));
+
+      if (phase === 'done') {
+        const fx = X(6), fy = Y(current.Tf);
+        ctx.fillStyle = css(PURPLE);
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(fx, fy, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.textAlign = 'right';
+        label(`Final ${current.Tf.toFixed(1)} °C`, fx - 2, fy - 14, css(PURPLE));
+      }
+    } catch (e) { /* canvas rendering is purely visual; never let it block the investigation flow */ }
+  }
+
+  // ---------- Area graphs (mass x deltaT = energy) ----------
+  const fmtCal = v => (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(Math.round(v)).toLocaleString('en-US');
+  function areaSVG(which, mass, dT) {
+    const W = 340, H = 300, L = 46, R = 26, T = 14, B = 14;
+    const pw = W - L - R, ph = H - T - B;
+    const X = m => L + (m / 250) * pw, Y = d => T + ph / 2 - (d / 90) * (ph / 2);
+    const color = which === 'warm' ? '#c62828' : '#1f6fb2';
+    const name = which === 'warm' ? 'warm cup' : 'cool cup';
+    let g = '';
+    for (let m = 0; m <= 250; m += 25) g += `<line x1="${X(m)}" y1="${T}" x2="${X(m)}" y2="${T + ph}" stroke="#e3e1da" stroke-width="1"/>`;
+    for (let d = -90; d <= 90; d += 10) g += `<line x1="${L}" y1="${Y(d)}" x2="${L + pw}" y2="${Y(d)}" stroke="#e3e1da" stroke-width="1"/>`;
+    for (let d = -80; d <= 80; d += 20) if (d !== 0) g += `<text x="${L - 7}" y="${Y(d) + 3.5}" font-size="10" text-anchor="end" fill="#45484c">${d < 0 ? '\u2212' + (-d) : d}</text>`;
+    g += `<text x="${L - 7}" y="${Y(0) - 3}" font-size="10" font-weight="bold" text-anchor="end" fill="#1a1a1a">\u0394T</text><text x="${L - 5}" y="${Y(0) + 9}" font-size="9" text-anchor="end" fill="#1a1a1a">(\u00b0C)</text>`;
+    let shape = '';
+    if (mass != null) {
+      const y0 = Math.min(Y(0), Y(dT)), h = Math.abs(Y(dT) - Y(0));
+      shape = `<rect x="${X(0)}" y="${y0}" width="${X(mass) - X(0)}" height="${h}" fill="${color}" fill-opacity="0.28" stroke="${color}" stroke-width="1.5"/>
+        <circle cx="${X(mass)}" cy="${Y(dT)}" r="5.5" fill="${color}" stroke="#fff" stroke-width="1.5"/>`;
+    }
+    // mass labels sit on the side of the axis away from the rectangle
+    const ly = (mass != null ? dT < 0 : which === 'warm') ? Y(0) - 6 : Y(0) + 14;
+    let ticks = '';
+    for (let m = 50; m <= 250; m += 50) ticks += `<line x1="${X(m)}" y1="${Y(0) - 4}" x2="${X(m)}" y2="${Y(0) + 4}" stroke="#1a1a1a" stroke-width="1.5"/><text x="${X(m)}" y="${ly}" font-size="10" text-anchor="middle" fill="#1a1a1a" stroke="#fffef9" stroke-width="3" paint-order="stroke">${m} g</text>`;
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Area graph for the ${name}: mass across, change in temperature up and down." font-family="sans-serif">
+      ${g}${shape}
+      <line x1="${L}" y1="${T}" x2="${L}" y2="${T + ph}" stroke="#1a1a1a" stroke-width="2.5"/>
+      <line x1="${L}" y1="${Y(0)}" x2="${L + pw}" y2="${Y(0)}" stroke="#1a1a1a" stroke-width="2.5"/>
+      ${ticks}
+      <text x="${L + pw}" y="${T + 10}" font-size="11" font-weight="bold" text-anchor="end" fill="${color}">mass of ${name}</text>
+    </svg>`;
+  }
+  function renderArea(r) {
+    $('areaWarm').innerHTML = areaSVG('warm', r ? r.mw : null, r ? r.dTw : 0);
+    $('areaCool').innerHTML = areaSVG('cool', r ? r.mc : null, r ? r.dTc : 0);
+    if (!r) {
+      $('areaWarmCap').textContent = 'Warm cup: run the trial to see its rectangle.';
+      $('areaCoolCap').textContent = 'Cool cup: run the trial to see its rectangle.';
+      $('areaNote').textContent = '';
+      return;
+    }
+    const qw = r.mw * r.dTw, qc = r.mc * r.dTc, leak = -(qw + qc);
+    $('areaWarmCap').innerHTML = `Warm cup: ${r.mw} g &times; ${signed(r.dTw)} &deg;C<br><b>= ${fmtCal(qw)} cal</b> (energy lost)`;
+    $('areaCoolCap').innerHTML = `Cool cup: ${r.mc} g &times; ${signed(r.dTc)} &deg;C<br><b>= ${fmtCal(qc)} cal</b> (energy gained)`;
+    const note = $('areaNote');
+    if (r.system === 'closed') {
+      note.textContent = 'Closed system: the two areas are the same size. The energy the warm water lost equals the energy the cool water gained (tiny differences come from rounding).';
+      note.style.color = SYSTEMS.closed.color;
+    } else {
+      const amt = Math.abs(Math.round(leak)).toLocaleString('en-US');
+      note.textContent = `Open system: the two areas are not the same size. About ${amt} cal leaked ${leak >= 0 ? 'out to' : 'in from'} the room.`;
+      note.style.color = SYSTEMS.open.color;
+    }
+  }
+
+  function setAreaOpen(open) {
+    $('areaBody').hidden = !open;
+    $('areaToggle').textContent = open ? 'Hide area graphs' : 'Show area graphs';
+    $('areaToggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  $('areaToggle').addEventListener('click', () => setAreaOpen($('areaBody').hidden));
+
+  // ---------- Number line ----------
+  function renderNumberLine(Tw, Tc, Tf) {
+    let html = '<div class="nl-axis"></div>';
+    for (let t = 0; t <= 100; t += 10) {
+      const major = t % 20 === 0;
+      html += `<div class="nl-tick${major ? '' : ' minor'}" style="left:${t}%"></div>`;
+      if (major) html += `<div class="nl-num" style="left:${t}%">${t}</div>`;
+    }
+    if (Tw != null) html += `<div class="nl-dot warm" style="left:${Tw}%"></div><div class="nl-lab warm" style="left:${Tw}%">Warm start<br>${Tw} °C</div>`;
+    if (Tc != null) html += `<div class="nl-dot cool" style="left:${Tc}%"></div><div class="nl-lab cool" style="left:${Tc}%">Cool start<br>${Tc} °C</div>`;
+    if (Tf != null) html += `<div class="nl-dot mix" style="left:${Tf}%"></div><div class="nl-lab mix" style="left:${Tf}%">Final<br>${Tf.toFixed(1)} °C</div>`;
+    $('numberLine').innerHTML = html;
+  }
+
+  // ---------- Log ----------
+  function renderLog() {
+    $('logBody').innerHTML = log.length ? log.map(r => `<tr>
+        <td class="col-trial">Trial ${r.n}</td>
+        <td class="sys-${r.system}">${SYSTEMS[r.system].label}</td>
+        <td class="col-warm">${BATHS[r.warmBath].label} &middot; ${r.Tw.toFixed(1)}</td>
+        <td>${r.mw}</td>
+        <td class="col-cool">${BATHS[r.coolBath].label} &middot; ${r.Tc.toFixed(1)}</td>
+        <td>${r.mc}</td>
+        <td class="col-mix">${r.Tf.toFixed(1)}</td>
+        <td class="col-warm">${signed(r.dTw)}</td>
+        <td class="col-cool">${signed(r.dTc)}</td>
+      </tr>`).join('')
+      : '<tr><td class="empty" colspan="9">No trials yet. Set up Trial 1 above and run it.</td></tr>';
+  }
+
+  // ---------- Screens ----------
+  function renderIdle() {
+    const Tw = setup.warmBath ? BATHS[setup.warmBath].temp : null;
+    const Tc = setup.coolBath ? BATHS[setup.coolBath].temp : null;
+    $('setupTrialName').textContent = 'Trial ' + trialNo;
+    $('stageTrialName').textContent = 'Trial ' + trialNo;
+    $('runBtn').textContent = 'Run Trial ' + trialNo;
+    $('runBtn').disabled = false;
+    $('skipBtn').disabled = true;
+    $('runStatus').textContent = trialNo === 1 ? 'Not started yet.' : `Ready for Trial ${trialNo}. Press Run when your setup is ready.`;
+    const pv = (setup.warmBath && setup.coolBath) ? computeTrial(setup) : null;
+    drawSystem(setup.system, !!pv && pv.TfIdeal < AMBIENT);
+    drawStage(restState({ mw: setup.warmMass, mc: setup.coolMass, warmSel: !!setup.warmBath, coolSel: !!setup.coolBath }));
+    renderStageLabels(cupText(setup.warmBath, setup.warmMass), cupText(setup.coolBath, setup.coolMass));
+    drawChart();
+    renderArea(null);
+    renderNumberLine(Tw, Tc, null);
+  }
+
+  function validateSetup() {
+    const missing = [];
+    ['warm', 'cool'].forEach(which => {
+      const input = $(which + 'Mass');
+      setup[which + 'Mass'] = clamp(Math.round(Number(input.value)) || MASS_MIN, MASS_MIN, MASS_MAX);
+      input.value = setup[which + 'Mass'];
+      const ok = !!setup[which + 'Bath'];
+      $(which + 'Card').classList.toggle('missing', !ok);
+      if (!ok) missing.push(which + ' cup');
+    });
+    const err = $('startError');
+    if (missing.length) {
+      err.textContent = `Choose a water bath for the ${missing.join(' and the ')} before you run the trial.`;
+      err.classList.add('show');
+      return false;
+    }
+    err.classList.remove('show');
+    return true;
+  }
+
+  function stageSrc() { return { mw: current.mw, mc: current.mc, warmSel: true, coolSel: true }; }
+
+  function startRun() {
+    if (phase === 'pour' || phase === 'graph') return;
+    if (!validateSetup()) return;
+    current = computeTrial(setup);
+    current.n = trialNo;
+    dataRows = [];
+    stepIndex = 0;
+    phase = 'pour';
+    setControlsDisabled(true);
+    $('runBtn').disabled = true;
+    $('skipBtn').disabled = false;
+    $('stageTrialName').textContent = 'Trial ' + current.n;
+    drawSystem(current.system, current.TfIdeal < AMBIENT);
+    renderStageLabels(cupText(current.warmBath, current.mw), cupText(current.coolBath, current.mc));
+    renderNumberLine(current.Tw, current.Tc, null);
+    renderArea(null);
+    setAreaOpen(false);
+    drawChart();
+    safeScrollIntoView($('stageSection'));
+    if (reducedMotion()) { skipToEnd(); return; }
+    $('runStatus').textContent = `Trial ${current.n} (${SYSTEMS[current.system].label.toLowerCase()} system): pouring the cool water into the warm water…`;
+    drawStage(restState(stageSrc()));
+    animatePour(stageSrc(), startGraph);
+  }
+
+  function startGraph() {
+    phase = 'graph';
+    stepOnce();
+    timer = setInterval(stepOnce, 480);
+  }
+  function stepOnce() {
+    if (stepIndex >= TIMES.length) { finishRun(); return; }
+    const t = TIMES[stepIndex];
+    dataRows.push({
+      t,
+      warm: tempAt(current, 'warm', t),
+      cool: tempAt(current, 'cool', t),
+    });
+    drawChart();
+    $('runStatus').textContent = `Trial ${current.n}: recording the temperature at ${t} minute${t === 1 ? '' : 's'}…`;
+    stepIndex++;
+    if (stepIndex >= TIMES.length) finishRun();
+  }
+
+  function skipToEnd() {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    clearInterval(timer);
+    drawStage(endState(stageSrc()));
+    dataRows = TIMES.map(t => ({
+      t,
+      warm: tempAt(current, 'warm', t),
+      cool: tempAt(current, 'cool', t),
+    }));
+    stepIndex = TIMES.length;
+    finishRun();
+  }
+
+  function finishRun() {
+    if (phase === 'done') return;
+    clearInterval(timer);
+    phase = 'done';
+    log.push(current);
+    trialNo = current.n + 1;
+    drawChart();
+    renderArea(current);
+    renderNumberLine(current.Tw, current.Tc, current.Tf);
+    renderStageLabels(cupText(current.warmBath, current.mw), `poured into the warm cup`, `${current.mw + current.mc} g at ${current.Tf.toFixed(1)} °C`);
+    renderLog();
+    const drift = Math.abs(current.Tf - current.TfIdeal) >= 0.05;
+    $('runStatus').textContent = `Trial ${current.n} (${current.system} system) complete — ` + (current.system === 'closed'
+      ? `the mixed water settled at ${current.Tf.toFixed(1)} °C and stayed there.`
+      : `after 6 minutes the mixed water was at ${current.Tf.toFixed(1)} °C` + (drift ? `, still drifting toward room temperature (${AMBIENT} °C).` : '.')) + ' It is saved in the Trial Log below.';
+    setControlsDisabled(false);
+    $('setupTrialName').textContent = 'Trial ' + trialNo;
+    $('runBtn').textContent = 'Run Trial ' + trialNo;
+    $('runBtn').disabled = false;
+    $('skipBtn').disabled = true;
+  }
+
+  $('runBtn').addEventListener('click', startRun);
+  $('skipBtn').addEventListener('click', () => { if (phase === 'pour' || phase === 'graph') skipToEnd(); });
+  window.addEventListener('resize', drawChart);
+
+  // ---------- Glossary ----------
+  const modal = $('glossaryModal');
+  $('openGlossary').addEventListener('click', () => modal.classList.add('open'));
+  $('closeGlossary').addEventListener('click', () => modal.classList.remove('open'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('open'); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.classList.remove('open'); });
+
+  // ---------- init ----------
+  buildChips('warmBath', WARM_BATHS, 'warm');
+  buildChips('coolBath', COOL_BATHS, 'cool');
+  bindMass('warm');
+  bindMass('cool');
+  bindSystem();
+  renderLog();
+  renderIdle();
+})();
+</script>
+</body>
+</html>
