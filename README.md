@@ -9,7 +9,7 @@ Free interactive science simulations at https://quarkyard.com (split out of ipas
 ## Layout
 - `index.html` — the hub page (was `ipassedmath.com/simulators/`); thumbnails in `thumbs/`
 - `<name>-simulator/index.html` (+ `index-es.html` for Spanish where available)
-- `ice-vs-cold-water/`, `cellgame*.html` (cell game and its pages)
+- `ice-vs-cold-water/`
 - `_redirects` — old `/simulators/` and lesson-numbered URLs
 
 ## Local preview
